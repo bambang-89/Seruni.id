@@ -121,7 +121,7 @@ function TaglineBar() {
  * S1 · Sambutan + selayang pandang (editorial split)
  * ============================================================ */
 
-function S1() {
+function S1() { return null; // 
   return (
     <EditorialSplit
       kicker="Bagian Satu — Tentang"
@@ -171,7 +171,7 @@ function StatistikBand() {
  * S2 · Indeks Desa Membangun (editorial ledger)
  * ============================================================ */
 
-function S2() {
+function S2() { return null; // 
   const { data: idmData } = useIdmData();
   return (
     <Band id="idm" tone="neutral">
@@ -226,7 +226,7 @@ function S2() {
  * S3 · Agenda mendatang (numbered list, navy)
  * ============================================================ */
 
-function S3() {
+function S3() { return null; // 
   const { data: agendaData } = useAgenda();
   return (
     <Band id="agenda" tone="dark">
@@ -270,7 +270,7 @@ function S3() {
  * S4 · Berita terbaru (featured card + list, paper)
  * ============================================================ */
 
-function S4() {
+function S4() { return null; // 
   const { data: beritaData } = useBerita();
   const [utama, ...lainnya] = beritaData || [];
   return (
@@ -319,7 +319,7 @@ function S4() {
  * S5 · Layanan (editorial tile grid, navy)
  * ============================================================ */
 
-function S5() {
+function S5() { return null; // 
   // TODO: Wire to useSuratAggregate hook
   const { data: layananData } = useState<Array<{kode: string; nama: string; jumlah_bulan: number}>>([
     { kode: "SKD", nama: "Surat Keterangan Domisili", jumlah_bulan: 128 },
@@ -369,7 +369,7 @@ function S5() {
  * S6 · Marketplace UMKM (editorial split, paper)
  * ============================================================ */
 
-function S6() {
+function S6() { return null; // 
   const { data: produkData } = usePotensiProduk({ featuredOnly: true });
   const Kolom = ({ judul, items }: { judul: string; items: { nama: string; harga: string; penjual: string; emoji: string }[] }) => (
     <div>
@@ -414,7 +414,7 @@ function S6() {
  * S7 · Realisasi pembangunan (dark band, editorial ledger)
  * ============================================================ */
 
-function S7() {
+function S7() { return null; // 
   const { data: pembangunanData } = usePembangunanData();
   return (
     <Band id="pembangunan" tone="dark">
@@ -473,7 +473,7 @@ function S7() {
  * S8 · Perencanaan / usulan warga (numbered, paper)
  * ============================================================ */
 
-function S8() {
+function S8() { return null; // 
   const { data: usulanData } = useUsulanStats();
   const max = Math.max(...(usulanData.top10 || []).map((u) => u.suara));
   return (
@@ -518,7 +518,7 @@ function S8() {
  * S9 · Potensi desa (editorial split w/ landscape)
  * ============================================================ */
 
-function S9() {
+function S9() { return null; // 
   const { data: wisataData } = usePotensiWisata();
   const { data: umkmData } = usePotensiUmkm();
   // Transform data for display
@@ -619,7 +619,7 @@ function QuoteKades() {
  * S10 · Galeri (editorial gallery)
  * ============================================================ */
 
-function S10() {
+function S10() { return null; // 
   const { data: galeriData } = useGaleri();
   const covers = [wartaPasar, umkmTenun, potensiLansekap, heroImg, portraitKades, wartaPasar];
   return (
@@ -663,7 +663,7 @@ function S10() {
  * S11 · Aduan warga (editorial form, neutral)
  * ============================================================ */
 
-function S11() {
+function S11() { return null; // 
   // TODO: Wire to ref_aduan_kategori table
   const aduanKategori = [
     { kode: "infrastruktur", label: "Infrastruktur (jalan, jembatan, PJU)" },
@@ -792,7 +792,7 @@ function S11() {
  * S12 · Peta desa (editorial split with layers)
  * ============================================================ */
 
-function S12() {
+function S12() { return null; // 
   // Default layers - can be fetched from site_settings
   const petaLayer = [
     { kode: "wilayah", label: "Batas Wilayah & Burnett", aktif: true },
