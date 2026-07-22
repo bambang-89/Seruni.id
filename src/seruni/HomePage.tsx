@@ -12,6 +12,9 @@ import {
   usePembangunanData,
   useUsulanStats,
   useGaleri,
+  useAgenda,
+  useBerita,
+  usePotensiProduk,
 } from "./lib/queries";
 import {
   Band,
