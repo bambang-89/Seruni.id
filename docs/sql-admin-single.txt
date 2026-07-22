@@ -1,0 +1,123 @@
+-- ============================================================
+-- SETUP ADMIN - Seruni.id
+-- ============================================================
+-- NIK: 5203083004880003
+-- Nama: Bambang Nurdiansyah
+-- Password: Seruni88
+-- ============================================================
+
+-- 1. ENABLE PASSWORD HASHING
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- 2. GENERATE PASSWORD HASH
+-- Bcrypt hash untuk password "Seruni88"
+DO $$
+DECLARE
+  v_email TEXT := 'nik-5203083004880003@admin.seruni.local';
+  v_nik TEXT := '5203083004880003';
+  v_nama TEXT := 'Bambang Nurdiansyah';
+  v_password TEXT := 'Seruni88';
+  v_now TIMESTAMPTZ := now();
+  v_user_id UUID;
+
+  -- Generate bcrypt hash dengan cost factor 10 (Supabase standard)
+  v_hash TEXT;
+BEGIN
+  -- Generate hash: crypt(password, gen_salt('bf', 10))
+  v_hash := encode(
+    pgcrypto.crypt(v_password, pgcrypto.gen_salt('bf', 10)),
+    'hex'
+  );
+
+  RAISE NOTICE 'Generated hash: %', substring(v_hash, 1, 30) || '...';
+
+  -- Check existing user
+  SELECT id INTO v_user_id FROM auth.users WHERE email = v_email;
+
+  IF v_user_id IS NOT NULL THEN
+    RAISE NOTICE 'User exists with ID: %', v_user_id;
+
+    -- Update password
+    UPDATE auth.users
+    SET encrypted_password = v_hash,
+        updated_at = v_now
+    WHERE email = v_email;
+    RAISE NOTICE 'Password updated!';
+  ELSE
+    -- Create new user with manual password hash
+    v_user_id := gen_random_uuid();
+
+    INSERT INTO auth.users (
+      instance_id,
+      id,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      created_at,
+      updated_at,
+      last_sign_in_at,
+      raw_user_meta_data,
+      raw_app_meta_data,
+      role,
+      aud,
+      nil
+    ) VALUES (
+      '00000000-0000-0000-0000-000000000000'::uuid,
+      v_user_id,
+      v_email,
+      v_hash,
+      v_now,
+      v_now,
+      v_now,
+      v_now,
+      jsonb_build_object(
+        'nik', v_nik,
+        'nama', v_nama
+      ),
+      jsonb_build_object(
+        'provider', 'email',
+        'providers', jsonb_build_array('email')
+      ),
+      'authenticated',
+      'authenticated',
+      false
+    )
+    ON CONFLICT (email) DO NOTHING;
+
+    RAISE NOTICE 'User created with ID: %', v_user_id;
+  END IF;
+
+  -- 3. LINK TO ADMIN TABLES
+  INSERT INTO public.admin_profiles (id, nik, nama, created_at, updated_at)
+  VALUES (v_user_id, v_nik, v_nama, v_now, v_now)
+  ON CONFLICT (nik) DO UPDATE SET
+    id = EXCLUDED.id,
+    nama = EXCLUDED.nama,
+    updated_at = v_now;
+
+  INSERT INTO public.user_roles (user_id, role, created_at)
+  VALUES (v_user_id, 'admin'::public.app_role, v_now)
+  ON CONFLICT (user_id, role) DO NOTHING;
+
+  INSERT INTO public.user_peran (user_id, peran, aktif, created_at, updated_at)
+  VALUES (v_user_id, 'admin'::public.app_peran, true, v_now, v_now)
+  ON CONFLICT (user_id, peran) DO NOTHING;
+
+  RAISE NOTICE '';
+  RAISE NOTICE '======================================';
+  RAISE NOTICE '  ADMIN BERHASIL DISETUP!';
+  RAISE NOTICE '======================================';
+  RAISE NOTICE '  NIK: %', v_nik;
+  RAISE NOTICE '  Nama: %', v_nama;
+  RAISE NOTICE '  Email: %', v_email;
+  RAISE NOTICE '  User ID: %', v_user_id;
+  RAISE NOTICE '';
+  RAISE NOTICE '  LOGIN: http://localhost:8080/admin/login';
+  RAISE NOTICE '  NIK: %', v_nik;
+  RAISE NOTICE '  Password: %', v_password;
+  RAISE NOTICE '======================================';
+
+END $$;
+
+-- 4. VERIFY
+SELECT 'admin_profiles' as table_name, nik, nama FROM public.admin_profiles WHERE nik = '5203083004880003';

@@ -1,0 +1,74 @@
+-- ============================================================
+-- SETUP ADMIN - Seruni.id
+-- ============================================================
+-- Paste ke SQL Editor:
+-- https://supabase.com/dashboard/project/smngqdpbmgcdbmkiuviq/sql/new
+-- ============================================================
+
+-- CEK APAKAH USER SUDAH ADA DI AUTH.USERS
+SELECT
+    id,
+    email,
+    created_at,
+    (raw_user_meta_data->>'nik') as nik,
+    (raw_user_meta_data->>'nama') as nama
+FROM auth.users
+WHERE raw_user_meta_data->>'nik' = '5203083004880003'
+   OR email = 'nik-5203083004880003@admin.seruni.local';
+
+-- JIKA USER ADA, JALANKAN SCRIPT DI BAWAH INI:
+-- ============================================================
+DO $$
+DECLARE
+    v_user_id UUID;
+    v_nik TEXT := '5203083004880003';
+    v_nama TEXT := 'Bambang Nurdiansyah';
+    v_now TIMESTAMPTZ := now();
+BEGIN
+    -- Cari user_id dari auth.users
+    SELECT id INTO v_user_id
+    FROM auth.users
+    WHERE raw_user_meta_data->>'nik' = v_nik
+       OR email = 'nik-' || v_nik || '@admin.seruni.local';
+
+    IF v_user_id IS NULL THEN
+        RAISE NOTICE '========================================';
+        RAISE NOTICE 'ERROR: User belum ada di auth.users!';
+        RAISE NOTICE '========================================';
+        RAISE NOTICE 'BUAT USER TERLEBIH DAHULU DI DASHBOARD AUTH USERS';
+        RETURN;
+    END IF;
+
+    RAISE NOTICE 'User ditemukan: %', v_user_id;
+
+    -- Insert admin_profiles
+    INSERT INTO public.admin_profiles (id, nik, nama, created_at, updated_at)
+    VALUES (v_user_id, v_nik, v_nama, v_now, v_now)
+    ON CONFLICT (nik) DO UPDATE SET
+        id = EXCLUDED.id,
+        nama = EXCLUDED.nama,
+        updated_at = v_now;
+
+    -- Insert user_roles
+    INSERT INTO public.user_roles (user_id, role, created_at)
+    VALUES (v_user_id, 'admin', v_now)
+    ON CONFLICT (user_id, role) DO NOTHING;
+
+    -- Insert user_peran
+    INSERT INTO public.user_peran (user_id, peran, aktif, created_at, updated_at)
+    VALUES (v_user_id, 'admin', true, v_now, v_now)
+    ON CONFLICT (user_id, peran) DO NOTHING;
+
+    RAISE NOTICE '';
+    RAISE NOTICE '========================================';
+    RAISE NOTICE '  ADMIN BERHASIL DISETUP!';
+    RAISE NOTICE '========================================';
+    RAISE NOTICE '  NIK: %', v_nik;
+    RAISE NOTICE '  Nama: %', v_nama;
+    RAISE NOTICE '  LOGIN: http://localhost:8080/admin/login';
+    RAISE NOTICE '  Password: Seruni88';
+    RAISE NOTICE '========================================';
+END $$;
+
+-- VERIFIKASI
+SELECT 'admin_profiles' as tabel, nik, nama FROM public.admin_profiles WHERE nik = '5203083004880003';

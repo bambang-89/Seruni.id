@@ -1,0 +1,80 @@
+{
+  "kpu_aktif": 7631,
+  "kpu_meninggal": 0,
+  "kpu_pmasuk": 0,
+  "kpu_pkeluar": 27,
+  "kpu_total": 7658,
+  "csv_total": 7867,
+  "csv_meni": 0,
+  "csv_pkeluar": 0,
+  "aktif_not_csv": 360,
+  "pmasuk_not_csv": 0,
+  "aktif_overlap": 7271,
+  "remove_count": 0,
+  "add_count": 360,
+  "sample_aktif_not_csv": [
+    {
+      "nik": "5203080903160003",
+      "nama": "DELFIN ABI PUTRA",
+      "dusun": "Mumbul Selatan",
+      "tgl": "PRINGGABAY"
+    },
+    {
+      "nik": "5203084502850009",
+      "nama": "IDA NASRUDIN",
+      "dusun": "Mumbul Selatan",
+      "tgl": "PRINGGABAY"
+    },
+    {
+      "nik": "5203087112640296",
+      "nama": "MA'ISAH",
+      "dusun": "Seruni Barat",
+      "tgl": "PRINGGABAY"
+    },
+    {
+      "nik": "5203082510040002",
+      "nama": "ISMUL WADI",
+      "dusun": "Seruni Timur",
+      "tgl": "PRINGGABAY"
+    },
+    {
+      "nik": "5203085606010005",
+      "nama": "UMMI KALSUM",
+      "dusun": "Mumbul Utara",
+      "tgl": "PRINGGABAY"
+    },
+    {
+      "nik": "5203084204020008",
+      "nama": "AULIA BILPIONA",
+      "dusun": "Seruni Barat",
+      "tgl": "PRINGGABAY"
+    },
+    {
+      "nik": "5203087112750640",
+      "nama": "SARIMAH",
+      "dusun": "Mumbul Utara",
+      "tgl": "PRINGGABAY"
+    },
+    {
+      "nik": "5203084901090006",
+      "nama": "MILA",
+      "dusun": "Seruni Timur",
+      "tgl": "PRINGGABAY"
+    },
+    {
+      "nik": "5203083112710133",
+      "nama": "UMAR",
+      "dusun": "Seruni Timur",
+      "tgl": "PRINGGABAY"
+    },
+    {
+      "nik": "5203083112680325",
+      "nama": "ABD. AZIZ",
+      "dusun": "Seruni Barat",
+      "tgl": "PRINGGABAY"
+    }
+  ],
+  "sample_pmasuk_not_csv": [],
+  "csv_meni_list": [],
+  "csv_pkeluar_list": []
+}

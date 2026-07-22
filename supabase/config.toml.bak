@@ -1,0 +1,13 @@
+project_id = "lpugtwgtfsokkavgrfgv"
+
+[functions.submit-usulan]
+verify_jwt = false
+
+[functions.vote-usulan]
+verify_jwt = false
+
+[functions.vote-topik]
+verify_jwt = false
+
+[functions.event-processor]
+verify_jwt = false

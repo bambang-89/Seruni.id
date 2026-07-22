@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Admin - Seruni</title>
+    <style>
+        body { font-family: system-ui; max-width: 500px; margin: 50px auto; padding: 20px; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; }
+        button { background: #015967; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #024a5a; }
+        .result { margin-top: 15px; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #fff3cd; color: #856404; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Buat Akun Admin</h1>
+    <div class="card">
+        <p><strong>NIK:</strong> 520308300488</p>
+        <p><strong>Nama:</strong> Bambang Nurdiansyah</p>
+        <p><strong>Password:</strong> Seruni88</p>
+        <button id="createBtn" onclick="createAdmin()">Buat Admin Sekarang</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function createAdmin() {
+            const btn = document.getElementById('createBtn');
+            const result = document.getElementById('result');
+
+            btn.disabled = true;
+            btn.textContent = 'Membuat...';
+            result.innerHTML = '<div class="result loading">Menghubungi server...</div>';
+
+            try {
+                const response = await fetch('https://smmngqdpbmgcdbmkiuviq.supabase.co/functions/v1/create-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtbmdxZHBibWdjZGJta2l1dmlxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDQ4NDk5MiwiZXhwIjoyMTAwMDYwOTkyfQ.ax7wYmOe1F9Aenr27yZQIJ1YeBXf2JbjCJDUqYJUfyQ'
+                    },
+                    body: JSON.stringify({
+                        nik: '520308300488',
+                        nama: 'Bambang Nurdiansyah',
+                        password: 'Seruni88'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    result.innerHTML = `
+                        <div class="result success">
+                            <strong>Berhasil!</strong>
+                            <p>Akun admin berhasil dibuat.</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                        <p style="margin-top: 15px;"><a href="/admin/login">Klik di sini untuk login</a></p>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="result error">
+                            <strong>Gagal!</strong>
+                            <p>${data.error || 'Terjadi kesalahan'}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="result error">
+                        <strong>Error!</strong>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Buat Admin Sekarang';
+        }
+
+        // Auto-run on page load
+        window.onload = createAdmin;
+    </script>
+</body>
+</html>

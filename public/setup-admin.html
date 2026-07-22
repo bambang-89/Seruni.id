@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Admin - Seruni</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #015967 0%, #024a5a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        h1 { margin: 0 0 8px 0; font-size: 24px; color: #1a1a1a; }
+        .subtitle { color: #666; margin-bottom: 24px; font-size: 14px; }
+        .info-box {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+        .info-row { display: flex; justify-content: space-between; margin: 8px 0; font-size: 14px; }
+        .info-label { color: #666; }
+        .info-value { font-weight: 600; color: #0c4a6e; font-family: monospace; }
+        button {
+            width: 100%;
+            background: #015967;
+            color: white;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #024a5a; }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        .result {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .success { background: #dcfce7; border: 1px solid #86efac; color: #166534; }
+        .error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; }
+        .login-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            padding: 12px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            color: #015967;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .login-link:hover { background: #e2e8f0; }
+        pre { background: #1a1a1a; color: #0f0; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 11px; margin-top: 12px; }
+        .badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <span class="badge">SUPABASE EDGE FUNCTION</span>
+        <h1>Setup Akun Admin</h1>
+        <p class="subtitle">Desa Seruni Mumbul</p>
+
+        <div class="info-box">
+            <div class="info-row">
+                <span class="info-label">NIK</span>
+                <span class="info-value">5203083004880003</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Nama</span>
+                <span class="info-value">Bambang Nurdiansyah</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Password</span>
+                <span class="info-value">••••••••</span>
+            </div>
+        </div>
+
+        <button id="btnCreate" onclick="createAdmin()">
+            Buat Akun Admin Sekarang
+        </button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const FUNCTION_URL = 'https://smmngqdpbmgcdbmkiuviq.supabase.co/functions/v1/create-admin';
+        const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtbmdxZHBibWdjZGJta2l1dmlxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDQ4NDk5MiwiZXhwIjoyMTAwMDYwOTkyfQ.ax7wYmOe1F9Aenr27yZQIJ1YeBXf2JbjCJDUqYJUfyQ';
+
+        async function createAdmin() {
+            const btn = document.getElementById('btnCreate');
+            const result = document.getElementById('result');
+
+            btn.disabled = true;
+            btn.textContent = 'Membuat akun...';
+            result.innerHTML = '<div class="result" style="background:#fff3cd;color:#856404;border:1px solid #fcd34d;">⏳ Menghubungi Supabase...</div>';
+
+            try {
+                const response = await fetch(FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SERVICE_KEY}`
+                    },
+                    body: JSON.stringify({
+                        nik: '5203083004880003',
+                        nama: 'Bambang Nurdiansyah',
+                        password: 'Seruni88'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    result.innerHTML = `
+                        <div class="result success">
+                            <strong>✓ Akun Admin Berhasil Dibuat!</strong>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                        <a href="/admin/login" class="login-link">
+                            → Klik di sini untuk Login Admin
+                        </a>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="result error">
+                            <strong>✗ Gagal Membuat Akun</strong>
+                            <p>${data.error || 'Terjadi kesalahan tidak dikenal'}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                    btn.disabled = false;
+                    btn.textContent = 'Coba Lagi';
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="result error">
+                        <strong>✗ Koneksi Gagal</strong>
+                        <p>Tidak bisa mengakses Supabase. Pastikan:</p>
+                        <ul style="margin:8px 0;padding-left:20px;">
+                            <li>Koneksi internet aktif</li>
+                            <li>Tidak diblokir firewall</li>
+                        </ul>
+                        <p style="color:#666;font-size:12px;">Error: ${error.message}</p>
+                    </div>
+                `;
+                btn.disabled = false;
+                btn.textContent = 'Coba Lagi';
+            }
+        }
+
+        // Auto-run on page load
+        window.onload = createAdmin;
+    </script>
+</body>
+</html>
