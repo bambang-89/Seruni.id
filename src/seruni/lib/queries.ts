@@ -160,7 +160,13 @@ export function usePotensiUmkm(tipe?: string) {
   useEffect(() => {
     let q = supabase.from("potensi_umkm").select("*").eq("status", "publish").order("nama");
     if (tipe) q = q.eq("tipe", tipe);
-    q.then(({ data: r }) => { setData((r as any) || []); setLoading(false); });
+    q.then(({ data: r }) => {
+      setData((r && Array.isArray(r)) ? r : []);
+      setLoading(false);
+    }).catch(() => {
+      setData([]);
+      setLoading(false);
+    });
   }, [tipe]);
   return { data, loading };
 }
@@ -172,7 +178,11 @@ export function usePotensiProduk(opts: { featuredOnly?: boolean } = {}) {
     let q = supabase.from("potensi_produk").select("*").eq("status", "publish").order("created_at", { ascending: false });
     if (opts.featuredOnly) q = q.eq("featured", true);
     q.then(({ data: r }) => {
-      setData(((r as any) || []).map((x: any) => ({ ...x, harga: x.harga == null ? null : Number(x.harga) })));
+      const safeData = (r && Array.isArray(r)) ? r : [];
+      setData(safeData.map((x: any) => ({ ...x, harga: x.harga == null ? null : Number(x.harga) })));
+      setLoading(false);
+    }).catch(() => {
+      setData([]);
       setLoading(false);
     });
   }, [opts.featuredOnly]);
@@ -184,11 +194,15 @@ export function usePotensiWisata() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("potensi_wisata").select("*").eq("status", "publish").order("nama").then(({ data: r }) => {
-      setData(((r as any) || []).map((x: any) => ({
+      const safeData = (r && Array.isArray(r)) ? r : [];
+      setData(safeData.map((x: any) => ({
         ...x,
         latitude: x.latitude == null ? null : Number(x.latitude),
         longitude: x.longitude == null ? null : Number(x.longitude),
       })));
+      setLoading(false);
+    }).catch(() => {
+      setData([]);
       setLoading(false);
     });
   }, []);
@@ -223,7 +237,7 @@ export function useApbdes(tahun: number) {
       .order("urutan")
       .then(({ data: r }) => {
         setData(
-          ((r as any) || []).map((x: any) => ({
+          (Array.isArray(r) ? r : []).map((x: any) => ({
             ...x,
             anggaran: Number(x.anggaran ?? 0),
             realisasi: Number(x.realisasi ?? 0),
