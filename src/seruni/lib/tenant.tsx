@@ -149,7 +149,7 @@ interface TenantProviderProps {
 
 export function TenantProvider({
   children,
-  defaultTenantSlug = "seruni-mumbul",
+  defaultTenantSlug = import.meta.env.VITE_DEFAULT_TENANT_SLUG || "seruni-mumbul",
   supabaseClient,
 }: TenantProviderProps) {
   const [tenant, setTenant] = useState<Tenant | null>(null);

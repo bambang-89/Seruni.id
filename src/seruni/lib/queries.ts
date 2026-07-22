@@ -35,7 +35,7 @@ export function useProfilDesa() {
         if (r) setData({ sejarah: r.sejarah as string[], visi: r.visi, misi: r.misi as string[] });
         setLoading(false);
       });
-  }, [tenantId]);
+  }, []);
   return { data, loading };
 }
 
@@ -77,7 +77,7 @@ export function useLembaga() {
       if (r?.length) setData(r as Lembaga[]);
       setLoading(false);
     });
-  }, [tenantId]);
+  }, []);
   return { data, loading };
 }
 
@@ -120,7 +120,7 @@ export function useAgenda() {
       if (r?.length) setData(r as Agenda[]);
       setLoading(false);
     });
-  }, [tenantId]);
+  }, []);
   return { data, loading };
 }
 
@@ -132,7 +132,7 @@ export function usePengumuman() {
       if (r?.length) setData(r as Pengumuman[]);
       setLoading(false);
     });
-  }, [tenantId]);
+  }, []);
   return { data, loading };
 }
 
@@ -144,7 +144,7 @@ export function useGaleri() {
       if (r?.length) setData(r as Galeri[]);
       setLoading(false);
     });
-  }, [tenantId]);
+  }, []);
   return { data, loading };
 }
 
@@ -191,7 +191,7 @@ export function usePotensiWisata() {
       })));
       setLoading(false);
     });
-  }, [tenantId]);
+  }, []);
   return { data, loading };
 }
 
@@ -541,7 +541,7 @@ export function useStatistikDesa() {
       }
       setLoading(false);
     });
-  }, [tenantId]);
+  }, []);
 
   return { data, loading };
 }
