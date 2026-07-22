@@ -369,8 +369,8 @@ function S5() {
  * S6 · Marketplace UMKM (editorial split, paper)
  * ============================================================ */
 
-function S6() {
-  const { data: produkData } = usePotensiProduk({ featuredOnly: true });
+function S6_Debug() {
+  const produkData = [];
   const Kolom = ({ judul, items }: { judul: string; items: { nama: string; harga: string; penjual: string; emoji: string }[] }) => (
     <div>
       <p className="font-display text-[11px] font-bold uppercase tracking-[0.28em] text-accent mb-6">
@@ -896,10 +896,10 @@ export default function HomePage() {
       <S3 />
       <S4 />
       <S5 />
-      <S6 />
-      <S7 />
-      <S8 />
-      <S9 />
+      <S6_Debug />
+      <S7_Disabled />
+      <S8_Disabled />
+      <S9_Disabled />
       <QuoteKades />
       <S10 />
       <S11 />
