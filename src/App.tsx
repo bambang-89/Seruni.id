@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, Component, ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./seruni/Layout";
 import HomePage from "./seruni/HomePage";
@@ -8,6 +8,33 @@ import LoginPage from "./seruni/admin/LoginPage";
 import InitAdminPage from "./seruni/admin/InitAdminPage";
 import { Toaster } from "sonner";
 import { supabase } from "./integrations/supabase/client";
+
+// Error Boundary component
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+          <div className="text-center p-8">
+            <h1 className="text-2xl font-bold mb-4">Terjadi kesalahan</h1>
+            <p className="text-gray-600 mb-4">Halaman sedang dimuat ulang...</p>
+            <button onClick={() => window.location.reload()} className="px-4 py-2 bg-primary text-white rounded">
+              Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Lazy-load admin bundles (heavy CRUD, only for signed-in admins).
 const AdminShell = lazy(() => import("./seruni/admin/AdminShell"));
@@ -118,16 +145,17 @@ function RouteFallback() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <TenantProvider supabaseClient={supabase} defaultTenantSlug="seruni-mumbul">
-        <Toaster position="top-right" richColors />
-        <BrowserRouter>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-          {/* Admin (di luar Layout publik) */}
-          <Route path="/admin/login" element={<LoginPage />} />
-          <Route path="/admin/init" element={<InitAdminPage />} />
-          <Route path="/admin" element={<AdminShell />}>
+    <ErrorBoundary>
+      <AuthProvider>
+        <TenantProvider supabaseClient={supabase} defaultTenantSlug="seruni-mumbul">
+          <Toaster position="top-right" richColors />
+          <BrowserRouter>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+            {/* Admin (di luar Layout publik) */}
+            <Route path="/admin/login" element={<LoginPage />} />
+            <Route path="/admin/init" element={<InitAdminPage />} />
+            <Route path="/admin" element={<AdminShell />}>
             <Route index element={<AdminDashboard />} />
             <Route path="profil-desa" element={<ProfilDesaAdmin />} />
             <Route path="struktur" element={<PamongAdmin />} />
@@ -240,5 +268,6 @@ export default function App() {
         </BrowserRouter>
       </TenantProvider>
     </AuthProvider>
+    </ErrorBoundary>
   );
 }
