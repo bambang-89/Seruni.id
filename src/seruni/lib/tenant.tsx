@@ -208,25 +208,31 @@ export function TenantProvider({
 
     // Try Supabase if client available
     if (supabaseClient) {
+      // Table uses 'subdomain' column, not 'slug'
       const { data, error: err } = await supabaseClient
         .from("tenants")
         .select("*")
-        .eq("slug", slug)
+        .eq("subdomain", slug)
         .maybeSingle();
 
       if (!err && data) {
         const t: Tenant = {
           id: data.id,
-          slug: data.slug || slug,
-          nama_resmi: data.nama_resmi || "Kantor Desa Seruni Mumbul",
-          tagline: data.tagline,
+          slug: data.subdomain || slug,
+          nama_resmi: data.nama_desa || "Kantor Desa Seruni Mumbul",
+          tagline: data.settings?.tagline,
           logo_url: data.logo_url,
           warna_primer: data.warna_primer,
           warna_aksen: data.warna_aksen,
-          kontak: data.kontak,
-          alamat: data.alamat,
-          jam_layanan: data.jam_layanan,
-          is_active: data.is_active ?? true,
+          kontak: data.settings?.kontak,
+          alamat: {
+            desa: data.nama_desa,
+            kecamatan: data.kecamatan,
+            kabupaten: data.kabupaten,
+            provinsi: data.provinsi,
+          },
+          jam_layanan: data.settings?.jam_layanan,
+          is_active: data.aktif ?? true,
         };
         setTenant(t);
         localStorage.setItem("seruni:tenant_id", t.id);
@@ -278,20 +284,25 @@ export function TenantProvider({
       if (!err && data) {
         const t: Tenant = {
           id: data.id,
-          slug: data.slug || "unknown",
-          nama_resmi: data.nama_resmi || "Kantor Desa",
-          tagline: data.tagline,
+          slug: data.subdomain || "unknown",
+          nama_resmi: data.nama_desa || "Kantor Desa",
+          tagline: data.settings?.tagline,
           logo_url: data.logo_url,
           warna_primer: data.warna_primer,
           warna_aksen: data.warna_aksen,
-          kontak: data.kontak,
-          alamat: data.alamat,
-          jam_layanan: data.jam_layanan,
-          is_active: data.is_active ?? true,
+          kontak: data.settings?.kontak,
+          alamat: {
+            desa: data.nama_desa,
+            kecamatan: data.kecamatan,
+            kabupaten: data.kabupaten,
+            provinsi: data.provinsi,
+          },
+          jam_layanan: data.settings?.jam_layanan,
+          is_active: data.aktif ?? true,
         };
         setTenant(t);
         localStorage.setItem("seruni:tenant_id", t.id);
-        localStorage.setItem(`seruni:tenant:${t.slug}`, JSON.stringify(t));
+        localStorage.setItem("seruni:tenant:" + t.slug, JSON.stringify(t));
         return;
       }
     }
