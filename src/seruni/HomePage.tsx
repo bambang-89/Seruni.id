@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   siteSettings as seedSettings,
+  marketplaceProduk,
 } from "./data";
 import { SectionWrap, formatTanggal } from "./ui";
 import { Seo } from "./lib/seo";
@@ -15,6 +16,8 @@ import {
   useAgenda,
   useBerita,
   usePotensiProduk,
+  usePotensiWisata,
+  usePotensiUmkm,
 } from "./lib/queries";
 import {
   Band,
