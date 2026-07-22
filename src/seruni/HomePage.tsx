@@ -284,7 +284,7 @@ function S4() {
             meta={formatTanggal(utama.tanggal)}
             judul={utama.judul}
             ringkasan={utama.ringkasan}
-            href={`/berita/${utama.slug}`
+            href={`/berita/${utama.slug}`}
             cta="Baca Selengkapnya"
           />
         )}
