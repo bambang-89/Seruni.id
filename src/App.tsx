@@ -10,7 +10,7 @@ import { Toaster } from "sonner";
 import { supabase } from "./integrations/supabase/client";
 
 // Error Boundary component
-class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+class ErrorBoundary_disabled extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
     super(props);
     this.state = { hasError: false };
@@ -145,7 +145,7 @@ function RouteFallback() {
 
 export default function App() {
   return (
-    <ErrorBoundary>
+    <div>
       <AuthProvider>
         <TenantProvider supabaseClient={supabase} defaultTenantSlug="seruni-mumbul">
           <Toaster position="top-right" richColors />
@@ -268,6 +268,6 @@ export default function App() {
         </BrowserRouter>
       </TenantProvider>
     </AuthProvider>
-    </ErrorBoundary>
+    </div>
   );
 }
