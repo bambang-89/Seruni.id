@@ -320,5 +320,3 @@ GROUP BY p.tenant_id, p.dusun;
 -- ============================================================
 GRANT SELECT ON public.penduduk_statistik TO anon, authenticated;
 GRANT SELECT ON public.penduduk_per_dusun TO anon, authenticated;
-
-RAISE NOTICE 'All migrations complete.';
