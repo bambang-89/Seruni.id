@@ -12,15 +12,94 @@ import {
 } from "../data";
 import { useTenantId } from "./tenant";
 
-export type ProfilDesa = { sejarah: string[]; visi: string; misi: string[] };
-export type Pamong = { id?: string; nama: string; jabatan: string; periode?: string | null; urutan: number; foto_url?: string | null };
-export type Dusun = { id?: string; nama: string; kk: number; jiwa: number; luas_ha: number; urutan: number };
+export type ProfilDesa = {
+  sejarah: string[];
+  visi: string;
+  misi: string[];
+  gambar_hero_url?: string | null;
+  gambar_logo_url?: string | null;
+  video_url?: string | null;
+};
+export type Pamong = {
+  id?: string;
+  nama: string;
+  jabatan: string;
+  periode?: string | null;
+  urutan: number;
+  foto_url?: string | null;
+  foto_selfie_url?: string | null;
+  nip?: string | null;
+  email?: string | null;
+  no_hp?: string | null;
+};
+export type Dusun = { id?: string; nama: string; kk: number; jiwa: number; luas_ha: number; urutan: number; latitude?: number | string | null; longitude?: number | string | null };
 export type Lembaga = { id?: string; nama: string; ketua: string; jumlah_anggota: number; urutan: number };
 
-export type Berita = { id?: string; slug: string; kategori: string; judul: string; ringkasan: string; isi: string[]; penulis: string; tanggal: string; published: boolean; cover_url?: string | null };
+export type Berita = {
+  id?: string;
+  slug: string;
+  kategori: string;
+  judul: string;
+  ringkasan: string;
+  isi: string[];
+  penulis: string;
+  tanggal: string;
+  published: boolean;
+  cover_url?: string | null;
+  gambar_url?: string | null;
+  gambar_gallery?: string[] | null;
+  gambar_alt?: string | null;
+};
 export type Agenda = { id?: string; slug: string; jenis: string; judul: string; tanggal: string; waktu: string; lokasi: string; penyelenggara: string; deskripsi: string };
 export type Pengumuman = { id?: string; nomor: string; tanggal: string; judul: string; ringkasan: string };
 export type Galeri = { id?: string; judul: string; emoji: string; album: string; tanggal: string; urutan: number; foto_url?: string | null };
+
+export type HeroSlider = {
+  id: string;
+  judul: string;
+  sub_judul?: string | null;
+  deskripsi?: string | null;
+  gambar_url: string;
+  gambar_mobile_url?: string | null;
+  tombol_teks?: string | null;
+  tombol_url?: string | null;
+  urutan: number;
+  aktif: boolean;
+};
+
+export type IdentitasDesa = {
+  id: string;
+  nama_desa: string;
+  kabupaten: string | null;
+  kecamatan: string | null;
+  provinsi: string | null;
+  kode_pos: string | null;
+  logo_url: string | null;
+  logo_favicon_url: string | null;
+  foto_profil_url: string | null;
+  foto_panorama_url: string | null;
+  video_url: string | null;
+  tahun_bentuk: number | null;
+  luas_wilayah: number | null;
+  koordinat_lat: number | null;
+  koordinat_lng: number | null;
+  slogan: string | null;
+};
+
+export type DokumenUpload = {
+  id: string;
+  entity_type: string;
+  entity_id: string | null;
+  kategori: string;
+  nama_file: string;
+  nama_asli: string;
+  tipe_file: string;
+  ukuran_file: number;
+  storage_path: string;
+  storage_url: string | null;
+  is_utama: boolean;
+  created_at: string;
+};
 
 export function useProfilDesa() {
   const [data, setData] = useState<ProfilDesa>(profilDesaSeed);
@@ -28,11 +107,18 @@ export function useProfilDesa() {
   useEffect(() => {
     supabase
       .from("profil_desa")
-      .select("sejarah,visi,misi")
+      .select("sejarah,visi,misi,gambar_hero_url,gambar_logo_url,video_url")
       .eq("singleton", true)
       .maybeSingle()
       .then(({ data: r }) => {
-        if (r) setData({ sejarah: r.sejarah as string[], visi: r.visi, misi: r.misi as string[] });
+        if (r) setData({
+          sejarah: r.sejarah as string[],
+          visi: r.visi,
+          misi: r.misi as string[],
+          gambar_hero_url: r.gambar_hero_url,
+          gambar_logo_url: r.gambar_logo_url,
+          video_url: r.video_url,
+        });
         setLoading(false);
       });
   }, []);
@@ -79,6 +165,77 @@ export function useLembaga() {
     });
   }, []);
   return { data, loading };
+}
+
+export async function fetchPendudukByNik(nik: string) {
+  if (!nik || nik.length !== 16) return null;
+  const { data } = await supabase.from("penduduk").select("*").eq("nik", nik).maybeSingle();
+  return data;
+}
+
+// ===================== Surat Identitas Autofill =====================
+
+export type IdentitasData = {
+  nik: string;
+  nama: string;
+  tempat_lahir: string;
+  tanggal_lahir: string; // ISO date string
+  jenis_kelamin: string; // "Laki-laki" | "Perempuan"
+  pekerjaan: string;
+  kewarganegaraan: string;
+  alamat_lengkap: string;
+  nomor_hp?: string;
+};
+
+const BULAN_INDO = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+
+export function formatTanggalLahir(tanggal: string, tempat: string): string {
+  if (!tanggal) return tempat || "-";
+  try {
+    const d = new Date(tanggal + "T00:00:00");
+    const day = d.getUTCDate();
+    const month = BULAN_INDO[d.getUTCMonth()];
+    const year = d.getUTCFullYear();
+    return `${tempat || "-"}, ${day} ${month} ${year}`;
+  } catch {
+    return tempat || "-";
+  }
+}
+
+export function composeAlamat(
+  dusun: unknown,
+  rt: unknown,
+  rw: unknown,
+  kecamatan: unknown,
+  kabupaten: unknown,
+  provinsi: unknown,
+): string {
+  const v = (val: unknown) => (val == null ? "-" : String(val).trim() || "-");
+  const parts = [
+    v(dusun) !== "-" ? `Dusun ${v(dusun)}` : null,
+    v(rt) !== "-" || v(rw) !== "-" ? `RT ${v(rt)}/RW ${v(rw)}` : null,
+    v(kecamatan) !== "-" ? `Kec. ${v(kecamatan)}` : null,
+    v(kabupaten) !== "-" ? `Kab. ${v(kabupaten)}` : null,
+    v(provinsi) !== "-" ? v(provinsi) : null,
+  ].filter(Boolean) as string[];
+  return parts.join(", ") || "-";
+}
+
+export async function fetchKewarganegaraan(warga_negara_id: unknown): Promise<string> {
+  if (!warga_negara_id) return "WNI";
+  try {
+    const { data } = await supabase
+      .from("ref_warga_negara")
+      .select("nama")
+      .eq("id", warga_negara_id)
+      .maybeSingle();
+    return (data as { nama: string } | null)?.nama ?? "WNI";
+  } catch {
+    return "WNI";
+  }
 }
 
 export function useBerita(opts: { publishedOnly?: boolean } = { publishedOnly: true }) {
@@ -148,6 +305,80 @@ export function useGaleri() {
   return { data, loading };
 }
 
+// ===================== Image-based queries =====================
+
+export function useHeroSlider() {
+  const [data, setData] = useState<HeroSlider[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase
+      .from("hero_slider")
+      .select("*")
+      .eq("aktif", true)
+      .order("urutan")
+      .then(({ data: r, error }) => {
+        if (r?.length) {
+          setData(r as HeroSlider[]);
+        }
+        setLoading(false);
+      });
+  }, []);
+  return { data, loading };
+}
+
+export function useIdentitasDesa() {
+  const [data, setData] = useState<IdentitasDesa | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase
+      .from("identitas_desa")
+      .select("*")
+      .eq("singleton", true)
+      .maybeSingle()
+      .then(({ data: r }) => {
+        if (r) setData(r as IdentitasDesa);
+        setLoading(false);
+      });
+  }, []);
+  return { data, loading };
+}
+
+export function useDokumenUpload(
+  entityType: string,
+  entityId: string,
+  kategori?: string
+) {
+  const [data, setData] = useState<DokumenUpload[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!entityId) {
+      setData([]);
+      setLoading(false);
+      return;
+    }
+
+    let query = supabase
+      .from("dokumen_upload")
+      .select("*")
+      .eq("entity_type", entityType)
+      .eq("entity_id", entityId);
+
+    if (kategori) {
+      query = query.eq("kategori", kategori);
+    }
+
+    query.then(({ data: r }) => {
+      if (r?.length) {
+        setData(r as DokumenUpload[]);
+      }
+      setLoading(false);
+    });
+  }, [entityType, entityId, kategori]);
+
+  return { data, loading };
+}
+
 // ===================== Phase 6B: Potensi, Marketplace, Wisata =====================
 
 export type PotensiUmkm = { id: string; tipe: string; nama: string; pemilik: string | null; sektor: string | null; dusun: string | null; kontak: string | null; alamat: string | null; deskripsi: string | null; status: string };
@@ -179,7 +410,7 @@ export function usePotensiProduk(opts: { featuredOnly?: boolean } = {}) {
     if (opts.featuredOnly) q = q.eq("featured", true);
     q.then(({ data: r }) => {
       const safeData = (r && Array.isArray(r)) ? r : [];
-      setData(safeData.map((x: any) => ({ ...x, harga: x.harga == null ? null : Number(x.harga) })));
+      setData((safeData as Record<string, unknown>[]).map((x) => ({ ...x, harga: x.harga == null ? null : Number(x.harga) })) as unknown as PotensiProduk[]);
       setLoading(false);
     }).catch(() => {
       setData([]);
@@ -195,11 +426,11 @@ export function usePotensiWisata() {
   useEffect(() => {
     supabase.from("potensi_wisata").select("*").eq("status", "publish").order("nama").then(({ data: r }) => {
       const safeData = (r && Array.isArray(r)) ? r : [];
-      setData(safeData.map((x: any) => ({
+      setData((safeData as Record<string, unknown>[]).map((x) => ({
         ...x,
         latitude: x.latitude == null ? null : Number(x.latitude),
         longitude: x.longitude == null ? null : Number(x.longitude),
-      })));
+      })) as unknown as PotensiWisata[]);
       setLoading(false);
     }).catch(() => {
       setData([]);
@@ -237,11 +468,11 @@ export function useApbdes(tahun: number) {
       .order("urutan")
       .then(({ data: r }) => {
         setData(
-          (Array.isArray(r) ? r : []).map((x: any) => ({
+          ((Array.isArray(r) ? r : []) as Record<string, unknown>[]).map((x) => ({
             ...x,
             anggaran: Number(x.anggaran ?? 0),
             realisasi: Number(x.realisasi ?? 0),
-          })),
+          })) as unknown as ApbdesRow[],
         );
         setLoading(false);
       });
@@ -254,7 +485,7 @@ export function useApbdesYears() {
   useEffect(() => {
     supabase.from("apbdes").select("tahun").then(({ data: r }) => {
       const set = new Set<number>();
-      ((r as any) || []).forEach((x: any) => set.add(x.tahun));
+      (r || []).forEach((x) => set.add(x.tahun));
       setYears(Array.from(set).sort((a, b) => b - a));
     });
   }, []);
@@ -268,7 +499,7 @@ export type EventLogRow = {
   event_name: string;
   entitas: string | null;
   entitas_id: string | null;
-  payload: any;
+  payload: unknown;
   actor_id: string | null;
   created_at: string;
   actor_nama?: string | null;
@@ -293,12 +524,14 @@ export function useEventLog(filter: { entitas?: string; event?: string; sejak?: 
       if (filter.event) q = q.ilike("event_name", `%${filter.event}%`);
       if (filter.sejak) q = q.gte("created_at", filter.sejak);
       const { data } = await q;
-      const list = ((data as any) || []) as EventLogRow[];
+      const list = ((data as unknown) || []) as EventLogRow[];
+
+      // Batch fetch all actor profiles at once (fix N+1 query)
       const actorIds = Array.from(new Set(list.map((r) => r.actor_id).filter(Boolean))) as string[];
-      let profiles: Record<string, { nama: string; nik: string }> = {};
+      const profiles: Record<string, { nama: string; nik: string }> = {};
       if (actorIds.length) {
         const { data: pr } = await supabase.from("admin_profiles").select("id,nama,nik").in("id", actorIds);
-        ((pr as any) || []).forEach((p: any) => (profiles[p.id] = { nama: p.nama, nik: p.nik }));
+        ((pr as unknown as { id: string; nama: string; nik: string }[]) || []).forEach((p) => (profiles[p.id] = { nama: p.nama, nik: p.nik }));
       }
       if (cancelled) return;
       setRows(
@@ -357,7 +590,7 @@ export function useBroadcasts(reloadKey = 0) {
       .order("created_at", { ascending: false })
       .limit(100)
       .then(({ data }) => {
-        setRows(((data as any) || []) as WaBroadcast[]);
+        setRows(((data as unknown) || []) as WaBroadcast[]);
         setLoading(false);
       });
   }, [reloadKey]);
@@ -380,7 +613,7 @@ export function useBroadcastTargets(broadcastId: string | null, reloadKey = 0) {
       .eq("broadcast_id", broadcastId)
       .order("created_at")
       .then(({ data }) => {
-        setRows(((data as any) || []) as WaBroadcastTarget[]);
+        setRows(((data as unknown) || []) as WaBroadcastTarget[]);
         setLoading(false);
       });
   }, [broadcastId, reloadKey]);
@@ -404,15 +637,15 @@ export function useRpjmdesAktif() {
       const { data: pers } = await supabase
         .from("rpjmdes_periode").select("*").eq("published", true)
         .order("tahun_mulai", { ascending: false }).limit(1);
-      const p = (pers?.[0] as any) || null;
+      const p = (pers?.[0] as unknown as Record<string, unknown> & { id: string; misi: string[] }) || null;
       if (!p) { setLoading(false); return; }
-      setPeriode({ ...p, misi: (p.misi as string[]) || [] });
+      setPeriode({ ...p, misi: (p.misi as string[]) || [] } as unknown as RpjmdesPeriode);
       const { data: bs } = await supabase.from("rpjmdes_bidang").select("*").eq("periode_id", p.id).order("urutan");
-      setBidang((bs as any) || []);
-      const ids = ((bs as any) || []).map((b: any) => b.id);
+      setBidang((bs as unknown as RpjmdesBidang[]) || []);
+      const ids = ((bs as unknown as RpjmdesBidang[]) || []).map((b) => b.id);
       if (ids.length) {
         const { data: pr } = await supabase.from("rpjmdes_program").select("*").in("bidang_id", ids).order("urutan");
-        setProgram(((pr as any) || []).map((x: any) => ({ ...x, anggaran_indikatif: Number(x.anggaran_indikatif ?? 0) })));
+        setProgram(((pr as unknown as Record<string, unknown>[]) || []).map((x) => ({ ...x, anggaran_indikatif: Number(x.anggaran_indikatif ?? 0) })) as unknown as RpjmdesProgram[]);
       }
       setLoading(false);
     })();
@@ -427,7 +660,7 @@ export function useRkpdesTahunList() {
   const [tahun, setTahun] = useState<RkpdesTahun[]>([]);
   useEffect(() => {
     supabase.from("rkpdes_tahun").select("*").eq("published", true).order("tahun", { ascending: false })
-      .then(({ data }) => setTahun(((data as any) || []) as RkpdesTahun[]));
+      .then(({ data }) => setTahun(((data as unknown) || []) as RkpdesTahun[]));
   }, []);
   return tahun;
 }
@@ -440,7 +673,7 @@ export function useRkpdesKegiatan(tahunId: string | null) {
     setLoading(true);
     supabase.from("rkpdes_kegiatan").select("*").eq("tahun_id", tahunId).order("urutan")
       .then(({ data }) => {
-        setRows(((data as any) || []).map((x: any) => ({ ...x, anggaran: Number(x.anggaran ?? 0), progress_pct: Number(x.progress_pct ?? 0) })));
+        setRows(((data as unknown as Record<string, unknown>[]) || []).map((x) => ({ ...x, anggaran: Number(x.anggaran ?? 0), progress_pct: Number(x.progress_pct ?? 0) })) as unknown as RkpdesKegiatan[]);
         setLoading(false);
       });
   }, [tahunId]);
@@ -462,7 +695,7 @@ export function useUsulanPublik(reloadKey = 0) {
       .in("status", ["diverifikasi", "ditindaklanjuti", "selesai"])
       .order("vote_count", { ascending: false }).limit(200)
       .then(({ data }) => {
-        setRows(((data as any) || []) as UsulanWarga[]);
+        setRows((data || []) as UsulanWarga[]);
         setLoading(false);
       });
   }, [reloadKey]);
@@ -483,7 +716,7 @@ export function useVotingTopikList(reloadKey = 0) {
   useEffect(() => {
     supabase.from("voting_topik").select("*").eq("published", true)
       .order("created_at", { ascending: false })
-      .then(({ data }) => setRows(((data as any) || []) as VotingTopik[]));
+      .then(({ data }) => setRows(((data as unknown) || []) as VotingTopik[]));
   }, [reloadKey]);
   return rows;
 }
@@ -493,7 +726,7 @@ export function useVotingOpsi(topikId: string | null, reloadKey = 0) {
   useEffect(() => {
     if (!topikId) { setRows([]); return; }
     supabase.from("voting_opsi").select("*").eq("topik_id", topikId).order("urutan")
-      .then(({ data }) => setRows(((data as any) || []) as VotingOpsi[]));
+      .then(({ data }) => setRows(((data as unknown) || []) as VotingOpsi[]));
   }, [topikId, reloadKey]);
   return rows;
 }
@@ -628,7 +861,7 @@ export function usePembangunanData() {
   useEffect(() => {
     supabase
       .from("kegiatan_pembangunan")
-      .select("nama_kegiatan, anggaran, realization, status")
+      .select("nama_kegiatan, anggaran, realisasi, status")
       .eq("tahun", 2026)
       .in("status", ["diproses", "diverifikasi"])
       .then(({ data: r }) => {
@@ -669,16 +902,20 @@ export function useUsulanStats() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from("usulan_warga").select("id, vote_count").in("status", ["diverifikasi", "ditindaklanjuti", "selesai"]),
+      supabase.from("usulan_warga").select("id, judul, vote_count").in("status", ["diverifikasi", "ditindaklanjuti", "selesai"]),
       supabase.from("usulan_vote").select("id"),
-    ]).then(([usulanRes, voteRes]) => {
+    ]).then((results: unknown[]) => {
+      const [usulanRes, voteRes] = results as [
+        { data: { id: string; judul: string; vote_count: number | null }[] | null },
+        { data: { id: string }[] | null }
+      ];
       if (usulanRes.data) {
         const sorted = [...usulanRes.data].sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0));
         setData({
           total_usulan: usulanRes.data.length,
           partisipasi_voting: voteRes.data?.length || 0,
           top10: sorted.slice(0, 10).map((u) => ({
-            judul: u.id, // perlu fetch judul lengkap
+            judul: u.judul || u.id,
             suara: u.vote_count || 0,
           })),
         });
@@ -687,5 +924,237 @@ export function useUsulanStats() {
     });
   }, []);
 
+  return { data, loading };
+}
+
+// ===================== Bansos =====================
+
+export type BantuanSosial = {
+  id: string; kode: string; nama: string; sumber: string; deskripsi: string | null;
+  periode_mulai: string | null; periode_selesai: string | null; kuota: number | null; aktif: boolean;
+};
+
+export type PenerimaBansos = {
+  id: string; bansos_id: string; nik: string | null; nama: string | null;
+  dusun: string | null; status: string; nominal: number | null; catatan: string | null;
+};
+
+export function useBantuanSosial() {
+  const [data, setData] = useState<BantuanSosial[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("bantuan_sosial").select("*").eq("aktif", true).order("nama")
+      .then(({ data: r }) => { setData(((r as unknown) || []) as BantuanSosial[]); setLoading(false); });
+  }, []);
+  return { data, loading };
+}
+
+export function usePenerimaBansos(bansosId?: string) {
+  const [data, setData] = useState<PenerimaBansos[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!bansosId) { setData([]); setLoading(false); return; }
+    supabase.from("penerima_bansos").select("*").eq("bansos_id", bansosId).order("nama")
+      .then(({ data: r }) => { setData(((r as unknown) || []) as PenerimaBansos[]); setLoading(false); });
+  }, [bansosId]);
+  return { data, loading };
+}
+
+// ===================== Stunting & Posyandu =====================
+
+export type StuntingAgregat = {
+  id: string; dusun: string; bulan: string; periode: string;
+  balita_diukur: number; stunting: number; wasting: number; underweight: number;
+  intervensi: string | null;
+};
+
+export type PosyanduAgregat = {
+  id: string; dusun: string; bulan: string; periode: string;
+  jumlah_balita: number; hadir: number; gizi_baik: number; gizi_kurang: number;
+  gizi_buruk: number; imunisasi_lengkap: number;
+  ibu_hamil_dilayani: number; ibu_menyusui: number; catatan: string | null;
+};
+
+export function useStuntingAgregat(bulan?: string) {
+  const [data, setData] = useState<StuntingAgregat[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let q = supabase.from("stunting_agregat").select("*").order("dusun");
+    if (bulan) q = q.eq("bulan", bulan);
+    q.then(({ data: r }) => { setData(((r as unknown) || []) as StuntingAgregat[]); setLoading(false); });
+  }, [bulan]);
+  return { data, loading };
+}
+
+export function usePosyanduAgregat(bulan?: string) {
+  const [data, setData] = useState<PosyanduAgregat[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let q = supabase.from("posyandu_agregat").select("*").order("dusun");
+    if (bulan) q = q.eq("bulan", bulan);
+    q.then(({ data: r }) => { setData(((r as unknown) || []) as PosyanduAgregat[]); setLoading(false); });
+  }, [bulan]);
+  return { data, loading };
+}
+
+export type Balita = {
+  id: string; nama: string; tanggal_lahir: string; jenis_kelamin: string;
+  dusun: string | null; rt: string | null; rw: string | null; alamat: string | null;
+  orang_tua_penduduk_id: string | null;
+};
+
+export function useBalita(dusun?: string) {
+  const [data, setData] = useState<Balita[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let q = supabase.from("balita").select("*").order("nama");
+    if (dusun) q = q.eq("dusun", dusun);
+    q.then(({ data: r }) => { setData(((r as unknown) || []) as Balita[]); setLoading(false); });
+  }, [dusun]);
+  return { data, loading };
+}
+
+// ===================== Bencana =====================
+
+export type BencanaKejadian = {
+  id: string; jenis: string; lokasi: string; dusun: string | null; tanggal: string;
+  severity: string; status: string; korban_jiwa: number; pengungsi: number;
+  kerugian_rp: number | null; deskripsi: string | null; penanganan: string | null;
+};
+
+export function useBencanaKejadian(status?: string) {
+  const [data, setData] = useState<BencanaKejadian[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let q = supabase.from("bencana_kejadian").select("*").order("tanggal", { ascending: false });
+    if (status) q = q.eq("status", status);
+    q.then(({ data: r }) => { setData(((r as unknown) || []) as BencanaKejadian[]); setLoading(false); });
+  }, [status]);
+  return { data, loading };
+}
+
+// ===================== Surat & Layanan =====================
+
+export type SuratJenis = {
+  id: string; kode_surat: string; nama: string; aktif: boolean; urutan: number;
+};
+
+export function useSuratJenis(aktifOnly = true) {
+  const [data, setData] = useState<SuratJenis[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let q = supabase.from("surat_jenis").select("*").order("urutan");
+    if (aktifOnly) q = q.eq("aktif", true);
+    // surat_jenis is public data — RLS policy (aktif=true) handles security.
+    // Tenant ID filter removed: fallback tenant UUID != DB tenant UUID → 0 rows.
+    q.then(({ data, error }) => {
+      if (error) console.error("useSuratJenis error:", error);
+      setData((data || []) as SuratJenis[]);
+      setLoading(false);
+    });
+  }, [aktifOnly]);
+  return { data, loading };
+}
+
+export type LayananStat = {
+  jenis_layanan: string; count_bulan_ini: number; count_bulan_lalu: number;
+};
+
+export function useLayananStatistik() {
+  const [data, setData] = useState<LayananStat[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("layanan_statistik").select("*").then(({ data }) => {
+      setData((data || []) as LayananStat[]);
+      setLoading(false);
+    });
+  }, []);
+  return { data, loading };
+}
+
+export type AduanKategori = { id: string; kode: string; nama: string };
+
+export function useAduanKategori() {
+  const [data, setData] = useState<AduanKategori[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("ref_aduan_kategori").select("*").eq("aktif", true).order("urutan")
+      .then(({ data }) => { setData((data || []) as AduanKategori[]); setLoading(false); });
+  }, []);
+  return { data, loading };
+}
+
+// ===================== Surat DNA Dynamic Fields =====================
+
+export type SuratDNAField = {
+  id: string;
+  tenant_id: string;
+  jenis_surat_id: string;
+  kode_surat: string;
+  field_name: string;
+  label: string;
+  tipe: 'text' | 'textarea' | 'number' | 'date' | 'select' | 'checkbox' | 'file' | 'phone' | 'email';
+  placeholder: string | null;
+  help_text: string | null;
+  options: string[] | null;
+  default_value: string | null;
+  validation_pattern: string | null;
+  min_length: number | null;
+  max_length: number | null;
+  min_value: number | null;
+  max_value: number | null;
+  wajib: boolean;
+  grup: string | null;
+  urutan: number;
+  tampil_di_cetak: boolean;
+  label_cetak: string | null;
+};
+
+export function useSuratDNAFields(jenisSuratId: string | null) {
+  const [data, setData] = useState<SuratDNAField[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!jenisSuratId) { setData([]); setLoading(false); return; }
+    supabase
+      .from("surat_jenis_dna")
+      .select("*")
+      .eq("jenis_surat_id", jenisSuratId)
+      .order("urutan")
+      .then(({ data }) => { setData((data || []) as SuratDNAField[]); setLoading(false); });
+  }, [jenisSuratId]);
+  return { data, loading };
+}
+
+export type SuratAjuanRow = {
+  id: string;
+  tenant_id: string;
+  nomor_tiket: string;
+  nik: string;
+  nama: string;
+  kontak: string;
+  jenis_surat_id: string | null;
+  keperluan: string;
+  lampiran: string[];
+  status: 'menunggu' | 'diproses' | 'diterima' | 'ditolak' | 'dibatalkan';
+  keterangan: string | null;
+  admin_id: string | null;
+  diproses_pada: string | null;
+  template_id: string | null;
+  preview_url: string | null;
+  status_preview: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export function useSuratAjuanList() {
+  const [data, setData] = useState<SuratAjuanRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase
+      .from("surat_ajuan")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => { setData((data || []) as SuratAjuanRow[]); setLoading(false); });
+  }, []);
   return { data, loading };
 }
