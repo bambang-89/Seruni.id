@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "../lib/auth";
@@ -455,7 +455,9 @@ export function TableCrud({
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [nikError, setNikError] = useState<string | null>(null);
+  const [nikLoading, setNikLoading] = useState(false);
   const tenantId = useTenantId();
+  const nikDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -651,14 +653,53 @@ export function TableCrud({
                             const raw = e.target.value;
                             const val = c.type === "number" ? (raw === "" ? 0 : Number(raw)) : raw;
                             setDraft({ ...draft, [c.key]: val });
-                            if (isNikField) setNikError(null);
+                            if (isNikField) {
+                              setNikError(null);
+                              setNikLoading(false);
+                              if (nikDebounceRef.current) clearTimeout(nikDebounceRef.current);
+                              if (/^\d{16}$/.test(raw)) {
+                                nikDebounceRef.current = setTimeout(async () => {
+                                  setNikLoading(true);
+                                  const { data: p } = await (supabase.from("penduduk") as any)
+                                    .select("*").eq("nik", raw).maybeSingle();
+                                  setNikLoading(false);
+                                  if (p) {
+                                    const genderMap: Record<string, string> = { L: "L", P: "P" };
+                                    setDraft((prev: any) => {
+                                      const next = { ...prev };
+                                      const fieldMap: Record<string, string> = {
+                                        nama: "nama",
+                                        tempat_lahir: "tempat_lahir",
+                                        tanggal_lahir: "tanggal_lahir",
+                                        jenis_kelamin: "jenis_kelamin",
+                                        pekerjaan: "pekerjaan",
+                                        alamat: "alamat",
+                                        dusun: "dusun",
+                                        keluarga_id: "keluarga_id",
+                                      };
+                                      for (const [src, dst] of Object.entries(fieldMap)) {
+                                        if (p[src] !== undefined && p[src] !== null) {
+                                          if (src === "jenis_kelamin") {
+                                            next[dst] = genderMap[p[src]] ?? p[src];
+                                          } else {
+                                            next[dst] = p[src];
+                                          }
+                                        }
+                                      }
+                                      return next;
+                                    });
+                                    toast.success("Data ditemukan — field otomatis terisi.");
+                                  }
+                                }, 500);
+                              }
+                            }
                           }}
                           className={inp}
                         />
                       );
                     })()}
-                    {columns.some(c => c.key === "nik" || c.label.toLowerCase().includes("nik")) && nikError && (
-                      <p className="text-xs text-red-500 mt-1">{nikError}</p>
+                    {columns.some(c => c.key === "nik" || c.label.toLowerCase().includes("nik")) && (nikError || nikLoading) && (
+                      <p className="text-xs mt-1">{nikLoading ? <span className="text-blue-500">Mencari data penduduk...</span> : <span className="text-red-500">{nikError}</span>}</p>
                     )}
                   </div>
                 )}

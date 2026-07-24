@@ -21,8 +21,8 @@ export function StatistikPendudukLivePage() {
       setAgg(a.data); setPerDusun(d.data || []);
     })();
   }, []);
-  const total = Number(agg?.total ?? 0);
-  const maxDusun = Math.max(1, ...perDusun.map((r) => Number(r.jumlah)));
+  const total = Number(agg?.jumlah_penduduk ?? 0);
+  const maxDusun = Math.max(1, ...perDusun.map((r) => Number(r.jumlah_penduduk)));
   return (
     <EditorialLayout
       eyebrow="Data & Statistik"
@@ -35,8 +35,8 @@ export function StatistikPendudukLivePage() {
         tone="dark"
         items={[
           { nilai: total.toLocaleString("id-ID"), label: "Total Jiwa", highlight: true },
-          { nilai: Number(agg?.kk ?? 0).toLocaleString("id-ID"), label: "Kepala Keluarga" },
-          { nilai: Number(agg?.laki ?? 0).toLocaleString("id-ID"), label: "Laki-laki" },
+          { nilai: Number(agg?.jumlah_kk ?? 0).toLocaleString("id-ID"), label: "Kepala Keluarga" },
+          { nilai: Number(agg?.laki_laki ?? 0).toLocaleString("id-ID"), label: "Laki-laki" },
           { nilai: Number(agg?.perempuan ?? 0).toLocaleString("id-ID"), label: "Perempuan" },
         ]}
       />
@@ -48,10 +48,10 @@ export function StatistikPendudukLivePage() {
             <li key={r.dusun}>
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-medium">{r.dusun}</span>
-                <span className="tabular-nums">{Number(r.jumlah).toLocaleString("id-ID")} jiwa · L {r.laki} / P {r.perempuan}</span>
+                <span className="tabular-nums">{Number(r.jumlah_penduduk).toLocaleString("id-ID")} jiwa · L {r.laki_laki} / P {r.perempuan}</span>
               </div>
               <div className="h-[3px] bg-current/10 overflow-hidden">
-                <div className="h-full bg-accent" style={{ width: `${(Number(r.jumlah) / maxDusun) * 100}%` }} />
+                <div className="h-full bg-accent" style={{ width: `${(Number(r.jumlah_penduduk) / maxDusun) * 100}%` }} />
               </div>
             </li>
           ))}
