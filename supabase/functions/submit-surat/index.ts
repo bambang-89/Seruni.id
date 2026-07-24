@@ -81,7 +81,8 @@ Deno.serve(async (req) => {
   const data_dna = body.data_dna || null;
   const data_identitas_raw = validateDataIdentitas(body.data_identitas);
 
-  if (nik.length < 2) return json({ error: "NIK tidak valid" }, 400, origin);
+  // Validate NIK is exactly 16 digits
+  if (!/^\d{16}$/.test(nik)) return json({ error: "NIK harus 16 digit angka" }, 400, origin);
   if (nama.length < 2) return json({ error: "Nama minimal 2 karakter" }, 400, origin);
   if (!validatePhone(kontak)) return json({ error: "Nomor WhatsApp tidak valid" }, 400, origin);
   if (keperluan.length < 10) return json({ error: "Keperluan terlalu pendek" }, 400, origin);
@@ -94,25 +95,25 @@ Deno.serve(async (req) => {
   // Rate limit: satu perangkat maksimal 3 pengajuan surat per hari
   const fp = await voterHash("surat-submit", req);
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const { data: recent } = await supabase
-    .from("event_log")
-    .select("id")
-    .eq("event_name", "surat.diajukan")
-    .gte("created_at", since)
-    .eq("payload->>fp", fp);
+  const now = new Date();
+  const ym = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const prefix = `SRT-${ym}-`;
+
+  // Parallel queries: rate limit + tenant + jenis surat + last ticket
+  const [rateLimitResult, tenantResult, lastTiketResult] = await Promise.all([
+    supabase.from("event_log").select("id").eq("event_name", "surat.diajukan").gte("created_at", since).eq("payload->>fp", fp),
+    supabase.from("tenants").select("id").limit(1).maybeSingle(),
+    supabase.from("surat_ajuan").select("nomor_tiket").like("nomor_tiket", `${prefix}%`).order("nomor_tiket", { ascending: false }).limit(1),
+  ]);
+
+  const recent = rateLimitResult.data;
+  const tenant = tenantResult.data;
   if ((recent?.length ?? 0) >= 3) {
     return json({ error: "Batas pengajuan harian tercapai. Coba lagi besok." }, 429, origin);
   }
-
-  // Get tenant_id
-  const { data: tenant } = await supabase
-    .from("tenants")
-    .select("id")
-    .limit(1)
-    .maybeSingle();
   if (!tenant) return json({ error: "Konfigurasi tenant tidak ditemukan" }, 500, origin);
 
-  // Validasi jenis surat ada dan aktif (jika provided)
+  // Validate jenis surat exists and is active
   let jenisSurat = null;
   if (jenis_surat_id) {
     const { data: jenis } = await supabase
@@ -127,17 +128,9 @@ Deno.serve(async (req) => {
   }
 
   // Generate nomor tiket: SRT-YYYYMM-XXXX
-  const now = new Date();
-  const ym = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-  const prefix = `SRT-${ym}-`;
-  const { data: last } = await supabase
-    .from("surat_ajuan")
-    .select("nomor_tiket")
-    .like("nomor_tiket", `${prefix}%`)
-    .order("nomor_tiket", { ascending: false })
-    .limit(1);
-  const nextSeq = last?.[0]?.nomor_tiket
-    ? parseInt((last[0].nomor_tiket as string).split("-").pop() || "0", 10) + 1
+  const lastTiket = lastTiketResult.data;
+  const nextSeq = lastTiket?.[0]?.nomor_tiket
+    ? parseInt((lastTiket[0].nomor_tiket as string).split("-").pop() || "0", 10) + 1
     : 1;
   const nomor_tiket = `${prefix}${String(nextSeq).padStart(4, "0")}`;
 
