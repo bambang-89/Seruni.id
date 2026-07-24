@@ -6,21 +6,15 @@ import { test, expect } from './fixtures';
  */
 
 test.describe('Surat Ajuan - Identity Autofill', () => {
-  test.beforeEach(async ({ page }) => {
-    // Accept Supabase/RLS noise in dev environment.
-    // Registered with `{ once: false }` and removed in afterEach to prevent listener leak.
-    const listener = (msg: any) => {
-      if (msg.type() === 'error') {
-        const t = msg.text();
-        if (t.includes('Supabase') || t.includes('RLS') || t.includes('fetch')) {
-          // Dev noise — expected
-        }
-      }
-    };
-    page.on('console', listener);
-    test.afterEach(() => {
+  // Store the active listener so the sync afterEach can remove it.
+  const activeListeners = new WeakMap<any, any>();
+
+  test.afterEach(({ page }) => {
+    const listener = activeListeners.get(page);
+    if (listener) {
       page.off('console', listener);
-    });
+      activeListeners.delete(page);
+    }
   });
 
   /**
@@ -61,6 +55,15 @@ test.describe('Surat Ajuan - Identity Autofill', () => {
   }
 
   test('form shows empty identity fields by default', async ({ page, baseURL }) => {
+    const listener = (msg: any) => {
+      if (msg.type() === 'error') {
+        const t = msg.text();
+        if (t.includes('Supabase') || t.includes('RLS') || t.includes('fetch')) { /* dev noise */ }
+      }
+    };
+    page.on('console', listener);
+    activeListeners.set(page, listener);
+
     await openSuratForm(page, baseURL!);
 
     // NIK field should be empty and editable
@@ -75,6 +78,15 @@ test.describe('Surat Ajuan - Identity Autofill', () => {
   });
 
   test('typing non-16-digit NIK does not trigger lookup', async ({ page, baseURL }) => {
+    const listener = (msg: any) => {
+      if (msg.type() === 'error') {
+        const t = msg.text();
+        if (t.includes('Supabase') || t.includes('RLS') || t.includes('fetch')) { /* dev noise */ }
+      }
+    };
+    page.on('console', listener);
+    activeListeners.set(page, listener);
+
     await openSuratForm(page, baseURL!);
 
     const nikInput = page.getByPlaceholder('16 digit NIK');
@@ -89,6 +101,15 @@ test.describe('Surat Ajuan - Identity Autofill', () => {
   });
 
   test('full 16-digit NIK triggers lookup (found or not found)', async ({ page, baseURL }) => {
+    const listener = (msg: any) => {
+      if (msg.type() === 'error') {
+        const t = msg.text();
+        if (t.includes('Supabase') || t.includes('RLS') || t.includes('fetch')) { /* dev noise */ }
+      }
+    };
+    page.on('console', listener);
+    activeListeners.set(page, listener);
+
     await openSuratForm(page, baseURL!);
 
     const nikInput = page.getByPlaceholder('16 digit NIK');
@@ -107,6 +128,15 @@ test.describe('Surat Ajuan - Identity Autofill', () => {
   });
 
   test('clearing NIK resets verified badge and CTA', async ({ page, baseURL }) => {
+    const listener = (msg: any) => {
+      if (msg.type() === 'error') {
+        const t = msg.text();
+        if (t.includes('Supabase') || t.includes('RLS') || t.includes('fetch')) { /* dev noise */ }
+      }
+    };
+    page.on('console', listener);
+    activeListeners.set(page, listener);
+
     await openSuratForm(page, baseURL!);
 
     const nikInput = page.getByPlaceholder('16 digit NIK');
@@ -126,6 +156,15 @@ test.describe('Surat Ajuan - Identity Autofill', () => {
   });
 
   test('form submission: submit button visible and form is fillable', async ({ page, baseURL }) => {
+    const listener = (msg: any) => {
+      if (msg.type() === 'error') {
+        const t = msg.text();
+        if (t.includes('Supabase') || t.includes('RLS') || t.includes('fetch')) { /* dev noise */ }
+      }
+    };
+    page.on('console', listener);
+    activeListeners.set(page, listener);
+
     await openSuratForm(page, baseURL!);
 
     const nikInput = page.getByPlaceholder('16 digit NIK');
