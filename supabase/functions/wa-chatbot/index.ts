@@ -137,8 +137,7 @@ Kab. Lombok Timur, NTB
 Senin - Jumat: 08:00 - 15:00 WITA
 
 📞 Kontak:
-Telepon: (0376) xxx-xxxx
-WhatsApp: 08xx-xxxx-xxxx
+WhatsApp: 087763170088
 
 🌐 Website:
 https://seruni.id
@@ -244,7 +243,7 @@ Contoh: SRN-202601-0001
     // Jenis Surat
     const { data: jenis } = await sb
       .from("surat_jenis")
-      .select("kode, nama, deskripsi")
+      .select("kode:kode_surat, nama, deskripsi")
       .eq("aktif", true)
       .limit(10);
 
@@ -253,7 +252,7 @@ Contoh: SRN-202601-0001
     }
 
     let reply = `📝 *JENIS SURAT TERSEDIA*\n\n`;
-    jenis.forEach((j, i) => {
+    jenis.forEach((j: any, i: number) => {
       reply += `${i + 1}. ${j.nama}\n   Kode: ${j.kode}\n`;
     });
     reply += `\n\nHubungi admin untuk informasi lengkap.`;
@@ -361,10 +360,9 @@ async function handleLacakPBB(
   const { data: tagihan } = await sb
     .from("pbb_tagihan")
     .select(`
-      id, nop, tahun, tagihan, jatuh_tempo, status_pembayaran,
-      alamat_objek
+      id, nop, tahun, tagihan:pbb_terutang, jatuh_tempo, status_pembayaran:status_bayar
     `)
-    .or(`nop.ilike.%${searchTerm}%,nik_wp.ilike.%${searchTerm}%`)
+    .or(`nop.ilike.%${searchTerm}%,wajib_pajak_nik.ilike.%${searchTerm}%`)
     .eq("tenant_id", session.tenant_id)
     .order("tahun", { ascending: false })
     .limit(1)
@@ -423,10 +421,10 @@ Ketik *0* untuk kembali.`;
     }
 
     let reply = `🗳️ *VOTING AKTIF*\n\n`;
-    voting.forEach((v, i) => {
+    voting.forEach((v: any, i: number) => {
       reply += `*${i + 1}.* ${v.judul}\n`;
       reply += `   ${v.deskripsi?.slice(0, 50) || ""}...\n`;
-      reply += `   📊 Suara: ${v.voting_opsi?.reduce((s, o) => s + (o.jumlah_suara ?? 0), 0) || 0}\n\n`;
+      reply += `   📊 Suara: ${v.voting_opsi?.reduce((s: number, o: any) => s + (o.jumlah_suara ?? 0), 0) || 0}\n\n`;
     });
     reply += `Kunjungi website kami untuk voting!`;
     return reply;
@@ -450,8 +448,8 @@ Ketik *0* untuk kembali.`;
     }
 
     let reply = `📊 *HASIL VOTING*\n\n`;
-    voting.forEach((v, i) => {
-      const totalSuara = v.voting_opsi?.reduce((s, o) => s + (o.jumlah_suara ?? 0), 0) || 0;
+    voting.forEach((v: any, i: number) => {
+      const totalSuara = v.voting_opsi?.reduce((s: number, o: any) => s + (o.jumlah_suara ?? 0), 0) || 0;
       reply += `*${v.judul}*\n`;
       reply += `   Total Suara: ${totalSuara}\n`;
       if (v.hasil_ringkasan) {
@@ -488,10 +486,10 @@ Contoh: 5201011234560001
     // Program Aktif
     const { data: program } = await sb
       .from("bantuan_sosial")
-      .select("nama_program, jenis_bantuan, tahun, status")
+      .select("nama_program:nama, jenis_bantuan:sumber, periode_mulai, status:aktif")
       .eq("tenant_id", session.tenant_id)
-      .eq("status", "aktif")
-      .order("tahun", { ascending: false })
+      .eq("aktif", true)
+      .order("periode_mulai", { ascending: false })
       .limit(5);
 
     if (!program?.length) {
@@ -499,10 +497,11 @@ Contoh: 5201011234560001
     }
 
     let reply = `📋 *PROGRAM BANTUAN AKTIF*\n\n`;
-    program.forEach((p, i) => {
-      reply += `*${i + 1}.* ${p.nama_program}\n`;
-      reply += `   Jenis: ${p.jenis_bantuan}\n`;
-      reply += `   Tahun: ${p.tahun}\n\n`;
+    program.forEach((p: Record<string, unknown>, i: number) => {
+      const tahun = p.periode_mulai ? new Date(p.periode_mulai as string).getFullYear() : "-";
+      reply += `*${i + 1}.* ${p.nama_program as string}\n`;
+      reply += `   Jenis: ${p.jenis_bantuan as string}\n`;
+      reply += `   Tahun: ${tahun}\n\n`;
     });
     return reply;
   }
@@ -616,20 +615,15 @@ Hubungi Kantor Desa jika ada kesalahan data.
 Ketik *0* untuk menu utama.`;
   }
 
-  const jk = pend.jenis_kelamin === "L" ? "Laki-laki" : "Perempuan";
-  const ttl = `${pend.tempat_lahir || "-"}, ${pend.tanggal_lahir ? new Date(pend.tanggal_lahir).toLocaleDateString("id-ID") : "-"}`;
-
-  return `👤 *DATA PENDUDUK*
+  return `👤 *DATA PENDUDUK (VERIFIKASI)*
 
 📛 Nama: ${pend.nama}
-🪪 NIK: ${pend.nik}
-⚧️ JK: ${jk}
-🎂 TTL: ${ttl}
-🏠 Alamat: ${pend.alamat || "-"}
-📍 Lokasi: ${pend.dusun || "-"} RT ${pend.rt || "-"} RW ${pend.rw || "-"}
+📍 Status Kependudukan: ${pend.status_hidup === "hidup" ? "✅ Aktif" : pend.status_hidup === "meninggal" ? "⚰️ Meninggal" : "📦 Pindah"}
+📍 Wilayah: ${pend.dusun || "-"} RT ${pend.rt || "-"} RW ${pend.rw || "-"}
 
-*Catatan:*
-Data di atas sesuai data kependudukan kami.
+⚠️ *Data lengkap hanya bisa dilihat di Kantor Desa Seruni Mumbul.*
+
+Hubungi kami di WA: 087763170088
 
 Ketik *0* untuk menu utama.`;
 }
@@ -670,7 +664,7 @@ async function handleMessage(
     case "main_menu":
     case "":
     case undefined:
-      return handleMainMenu(input);
+      return await handleMainMenu(sb, session, input);
 
     case "surat":
       return handleCekSurat(sb, session, input);
@@ -720,27 +714,36 @@ async function handleMessage(
   }
 }
 
-function handleMainMenu(input: string): string {
+async function handleMainMenu(
+  sb: ReturnType<typeof createClient>,
+  session: ChatContext,
+  input: string,
+): Promise<string> {
   switch (input) {
     case "1":
+      await updateSession(sb, session.session_id, { state: "surat" });
       return MENU_SURAT;
     case "2":
+      await updateSession(sb, session.session_id, { state: "pbb" });
       return MENU_PBB;
     case "3":
+      await updateSession(sb, session.session_id, { state: "voting" });
       return MENU_VOTING;
     case "4":
+      await updateSession(sb, session.session_id, { state: "bansos" });
       return MENU_BANSOS;
     case "5":
       // Cek Data Diri — langsung minta NIK
       return handleCekDataDiri(sb, session, "");
     case "6":
+      await updateSession(sb, session.session_id, { state: "info" });
       return MENU_INFO;
     case "7":
       return `📞 *KONTAK ADMIN*
 
 Hubungi kami:
 
-📱 WhatsApp: 08xx-xxxx-xxxx
+📱 WhatsApp: 087763170088
 📧 Email: admin@seruni.id
 🏠 Kantor: Jl. Desa Seruni, Lombok Timur
 `;
@@ -855,8 +858,8 @@ async function sendFonnte(token: string, nomor: string, message: string) {
     });
     const data = await res.json().catch(() => ({}));
     return { ok: res.ok && (data?.status === true), response: data };
-  } catch (e: any) {
-    return { ok: false, response: { error: e?.message } };
+  } catch (e: unknown) {
+    return { ok: false, response: { error: (e as Error)?.message } };
   }
 }
 
