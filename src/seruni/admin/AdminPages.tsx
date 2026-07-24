@@ -662,34 +662,49 @@ export function TableCrud({
                                   setNikLoading(true);
                                   const { data: p } = await (supabase.from("penduduk") as any)
                                     .select("*").eq("nik", raw).maybeSingle();
-                                  setNikLoading(false);
-                                  if (p) {
-                                    const genderMap: Record<string, string> = { L: "L", P: "P" };
-                                    setDraft((prev: any) => {
-                                      const next = { ...prev };
-                                      const fieldMap: Record<string, string> = {
-                                        nama: "nama",
-                                        tempat_lahir: "tempat_lahir",
-                                        tanggal_lahir: "tanggal_lahir",
-                                        jenis_kelamin: "jenis_kelamin",
-                                        pekerjaan: "pekerjaan",
-                                        alamat: "alamat",
-                                        dusun: "dusun",
-                                        keluarga_id: "keluarga_id",
-                                      };
-                                      for (const [src, dst] of Object.entries(fieldMap)) {
-                                        if (p[src] !== undefined && p[src] !== null) {
-                                          if (src === "jenis_kelamin") {
-                                            next[dst] = genderMap[p[src]] ?? p[src];
-                                          } else {
-                                            next[dst] = p[src];
-                                          }
-                                        }
-                                      }
-                                      return next;
-                                    });
-                                    toast.success("Data ditemukan — field otomatis terisi.");
+                                  if (!p) { setNikLoading(false); return; }
+                                  const genderMap: Record<string, string> = { L: "L", P: "P" };
+                                  const next: Record<string, unknown> = { ...draft };
+
+                                  // Plain text fields — direct copy
+                                  for (const k of ["nama", "tempat_lahir", "tanggal_lahir", "alamat"]) {
+                                    if (p[k] !== undefined && p[k] !== null) next[k] = p[k];
                                   }
+                                  next.jenis_kelamin = genderMap[p.jenis_kelamin] ?? p.jenis_kelamin ?? "L";
+                                  next.keluarga_id = p.keluarga_id ?? null;
+
+                                  // Relation fields — penduduk stores plain text names; RelationSelect
+                                  // expects valueCol (kode or nama depending on table). We try to
+                                  // resolve name->kode for ref tables that use kode as value.
+                                  if (p.agama) {
+                                    const { data: ref } = await (supabase.from("ref_agama") as any)
+                                      .select("kode").ilike("nama", String(p.agama)).maybeSingle();
+                                    next.agama = ref?.kode ?? String(p.agama);
+                                  }
+                                  if (p.pendidikan) {
+                                    const { data: ref } = await (supabase.from("ref_pendidikan") as any)
+                                      .select("nama").ilike("nama", String(p.pendidikan)).maybeSingle();
+                                    if (ref?.nama) next.pendidikan = ref.nama;
+                                  }
+                                  if (p.pekerjaan) {
+                                    const { data: ref } = await (supabase.from("ref_pekerjaan") as any)
+                                      .select("nama").ilike("nama", String(p.pekerjaan)).maybeSingle();
+                                    if (ref?.nama) next.pekerjaan = ref.nama;
+                                  }
+                                  if (p.status_kawin) {
+                                    const { data: ref } = await (supabase.from("ref_status_perkawinan") as any)
+                                      .select("kode").ilike("nama", String(p.status_kawin)).maybeSingle();
+                                    next.status_kawin = ref?.kode ?? String(p.status_kawin);
+                                  }
+                                  if (p.hubungan_kk) {
+                                    const { data: ref } = await (supabase.from("ref_hubungan_keluarga") as any)
+                                      .select("nama").ilike("nama", String(p.hubungan_kk)).maybeSingle();
+                                    if (ref?.nama) next.hubungan_kk = ref.nama;
+                                  }
+
+                                  setNikLoading(false);
+                                  setDraft(next);
+                                  toast.success("Data ditemukan — field otomatis terisi.");
                                 }, 500);
                               }
                             }
