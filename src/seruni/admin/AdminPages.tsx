@@ -2,8 +2,9 @@ import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "../lib/auth";
+import { useTenantId } from "../lib/tenant";
 import { Link } from "react-router-dom";
-import { uploadImage } from "../lib/upload";
+import { uploadFile } from "../lib/upload";
 import {
   ResponsiveContainer,
   BarChart,
@@ -282,7 +283,7 @@ export function ProfilDesaAdmin() {
       misi: misi.map((s) => s.trim()).filter(Boolean),
       sejarah: sejarah.map((s) => s.trim()).filter(Boolean),
     };
-    const { error } = await supabase.from("profil_desa").upsert(payload, { onConflict: "singleton" });
+    const { error } = await supabase.from("profil_desa").upsert(payload as any, { onConflict: "singleton" });
     setBusy(false);
     if (error) toast.error(error.message);
     else toast.success("Profil desa tersimpan.");
@@ -346,17 +347,97 @@ function ListEditor({ title, items, setItems, placeholder, multiline }: { title:
 export type Column = {
   key: string;
   label: string;
-  type?: "text" | "number" | "date" | "textarea" | "checkbox" | "select" | "image";
+  type?: "text" | "number" | "date" | "textarea" | "checkbox" | "select" | "image" | "relation";
   step?: string;
   hideInTable?: boolean;
   options?: { value: string; label: string }[];
+  relation?: { table: string; labelCol: string; valueCol: string };
   imageFolder?: string;
   render?: (row: any) => ReactNode;
 };
 
+export function RelationSelect({ 
+  relation, 
+  value, 
+  onChange, 
+  className 
+}: { 
+  relation: { table: string; labelCol: string; valueCol: string }; 
+  value: string; 
+  onChange: (val: string) => void;
+  className?: string;
+}) {
+  const [opts, setOpts] = useState<{value: string, label: string}[]>([]);
+  useEffect(() => {
+    supabase.from(relation.table as any).select(`${relation.labelCol},${relation.valueCol}`).then(({ data }) => {
+      if (data) {
+        setOpts(data.map((d: any) => ({
+          value: d[relation.valueCol],
+          label: d[relation.labelCol]
+        })));
+      }
+    });
+  }, [relation.table, relation.labelCol, relation.valueCol]);
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={className}
+    >
+      <option value="">— pilih —</option>
+      {opts.map(o => (
+        <option key={o.value} value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  );
+}
+
+// Confirmation dialog component
+function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = "Hapus",
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-background rounded-xl shadow-2xl max-w-sm w-full mx-4 p-6">
+        <h3 className="text-lg font-semibold mb-2">{title}</h3>
+        <p className="text-muted-foreground text-sm mb-6">{message}</p>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted"
+          >
+            Batal
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm hover:bg-destructive/90"
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TableCrud({
   table, columns, blank, title, desc,
   orderBy = "urutan", orderAsc = true,
+  pageSize = 50,
 }: {
   table: string;
   columns: Column[];
@@ -365,22 +446,51 @@ export function TableCrud({
   desc: string;
   orderBy?: string;
   orderAsc?: boolean;
+  pageSize?: number;
 }) {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<any | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [nikError, setNikError] = useState<string | null>(null);
+  const tenantId = useTenantId();
 
   const load = () => {
     setLoading(true);
-    (supabase.from(table as any) as any).select("*").order(orderBy, { ascending: orderAsc }).then(({ data }: { data: any }) => {
+    let q = (supabase.from(table as any) as any).select("*", { count: "exact" }).order(orderBy, { ascending: orderAsc });
+    if (search) {
+      // Basic search on first text column
+      const searchCol = columns.find(c => c.type !== "number" && c.type !== "checkbox" && c.type !== "date" && c.type !== "select" && c.type !== "image");
+      if (searchCol) q = q.ilike(searchCol.key, `%${search}%`);
+    }
+    q = q.range((page - 1) * pageSize, page * pageSize - 1);
+    q.then(({ data, count }: any) => {
       setRows(data || []);
+      setTotalCount(count || 0);
       setLoading(false);
     });
   };
-  useEffect(load, [table, orderBy, orderAsc]);
+
+  useEffect(() => { load(); }, [table, orderBy, orderAsc, search, page]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const filteredRows = search ? rows : rows; // Already filtered by Supabase
 
   const save = async (row: any) => {
     const { id, ...payload } = row;
+    // NIK validation: must be exactly 16 digits
+    const nikCol = columns.find(c => c.key === "nik" || c.label.toLowerCase().includes("nik"));
+    if (nikCol && payload.nik && !/^\d{16}$/.test(String(payload.nik))) {
+      setNikError("NIK harus 16 digit angka");
+      return;
+    }
+    // Auto-inject tenant_id for tables that need it
+    const tenantTables = ["penduduk", "keluarga", "surat_ajuan", "berita", "aduan_warga", "usulan_warga", "apbdes", "kegiatan_pembangunan"];
+    if (tenantTables.includes(table) && !payload.tenant_id && tenantId) {
+      payload.tenant_id = tenantId;
+    }
     const q = id
       ? (supabase.from(table as any) as any).update(payload).eq("id", id)
       : (supabase.from(table as any) as any).insert(payload);
@@ -388,6 +498,8 @@ export function TableCrud({
     if (error) return toast.error(error.message);
     toast.success("Tersimpan.");
     setDraft(null);
+    setNikError(null);
+    setPage(1);
     load();
   };
 
@@ -399,11 +511,84 @@ export function TableCrud({
     load();
   };
 
+  // CSV Export
+  const exportCsv = () => {
+    const header = columns.filter(c => !c.hideInTable).map(c => c.label).join(",");
+    const csvRows = filteredRows.map(r =>
+      columns.filter(c => !c.hideInTable).map(c => {
+        const val = r[c.key];
+        if (val === null || val === undefined) return "";
+        const str = String(val);
+        return str.includes(",") || str.includes('"') || str.includes("\n")
+          ? `"${str.replace(/"/g, '""')}"`
+          : str;
+      }).join(",")
+    );
+    const csv = [header, ...csvRows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${table}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Export CSV berhasil");
+  };
+
+  // CSV Import
+  const importCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split("\n").filter(l => l.trim());
+      if (lines.length < 2) return toast.error("Format CSV tidak valid");
+      const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
+      const dataRows = lines.slice(1);
+      let imported = 0, failed = 0;
+      for (const line of dataRows) {
+        const values = line.split(",").map(v => v.trim().replace(/^"|"$/g, "").replace(/""/g, '"'));
+        const row: any = {};
+        headers.forEach((h, i) => {
+          const col = columns.find(c => c.label === h);
+          if (col) row[col.key] = values[i] || null;
+        });
+        if (Object.keys(row).length > 0) {
+          const { error } = await (supabase.from(table as any) as any).insert(row);
+          if (error) failed++; else imported++;
+        }
+      }
+      toast.success(`Impor selesai: ${imported} berhasil, ${failed} gagal`);
+      setPage(1);
+      load();
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
   return (
     <>
       <PageTitle title={title} desc={desc} />
-      <div className="flex justify-end mb-4">
-        <button onClick={() => setDraft({ ...blank })} className={btnPri}>+ Tambah</button>
+      <div className="flex flex-wrap gap-2 justify-between items-center mb-4">
+        <div className="flex gap-2 items-center">
+          <input
+            type="search"
+            placeholder="Cari..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="rounded-md border border-input bg-background px-3 py-2 text-sm w-48"
+          />
+          <span className="text-xs text-muted-foreground">{totalCount} data</span>
+        </div>
+        <div className="flex gap-2">
+          <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-2 text-sm hover:bg-muted">
+            <span>Import CSV</span>
+            <input type="file" accept=".csv" className="hidden" onChange={importCsv} />
+          </label>
+          <button onClick={exportCsv} className="rounded-md border border-border bg-background px-3 py-2 text-sm hover:bg-muted">Export CSV</button>
+          <button onClick={() => setDraft({ ...blank })} className={btnPri}>+ Tambah</button>
+        </div>
       </div>
 
       {draft && (
@@ -440,6 +625,13 @@ export function TableCrud({
                       <option key={o.value} value={o.value}>{o.label}</option>
                     ))}
                   </select>
+                ) : c.type === "relation" && c.relation ? (
+                  <RelationSelect
+                    relation={c.relation}
+                    value={(draft[c.key] ?? "") as string}
+                    onChange={(val) => setDraft({ ...draft, [c.key]: val })}
+                    className={inp}
+                  />
                 ) : c.type === "image" ? (
                   <ImageField
                     value={(draft[c.key] as string) || ""}
@@ -447,24 +639,35 @@ export function TableCrud({
                     onChange={(url) => setDraft({ ...draft, [c.key]: url })}
                   />
                 ) : (
-                  <input
-                    type={c.type === "number" ? "number" : c.type === "date" ? "date" : "text"}
-                    step={c.step}
-                    value={(draft[c.key] ?? "") as string | number}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      const val = c.type === "number" ? (raw === "" ? 0 : Number(raw)) : raw;
-                      setDraft({ ...draft, [c.key]: val });
-                    }}
-                    className={inp}
-                  />
+                  <div>
+                    {(() => {
+                      const isNikField = c.key === "nik" || c.label.toLowerCase().includes("nik");
+                      return (
+                        <input
+                          type={c.type === "number" ? "number" : c.type === "date" ? "date" : "text"}
+                          step={c.step}
+                          value={(draft[c.key] ?? "") as string | number}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const val = c.type === "number" ? (raw === "" ? 0 : Number(raw)) : raw;
+                            setDraft({ ...draft, [c.key]: val });
+                            if (isNikField) setNikError(null);
+                          }}
+                          className={inp}
+                        />
+                      );
+                    })()}
+                    {columns.some(c => c.key === "nik" || c.label.toLowerCase().includes("nik")) && nikError && (
+                      <p className="text-xs text-red-500 mt-1">{nikError}</p>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={() => save(draft)} className={btnPri}>Simpan</button>
-            <button onClick={() => setDraft(null)} className={btnSec}>Batal</button>
+            <button onClick={() => { setDraft(null); setNikError(null); }} className={btnSec}>Batal</button>
           </div>
         </div>
       )}
@@ -502,47 +705,104 @@ export function TableCrud({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-1 mt-4">
+          <button onClick={() => setPage(1)} disabled={page === 1} className="px-3 py-1 rounded border text-sm disabled:opacity-50">«</button>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 rounded border text-sm disabled:opacity-50">‹</button>
+          <span className="px-3 py-1 text-sm">Halaman {page} dari {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 rounded border text-sm disabled:opacity-50">›</button>
+          <button onClick={() => setPage(totalPages)} disabled={page === totalPages} className="px-3 py-1 rounded border text-sm disabled:opacity-50">»</button>
+        </div>
+      )}
     </>
   );
 }
 
 export function ImageField({ value, folder, onChange }: { value: string; folder: string; onChange: (url: string) => void }) {
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<string>(value || "");
+
   const onFile = async (f: File | null) => {
     if (!f) return;
     setBusy(true);
     try {
-      const url = await uploadImage(folder, f);
-      onChange(url);
-      toast.success("Foto terunggah.");
+      // Show preview immediately while uploading
+      const reader = new FileReader();
+      reader.onload = (e) => setPreview(e.target?.result as string || "");
+      reader.readAsDataURL(f);
+
+      const result = await uploadFile(f, {
+        entityType: 'lainnya',
+        kategori: 'foto_galeri',
+      } as any);
+      if (result.success && result.url) {
+        onChange(result.url);
+        toast.success("Foto berhasil diunggah ke penyimpanan internal.");
+      } else {
+        toast.error(result.error || "Gagal upload.");
+      }
     } catch (e: any) {
       toast.error(e.message || "Gagal upload.");
     } finally {
       setBusy(false);
     }
   };
+
+  const handleRemove = () => {
+    setPreview("");
+    onChange("");
+  };
+
   return (
     <div className="space-y-2">
-      {value && (
-        <img src={value} alt="preview" className="h-32 w-full object-cover border border-border" />
+      {/* Preview Image */}
+      {(preview || value) && (
+        <div className="relative">
+          <img
+            src={preview || value}
+            alt="preview"
+            className="h-32 w-full object-cover border border-border rounded-md"
+          />
+          <div className="absolute top-2 right-2">
+            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
+              ✓ Internal
+            </span>
+          </div>
+        </div>
       )}
-      <div className="flex flex-wrap gap-2 items-center">
-        <input
-          type="file"
-          accept="image/*"
-          disabled={busy}
-          onChange={(e) => onFile(e.target.files?.[0] || null)}
-          className="text-xs"
-        />
-        {value && <button type="button" onClick={() => onChange("")} className={btnDanger}>Hapus</button>}
+
+      {/* Upload Button */}
+      <div className="flex items-center gap-3">
+        <label className="cursor-pointer inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90 disabled:opacity-50">
+          {busy ? "Mengunggah..." : "📁 Pilih File dari Device"}
+          <input
+            type="file"
+            accept="image/*"
+            disabled={busy}
+            onChange={(e) => onFile(e.target.files?.[0] || null)}
+            className="hidden"
+          />
+        </label>
+        {(value || preview) && (
+          <button type="button" onClick={handleRemove} className={btnDanger}>
+            Hapus
+          </button>
+        )}
       </div>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="URL foto (otomatis terisi setelah upload)"
-        className={inp}
-      />
+
+      {/* Info */}
+      <p className="text-xs text-muted-foreground">
+        <span className="font-medium">📱 Penyimpanan Internal</span> — Gambar disimpan di server aplikasi, bukan URL eksternal.
+      </p>
+
+      {/* Show current URL if exists (read-only) */}
+      {value && (
+        <div className="text-xs text-muted-foreground truncate">
+          Path: {value.split('/').pop() || value}
+        </div>
+      )}
     </div>
   );
 }
@@ -553,13 +813,17 @@ export function PamongAdmin() {
       table="desa_pamong"
       title="Struktur Pamong Desa"
       desc="Perangkat pemerintahan desa yang tampil di halaman Struktur."
-      blank={{ nama: "", jabatan: "", periode: "", urutan: 0, foto_url: "" } as any}
+      blank={{ nama: "", jabatan: "", periode: "", urutan: 0, foto_url: "", nip: "", aktif: true, qr_code_url: "", ttd_image_url: "" } as any}
       columns={[
         { key: "nama", label: "Nama" },
         { key: "jabatan", label: "Jabatan" },
+        { key: "nip", label: "NIP" },
         { key: "periode", label: "Periode" },
         { key: "urutan", label: "Urutan", type: "number" },
+        { key: "aktif", label: "Aktif", type: "checkbox" },
         { key: "foto_url", label: "Foto Pamong", type: "image", imageFolder: "pamong", hideInTable: true },
+        { key: "ttd_image_url", label: "Tanda Tangan", type: "image", imageFolder: "pamong/ttd", hideInTable: true },
+        { key: "qr_code_url", label: "QR Code Verifikasi", type: "image", imageFolder: "pamong/qr", hideInTable: true },
       ]}
     />
   );
