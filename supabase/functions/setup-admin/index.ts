@@ -75,11 +75,12 @@ Deno.serve(async (req) => {
         JSON.stringify({
           success: true,
           message: "Admin berhasil dibuat!",
-          user: newUser.user,
-          login: {
-            nik: "5203083004880003",
-            password: "Seruni88"
-          }
+          user: {
+            id: newUser.user!.id,
+            email: newUser.user!.email,
+            nik: newUser.user!.user_metadata?.nik,
+            nama: newUser.user!.user_metadata?.nama,
+          },
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -93,12 +94,8 @@ Deno.serve(async (req) => {
           id: adminUser.id,
           email: adminUser.email,
           nik: adminUser.user_metadata?.nik,
-          nama: adminUser.user_metadata?.nama
+          nama: adminUser.user_metadata?.nama,
         },
-        login: {
-          nik: "5203083004880003",
-          password: "Seruni88"
-        }
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

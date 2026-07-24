@@ -745,7 +745,7 @@ export type StatistikDesa = {
 };
 
 export function useStatistikDesa() {
-  const tenantId = useTenantId();
+  const tenantId = useTenantId(); // Tenant context for future aggregation queries
   const [data, setData] = useState<StatistikDesa>({
     jumlah_penduduk: 6842,
     jumlah_kk: 1937,
