@@ -124,6 +124,7 @@ BEGIN
   -- STEP 5: Fix keluarga trigger — remove reference to status_kk
   -- ============================================================
   -- Drop existing trigger function if it has the bug
+  DROP TRIGGER IF EXISTS trg_keluarga_publish_event ON public.keluarga;
   DROP TRIGGER IF EXISTS trigger_publish_keluarga_event ON public.keluarga;
   DROP FUNCTION IF EXISTS public.trigger_publish_keluarga_event();
 
@@ -175,7 +176,7 @@ BEGIN
   $$;
 
   -- Recreate trigger
-  CREATE TRIGGER trigger_publish_keluarga_event
+  CREATE TRIGGER trg_keluarga_publish_event
     AFTER INSERT OR UPDATE ON public.keluarga
     FOR EACH ROW EXECUTE FUNCTION public.trigger_publish_keluarga_event();
 
