@@ -12,7 +12,7 @@
 -- RUN ORDER: Execute AFTER existing migrations (idempotent)
 -- ============================================================
 
-DO $$
+DO $outer$
 DECLARE
   _tenant_id UUID;
 BEGIN
@@ -269,7 +269,7 @@ BEGIN
   -- ============================================================
   GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated;
 
-END $$;
+END $outer$;
 
 -- ============================================================
 -- STEP 10: Add missing indexes (new)
