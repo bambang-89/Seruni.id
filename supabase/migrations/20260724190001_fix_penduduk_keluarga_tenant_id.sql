@@ -287,7 +287,8 @@ CREATE INDEX IF NOT EXISTS idx_keluarga_no_kk_tenant
 -- ============================================================
 -- STEP 11: Create penduduk_statistik view if not exists
 -- ============================================================
-CREATE OR REPLACE VIEW public.penduduk_statistik AS
+DROP VIEW IF EXISTS public.penduduk_statistik;
+CREATE VIEW public.penduduk_statistik AS
 SELECT
   p.tenant_id,
   COUNT(*) FILTER (WHERE p.status_hidup = 'hidup') AS jumlah_penduduk,
@@ -303,7 +304,8 @@ GROUP BY p.tenant_id;
 -- ============================================================
 -- STEP 12: Create penduduk_per_dusun view if not exists
 -- ============================================================
-CREATE OR REPLACE VIEW public.penduduk_per_dusun AS
+DROP VIEW IF EXISTS public.penduduk_per_dusun;
+CREATE VIEW public.penduduk_per_dusun AS
 SELECT
   p.tenant_id,
   p.dusun,
