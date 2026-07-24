@@ -7,14 +7,19 @@ import { test, expect } from './fixtures';
 
 test.describe('Surat Ajuan - Identity Autofill', () => {
   test.beforeEach(async ({ page }) => {
-    // Accept Supabase/RLS noise in dev environment
-    page.on('console', (msg) => {
+    // Accept Supabase/RLS noise in dev environment.
+    // Registered with `{ once: false }` and removed in afterEach to prevent listener leak.
+    const listener = (msg: any) => {
       if (msg.type() === 'error') {
         const t = msg.text();
         if (t.includes('Supabase') || t.includes('RLS') || t.includes('fetch')) {
           // Dev noise — expected
         }
       }
+    };
+    page.on('console', listener);
+    test.afterEach(() => {
+      page.off('console', listener);
     });
   });
 
@@ -64,7 +69,7 @@ test.describe('Surat Ajuan - Identity Autofill', () => {
     await expect(nikInput).toHaveValue('');
 
     // TTL field should be present (read-only, placeholder shown)
-    const ttlField = page.locator('input[placeholder="Otomatis terisi dari NIK"]').first();
+    const ttlField = page.locator('[data-testid="field-ttl"]');
     await expect(ttlField).toBeVisible({ timeout: 5000 });
     await expect(ttlField).toHaveAttribute('readonly', '');
   });
@@ -96,10 +101,8 @@ test.describe('Surat Ajuan - Identity Autofill', () => {
     await page.waitForTimeout(2500);
 
     // Either the verified badge OR the "NIK tidak ditemukan" CTA must be visible.
-    // Badge: a badge element containing "Terverifikasi" near the NIK input
-    // CTA: "NIK tidak ditemukan" text near the form (use .first() for strict mode)
-    const badgeVisible = await page.locator('[class*="bg-green"]').isVisible();
-    const notFoundVisible = await page.getByText('NIK tidak ditemukan').first().isVisible();
+    const badgeVisible = await page.locator('[data-testid="badge-verified"]').isVisible();
+    const notFoundVisible = await page.locator('[data-testid="cta-not-found"]').isVisible();
     expect(badgeVisible || notFoundVisible).toBeTruthy();
   });
 
@@ -118,10 +121,8 @@ test.describe('Surat Ajuan - Identity Autofill', () => {
     await page.waitForTimeout(500);
 
     // Both verified badge and "not found" CTA should be gone.
-    // Use .first() to avoid strict mode when multiple partial matches exist.
-    await expect(page.getByText('NIK tidak ditemukan').first()).not.toBeVisible();
-    // Badge is a green badge element in the form
-    await expect(page.locator('[class*="bg-green"]')).not.toBeVisible();
+    await expect(page.locator('[data-testid="badge-verified"]')).not.toBeVisible();
+    await expect(page.locator('[data-testid="cta-not-found"]')).not.toBeVisible();
   });
 
   test('form submission: submit button visible and form is fillable', async ({ page, baseURL }) => {
@@ -136,7 +137,7 @@ test.describe('Surat Ajuan - Identity Autofill', () => {
 
     // If NIK was found (verified badge), fields are pre-filled.
     // If not found, manually fill required fields.
-    const badgeVisible = await page.locator('[class*="bg-green"]').isVisible();
+    const badgeVisible = await page.locator('[data-testid="badge-verified"]').isVisible();
 
     if (!badgeVisible) {
       // Fill nama manually (required)

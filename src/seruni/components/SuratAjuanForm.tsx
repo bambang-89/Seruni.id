@@ -627,6 +627,7 @@ export function SuratAjuanForm() {
                   type="text"
                   value={nik}
                   inputMode="numeric"
+                  data-testid="field-nik"
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, "").slice(0, 16);
                     setNik(val);
@@ -677,7 +678,7 @@ export function SuratAjuanForm() {
 
         {/* Verified badge */}
         {identitas && (
-          <div className="mt-3 inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-600 text-xs px-3 py-1.5 rounded-full font-display font-bold uppercase tracking-wider">
+          <div className="mt-3 inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-600 text-xs px-3 py-1.5 rounded-full font-display font-bold uppercase tracking-wider" data-testid="badge-verified">
             <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
             Terverifikasi: {identitas.nama}
           </div>
@@ -685,7 +686,7 @@ export function SuratAjuanForm() {
 
         {/* Not found CTA */}
         {lookupError && !identitas && (
-          <div className="mt-3 border border-red-500/30 bg-red-500/5 p-4 rounded space-y-2">
+          <div className="mt-3 border border-red-500/30 bg-red-500/5 p-4 rounded space-y-2" data-testid="cta-not-found">
             <p className="text-sm text-red-600 font-medium">NIK tidak ditemukan dalam database.</p>
             <p className="text-xs opacity-70">Silakan hubungi Kantor Desa Seruni Mumbul untuk mendaftarkan data Anda.</p>
             <a
@@ -711,6 +712,7 @@ export function SuratAjuanForm() {
                 type="text"
                 value={identitas ? formatTanggalLahir(identitas.tanggal_lahir, identitas.tempat_lahir) : ""}
                 readOnly
+                data-testid="field-ttl"
                 className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
                 placeholder="Otomatis terisi dari NIK"
               />
@@ -726,6 +728,7 @@ export function SuratAjuanForm() {
                 type="text"
                 value={identitas?.jenis_kelamin || ""}
                 readOnly
+                data-testid="field-gender"
                 className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
                 placeholder="Otomatis terisi dari NIK"
               />
@@ -741,6 +744,7 @@ export function SuratAjuanForm() {
                 type="text"
                 value={identitas?.pekerjaan || ""}
                 readOnly
+                data-testid="field-pekerjaan"
                 className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
                 placeholder="Otomatis terisi dari NIK"
               />
@@ -756,6 +760,7 @@ export function SuratAjuanForm() {
                 type="text"
                 value={identitas?.kewarganegaraan || ""}
                 readOnly
+                data-testid="field-kewarganegaraan"
                 className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
                 placeholder="Otomatis terisi dari NIK"
               />
@@ -771,6 +776,7 @@ export function SuratAjuanForm() {
                 value={identitas?.alamat_lengkap || ""}
                 readOnly
                 rows={2}
+                data-testid="field-alamat"
                 className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm resize-none")}
                 placeholder="Otomatis terisi dari NIK"
               />
@@ -785,6 +791,7 @@ export function SuratAjuanForm() {
               <input
                 type="tel"
                 value={kontak}
+                data-testid="field-whatsapp"
                 onChange={(e) => { setKontak(e.target.value); setDnaErrors((p) => { const n = { ...p }; delete n.kontak; return n; }); }}
                 placeholder={identitas?.nomor_hp ? "" : "08xxxxxxxxxx"}
                 maxLength={20}
