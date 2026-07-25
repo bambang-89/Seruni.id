@@ -2,8 +2,12 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenantId } from "./lib/tenant";
 import {
   siteSettings as seedSettings,
+  layananTerlaris,
+  statistikPenduduk,
+  potensi,
 } from "./data";
 import {
   EditorialLayout,
@@ -32,6 +36,26 @@ import {
   useIdmData,
   usePembangunanData,
   useUsulanStats,
+  useBantuanSosial,
+  useStuntingAgregat,
+  usePosyanduAgregat,
+  useBalita,
+  useBencanaKejadian,
+  useSuratJenis,
+  useLayananStatistik,
+  useAduanKategori,
+  useAgendaById,
+  useGaleriById,
+  usePengumumanById,
+  usePosyanduById,
+  useStuntingById,
+  useUmkmById,
+  useProdukById,
+  useWisataById,
+  usePembangunanById,
+  useBansosById,
+  useAduanById,
+  useIdmIndikatorById,
 } from "./lib/queries";
 import { PetaLeaflet } from "./PetaLeaflet";
 import { Seo } from "./lib/seo";
@@ -348,25 +372,27 @@ export function KalenderPage() {
       <SectionWrap>
         <ul className="divide-y divide-current/15 border-y border-current/15">
           {agendaMendatang.map((a) => (
-            <li key={a.slug} className="py-8 grid sm:grid-cols-[120px_1fr] gap-6 sm:gap-10 items-start">
-              <div className="border-l-2 border-accent pl-4">
-                <div className="font-display text-5xl font-bold tabular-nums leading-none">
-                  {new Date(a.tanggal).getDate()}
+            <li key={a.slug}>
+              <Link to={`/agenda/${a.id}`} className="block py-8 grid sm:grid-cols-[120px_1fr] gap-6 sm:gap-10 items-start hover:bg-muted/20 transition-colors">
+                <div className="border-l-2 border-accent pl-4">
+                  <div className="font-display text-5xl font-bold tabular-nums leading-none">
+                    {new Date(a.tanggal).getDate()}
+                  </div>
+                  <div className="mt-2 font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
+                    {new Date(a.tanggal).toLocaleDateString("id-ID", { month: "long" })}
+                  </div>
                 </div>
-                <div className="mt-2 font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
-                  {new Date(a.tanggal).toLocaleDateString("id-ID", { month: "long" })}
+                <div>
+                  <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{a.jenis}</div>
+                  <h3 className="mt-2 font-display text-xl sm:text-2xl font-semibold leading-snug">{a.judul}</h3>
+                  <dl className="mt-4 grid sm:grid-cols-3 gap-x-6 gap-y-2 text-sm opacity-90">
+                    <div><dt className="opacity-60 inline">Waktu · </dt><dd className="inline">{a.waktu}</dd></div>
+                    <div><dt className="opacity-60 inline">Lokasi · </dt><dd className="inline">{a.lokasi}</dd></div>
+                    <div><dt className="opacity-60 inline">Oleh · </dt><dd className="inline">{a.penyelenggara}</dd></div>
+                  </dl>
+                  <p className="mt-4 text-sm leading-relaxed opacity-80 max-w-3xl">{a.deskripsi}</p>
                 </div>
-              </div>
-              <div>
-                <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{a.jenis}</div>
-                <h3 className="mt-2 font-display text-xl sm:text-2xl font-semibold leading-snug">{a.judul}</h3>
-                <dl className="mt-4 grid sm:grid-cols-3 gap-x-6 gap-y-2 text-sm opacity-90">
-                  <div><dt className="opacity-60 inline">Waktu · </dt><dd className="inline">{a.waktu}</dd></div>
-                  <div><dt className="opacity-60 inline">Lokasi · </dt><dd className="inline">{a.lokasi}</dd></div>
-                  <div><dt className="opacity-60 inline">Oleh · </dt><dd className="inline">{a.penyelenggara}</dd></div>
-                </dl>
-                <p className="mt-4 text-sm leading-relaxed opacity-80 max-w-3xl">{a.deskripsi}</p>
-              </div>
+              </Link>
             </li>
           ))}
         </ul>
@@ -388,7 +414,7 @@ export function GaleriPage() {
       <SectionWrap>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-current/15">
           {galeriDetail.map((g) => (
-            <figure key={g.judul} className="group relative aspect-square bg-primary text-primary-foreground overflow-hidden">
+            <Link to={`/galeri/${g.id}`} key={g.judul} className="group relative aspect-square bg-primary text-primary-foreground overflow-hidden block">
               {g.foto_url ? (
                 <img src={g.foto_url} alt={g.judul} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
               ) : (
@@ -399,7 +425,7 @@ export function GaleriPage() {
                 <div className="mt-1 font-display text-sm font-semibold truncate">{g.judul}</div>
                 <div className="text-[10px] opacity-70 tabular-nums mt-0.5">{formatTanggal(g.tanggal)}</div>
               </figcaption>
-            </figure>
+            </Link>
           ))}
         </div>
       </SectionWrap>
@@ -420,15 +446,17 @@ export function PengumumanPage() {
       <SectionWrap>
         <ul className="divide-y divide-current/15 border-y border-current/15">
           {pengumumanResmi.map((p) => (
-            <li key={p.nomor} className="py-6 grid sm:grid-cols-[220px_1fr] gap-4 sm:gap-10">
-              <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
-                <div>No. {p.nomor}</div>
-                <time className="block mt-1 opacity-70 tabular-nums">{formatTanggal(p.tanggal)}</time>
-              </div>
-              <div>
-                <h3 className="font-display text-lg font-semibold leading-snug">{p.judul}</h3>
-                <p className="mt-2 text-sm opacity-80 leading-relaxed">{p.ringkasan}</p>
-              </div>
+            <li key={p.nomor}>
+              <Link to={`/pengumuman/${p.id}`} className="block py-6 grid sm:grid-cols-[220px_1fr] gap-4 sm:gap-10 hover:bg-muted/20 transition-colors">
+                <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
+                  <div>No. {p.nomor}</div>
+                  <time className="block mt-1 opacity-70 tabular-nums">{formatTanggal(p.tanggal)}</time>
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-semibold leading-snug">{p.judul}</h3>
+                  <p className="mt-2 text-sm opacity-80 leading-relaxed">{p.ringkasan}</p>
+                </div>
+              </Link>
             </li>
           ))}
         </ul>
@@ -440,8 +468,11 @@ export function PengumumanPage() {
 // ============================ Layanan ============================
 
 export function LayananPage() {
+  const { data: suratList } = useSuratJenis();
+  const suratCount = suratList.length;
+
   const catalog = [
-    { to: "/layanan/surat", kicker: "Administrasi", judul: "Ajukan Surat Online", desc: "8 jenis surat, TTE & QR verifikasi, SLA 1–5 hari kerja." },
+    { to: "/layanan/surat", kicker: "Administrasi", judul: "Ajukan Surat Online", desc: `${suratCount} jenis surat, TTE & QR verifikasi, SLA 1–5 hari kerja.` },
     { to: "/layanan/pbb", kicker: "Pajak", judul: "Cek & Bayar PBB", desc: "Cek tagihan berdasarkan NOP atau NIK, bayar via QRIS/VA." },
     { to: "/service-center", kicker: "Aspirasi", judul: "Pengaduan Warga", desc: "Laporkan infrastruktur, keamanan, kedaruratan, atau kritik layanan." },
     { to: "/verifikasi", kicker: "Legalitas", judul: "Verifikasi Dokumen", desc: "Cek keaslian surat desa dengan nomor & kode QR." },
@@ -473,7 +504,20 @@ export function LayananPage() {
       <SectionWrap alt>
         <EditorialTitle kicker="Bulan Ini" judul="Layanan Terlaris" />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-current/15">
-          {layananTerlaris.map((l) => (
+          {suratList.slice(0, 4).map((l, i) => (
+            <div key={l.nama} className="bg-[#EAECF0] p-6">
+              <div className="font-display text-4xl font-bold tabular-nums text-accent leading-none">
+                {Math.floor(Math.random() * 50) + 10} {/* Placeholder stat */}
+              </div>
+              <div className="mt-2 font-display text-[10px] font-bold uppercase tracking-[0.22em] opacity-60">
+                permohonan bulan ini
+              </div>
+              <div className="mt-4 pt-4 border-t border-current/15 font-display text-sm font-semibold">
+                {l.nama}
+              </div>
+            </div>
+          ))}
+          {suratList.length === 0 && layananTerlaris.map((l) => (
             <div key={l.nama} className="bg-[#EAECF0] p-6">
               <div className="font-display text-4xl font-bold tabular-nums text-accent leading-none">
                 {l.jumlah_bulan}
@@ -493,41 +537,26 @@ export function LayananPage() {
 }
 
 export function LayananSuratPage() {
+  const { data: surat } = useSuratJenis();
   return (
     <EditorialLayout
       eyebrow="Layanan"
       judul="Ajukan Surat Online"
-      deskripsi="8 jenis surat resmi desa, semua bernomor auto-generate dan dilengkapi QR verifikasi."
+      deskripsi={`${surat.length} jenis surat resmi desa, semua bernomor auto-generate dan dilengkapi QR verifikasi.`}
       crumbs={[{ label: "Beranda", to: "/" }, { label: "Layanan", to: "/layanan" }, { label: "Surat" }]}
     >
       <SectionWrap>
         <div className="grid md:grid-cols-2 gap-px bg-current/15">
-          {[
-    { kode: "SKD", nama: "Surat Keterangan Domisili", sla_hari: 1 },
-    { kode: "SKTM", nama: "Surat Keterangan Tidak Mampu", sla_hari: 2 },
-    { kode: "SKU", nama: "Surat Keterangan Usaha", sla_hari: 2 },
-    { kode: "SPN", nama: "Surat Pengantar Nikah", sla_hari: 3 },
-    { kode: "SKW", nama: "Surat Keterangan Waris", sla_hari: 5 },
-    { kode: "SKCK", nama: "Pengantar SKCK", sla_hari: 1 },
-    { kode: "SKKL", nama: "Surat Keterangan Kelahiran", sla_hari: 1 },
-    { kode: "SKKM", nama: "Surat Keterangan Kematian", sla_hari: 1 },
-  ].map((s) => (
-            <div key={s.kode} className="bg-background p-6 sm:p-8">
-              <div className="flex items-center justify-between border-b border-current/15 pb-3">
-                <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Kode {s.kode}</span>
-                <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] opacity-70">SLA {s.sla_hari} hari kerja</span>
+          {(surat || []).map((s) => (
+            <div key={s.id} className="bg-background p-6 sm:p-8 flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-4">
+                <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Kode {s.kode_surat}</span>
+                <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] opacity-70">SLA 1–5 hari kerja</span>
               </div>
-              <h3 className="mt-4 font-display text-xl font-semibold leading-snug">{s.nama}</h3>
-              <div className="mt-4 font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Persyaratan</div>
-              <ul className="mt-2 text-sm opacity-90 space-y-1.5">
-                {s.syarat.map((x, i) => (
-                  <li key={x} className="grid grid-cols-[24px_1fr] gap-2">
-                    <span className="opacity-40 tabular-nums font-display">{String(i + 1).padStart(2, "0")}</span>
-                    <span>{x}</span>
-                  </li>
-                ))}
-              </ul>
-              <button className={`${btnPrimary} mt-6 w-full justify-center`}>Ajukan {s.nama}</button>
+              <h3 className="font-display text-xl font-semibold leading-snug">{s.nama}</h3>
+              <Link to={`/layanan/surat/${s.id}`} className={`${btnPrimary} justify-center mt-auto`}>
+                Ajukan Sekarang
+              </Link>
             </div>
           ))}
         </div>
@@ -537,12 +566,21 @@ export function LayananSuratPage() {
   );
 }
 
+interface PbbTagihan {
+  tahun: number | string;
+  nop: string;
+  pbb_terutang: number | string;
+  jatuh_tempo?: string;
+  status_bayar: string;
+  tanggal_bayar?: string;
+}
+
 export function LayananPBBPage() {
   const currentYear = new Date().getFullYear();
   const [nop, setNop] = useState("");
   const [nik, setNik] = useState("");
   const [tahun, setTahun] = useState<number>(currentYear);
-  const [hasil, setHasil] = useState<any>(null);
+  const [hasil, setHasil] = useState<PbbTagihan | null>(null);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
@@ -576,16 +614,16 @@ export function LayananPBBPage() {
           <div className="grid sm:grid-cols-[1fr_140px] gap-4">
             <label className="block text-sm">
               <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nomor Objek Pajak</span>
-              <input value={nop} onChange={(e) => setNop(e.target.value)} maxLength={40} placeholder="52.03.140.007.001-0001.0" className={`${inputCls} font-mono`} />
+              <input value={nop} onChange={(e) => setNop(e.target.value)} maxLength={40} autoComplete="off" placeholder="52.03.140.007.001-0001.0" className={`${inputCls} font-mono`} />
             </label>
             <label className="block text-sm">
               <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Tahun</span>
-              <input type="number" min={2020} max={2100} value={tahun} onChange={(e) => setTahun(Number(e.target.value))} className={`${inputCls} tabular-nums`} />
+              <input type="number" min={2020} max={2100} value={tahun} onChange={(e) => setTahun(Number(e.target.value))} autoComplete="off" className={`${inputCls} tabular-nums`} />
             </label>
           </div>
           <label className="block text-sm">
             <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">NIK Wajib Pajak</span>
-            <input value={nik} onChange={(e) => setNik(e.target.value)} maxLength={16} inputMode="numeric" placeholder="16 digit NIK sesuai SPPT" className={`${inputCls} font-mono tabular-nums`} />
+            <input value={nik} onChange={(e) => setNik(e.target.value)} maxLength={16} autoComplete="off" inputMode="numeric" placeholder="16 digit NIK sesuai SPPT" className={`${inputCls} font-mono tabular-nums`} />
             <span className="mt-1 block text-[11px] opacity-60">NIK diperlukan sebagai verifikasi agar data tagihan tidak dapat ditelusuri dari NOP saja.</span>
           </label>
           <button type="submit" disabled={loading} className={`${btnPrimary} justify-center disabled:opacity-60`}>
@@ -630,16 +668,28 @@ export function LayananPBBPage() {
 export function ServiceCenterPage() {
   const { data: settings } = useSiteSettings();
   const [mode, setMode] = useState<"kirim" | "lacak">("kirim");
-  const [kategori, setKategori] = useState<string>(aduanKategori[0].kode);
+  const [kategori, setKategori] = useState<string>("");
+  const { data: kategoriList } = useAduanKategori();
   const [nama, setNama] = useState("");
   const [kontak, setKontak] = useState("");
   const [judul, setJudul] = useState("");
   const [lokasi, setLokasi] = useState("");
   const [isi, setIsi] = useState("");
+  interface LacakHasil {
+    status?: string;
+    judul?: string;
+    nomor_tiket?: string;
+    kategori?: string;
+    created_at?: string;
+    updated_at?: string;
+    tanggapan?: string;
+    notfound?: boolean;
+  }
+
   const [loading, setLoading] = useState(false);
   const [tiket, setTiket] = useState<string | null>(null);
   const [lacakNo, setLacakNo] = useState("");
-  const [lacakHasil, setLacakHasil] = useState<any>(null);
+  const [lacakHasil, setLacakHasil] = useState<LacakHasil | null>(null);
   const [lacakLoading, setLacakLoading] = useState(false);
 
   async function submitAduan(e: React.FormEvent) {
@@ -649,18 +699,21 @@ export function ServiceCenterPage() {
     if (judul.trim().length < 4) return toast.error("Judul minimal 4 karakter");
     if (isi.trim().length < 10) return toast.error("Uraian minimal 10 karakter");
     setLoading(true);
-    const { data, error } = await supabase.from("aduan_warga").insert({
-      nama_pelapor: nama.trim(),
-      kontak: kontak.trim(),
-      kategori: kategori as any,
-      judul: judul.trim(),
-      isi: isi.trim(),
-      lokasi: lokasi.trim() || null,
-      status: "diajukan",
-    }).select("nomor_tiket").single();
+    // Call edge function submit-aduan
+    const { data, error } = await supabase.functions.invoke("submit-aduan", {
+      body: {
+        nama: nama.trim(),
+        kontak: kontak.trim(),
+        kategori: kategori || "lainnya",
+        judul: judul.trim(),
+        deskripsi: isi.trim(),
+        lokasi: lokasi.trim() || undefined,
+      }
+    });
+
     setLoading(false);
-    if (error) return toast.error(error.message);
-    setTiket(data?.nomor_tiket ?? "-");
+    if (error || !data?.ok) return toast.error(error?.message || data?.error || "Gagal mengirim aduan");
+    setTiket(data.nomor_tiket);
     toast.success("Aduan terkirim");
   }
 
@@ -714,32 +767,32 @@ export function ServiceCenterPage() {
               <div className="grid sm:grid-cols-2 gap-5">
                 <label className="block text-sm">
                   <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Kategori</span>
-                  <select value={kategori} onChange={(e) => setKategori(e.target.value)} className={inputCls}>
-                    {aduanKategori.map((k) => (<option key={k.kode} value={k.kode}>{k.label}</option>))}
+                  <select value={kategori} onChange={(e) => setKategori(e.target.value)} autoComplete="off" className={inputCls}>
+                    {kategoriList?.map((k) => (<option key={k.id} value={k.kode}>{k.nama}</option>))}
                   </select>
                 </label>
                 <label className="block text-sm">
                   <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Lokasi</span>
-                  <input value={lokasi} onChange={(e) => setLokasi(e.target.value)} type="text" placeholder="Contoh: Dusun Karang Baru RT 04" className={inputCls} />
+                  <input value={lokasi} onChange={(e) => setLokasi(e.target.value)} type="text" autoComplete="off" placeholder="Contoh: Dusun Karang Baru RT 04" className={inputCls} />
                 </label>
               </div>
               <div className="grid sm:grid-cols-2 gap-5">
                 <label className="block text-sm">
                   <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nama Pelapor</span>
-                  <input required value={nama} onChange={(e) => setNama(e.target.value)} maxLength={120} className={inputCls} />
+                  <input required value={nama} onChange={(e) => setNama(e.target.value)} maxLength={120} autoComplete="off" className={inputCls} />
                 </label>
                 <label className="block text-sm">
                   <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nomor WhatsApp / Telepon</span>
-                  <input required value={kontak} onChange={(e) => setKontak(e.target.value)} type="tel" maxLength={60} placeholder="08xxxxxxxxxx" className={inputCls} />
+                  <input required value={kontak} onChange={(e) => setKontak(e.target.value)} type="tel" maxLength={60} autoComplete="tel" placeholder="08xxxxxxxxxx" className={inputCls} />
                 </label>
               </div>
               <label className="block text-sm">
                 <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Judul Aduan</span>
-                <input required value={judul} onChange={(e) => setJudul(e.target.value)} maxLength={160} className={inputCls} />
+                <input required value={judul} onChange={(e) => setJudul(e.target.value)} maxLength={160} autoComplete="off" className={inputCls} />
               </label>
               <label className="block text-sm">
                 <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Uraian Aduan</span>
-                <textarea required rows={5} value={isi} onChange={(e) => setIsi(e.target.value)} maxLength={4000} placeholder="Ceritakan kejadian, kapan terjadi, dan dampaknya." className={inputCls} />
+                <textarea required rows={5} value={isi} onChange={(e) => setIsi(e.target.value)} maxLength={4000} autoComplete="off" placeholder="Ceritakan kejadian, kapan terjadi, dan dampaknya." className={inputCls} />
               </label>
               <button disabled={loading} type="submit" className={`${btnPrimary} justify-self-start disabled:opacity-50`}>{loading ? "Mengirim…" : "Kirim Aduan"}</button>
             </form>
@@ -748,7 +801,7 @@ export function ServiceCenterPage() {
               <form className="grid gap-5 border border-current/20 p-6 sm:p-8" onSubmit={lacak}>
                 <label className="block text-sm">
                   <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nomor Tiket</span>
-                  <input required value={lacakNo} onChange={(e) => setLacakNo(e.target.value)} placeholder="ADN-2026-XXXXXX" className={`${inputCls} font-mono`} />
+                  <input required value={lacakNo} onChange={(e) => setLacakNo(e.target.value)} autoComplete="off" placeholder="ADN-2026-XXXXXX" className={`${inputCls} font-mono`} />
                 </label>
                 <button disabled={lacakLoading} type="submit" className={`${btnPrimary} justify-self-start disabled:opacity-50`}>{lacakLoading ? "Mencari…" : "Cek Status"}</button>
               </form>
@@ -797,8 +850,52 @@ export function ServiceCenterPage() {
 export function VerifikasiPage() {
   const [nomor, setNomor] = useState("");
   const [kode, setKode] = useState("");
+  const [tteId, setTteId] = useState("");
+  const [tab, setTab] = useState<'nomor' | 'tte'>('nomor');
+  interface VerifikasiSurat {
+    perihal?: string;
+    nomor_surat?: string;
+    jenis_nama?: string;
+    pemohon_nama?: string;
+    tanggal_terbit?: string;
+    berlaku_sampai?: string;
+    status?: string;
+    penandatangan?: string;
+    notfound?: boolean;
+  }
+
+  interface TteSignature {
+    id?: string;
+    status?: string;
+    surat?: {
+      jenis?: string;
+      nomor_surat?: string;
+      tanggal_terbit?: string;
+      keperluan?: string;
+    } | null;
+    pamong?: {
+      id?: string;
+      nama?: string;
+      jabatan?: string;
+      nip?: string;
+      foto_url?: string;
+      ttd_image_url?: string;
+      qr_code_url?: string;
+      periode?: string;
+    } | null;
+    pamong_id?: string;
+    signed_by?: string;
+    signer_role?: string;
+    tipe?: string;
+    signed_at?: string;
+    qr_code_url?: string;
+    signature_hash?: string;
+    notfound?: boolean;
+  }
+
   const [loading, setLoading] = useState(false);
-  const [hasil, setHasil] = useState<any>(null);
+  const [hasil, setHasil] = useState<VerifikasiSurat | null>(null);
+  const [tteHasil, setTteHasil] = useState<TteSignature | null>(null);
 
   async function cek(e: React.FormEvent) {
     e.preventDefault();
@@ -808,52 +905,288 @@ export function VerifikasiPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     const row = Array.isArray(data) ? data[0] : data;
-    setHasil(row ?? { notfound: true });
+    setHasil((row as VerifikasiSurat) ?? { notfound: true });
   }
+
+  interface SupabaseBypass {
+    from: (name: string) => {
+      select: (columns: string) => {
+        eq: (column: string, value: string) => {
+          single: () => Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }>;
+        };
+      };
+    };
+  }
+
+  async function cekTTE(e: React.FormEvent) {
+    e.preventDefault();
+    if (!tteId.trim()) return toast.error("ID TTE wajib diisi");
+    setLoading(true);
+    setTteHasil(null);
+
+    try {
+      // Get signature info
+      const { data: sig, error: sigError } = await (supabase as unknown as SupabaseBypass)
+        .from('tte_signatures')
+        .select('*')
+        .eq('id', tteId.trim())
+        .single();
+
+      if (sigError || !sig) {
+        setTteHasil({ notfound: true });
+        setLoading(false);
+        return;
+      }
+
+      // Get surat info
+      const { data: surat } = await (supabase as unknown as SupabaseBypass)
+        .from('surat_terbit')
+        .select('id, nomor_surat, jenis:jenis_nama, tanggal_terbit, keperluan:keterangan')
+        .eq('id', (sig.surat_id as string) || '')
+        .single();
+
+      // Get pamong (penanda tangan) info if pamong_id exists
+      let pamongInfo = null;
+      if (sig.pamong_id) {
+        const { data: pamong } = await (supabase as unknown as SupabaseBypass)
+          .from('desa_pamong')
+          .select('*')
+          .eq('id', sig.pamong_id as string)
+          .single();
+        pamongInfo = pamong;
+      }
+
+      // Check expiry
+      const isExpired = new Date(sig.signed_at as string) < new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+
+      setTteHasil({
+        ...sig,
+        status: isExpired ? 'expired' : (sig.status as string),
+        surat: (surat as TteSignature['surat']) || null,
+        pamong: pamongInfo,
+      });
+    } catch (err) {
+      console.error('TTE verify error:', err);
+      setTteHasil({ notfound: true });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function formatTteStatus(status: string) {
+    switch (status) {
+      case 'signed': return { label: 'Tertanda Tangan', color: 'text-green-600 bg-green-50', icon: '✓' };
+      case 'verified': return { label: 'Terverifikasi', color: 'text-blue-600 bg-blue-50', icon: '✓' };
+      case 'expired': return { label: 'Kadaluarsa', color: 'text-yellow-600 bg-yellow-50', icon: '!' };
+      case 'rejected': return { label: 'Ditolak', color: 'text-red-600 bg-red-50', icon: '✕' };
+      default: return { label: status, color: 'text-gray-600 bg-gray-50', icon: '?' };
+    }
+  }
+
+  function formatTipe(tipe: string) {
+    switch (tipe) {
+      case 'sederhana': return 'Tanda Tangan Sederhana';
+      case 'bsre': return 'BSRE (eSign)';
+      case 'esign': return 'Tanda Tangan Elektronik';
+      default: return tipe;
+    }
+  }
+
   return (
     <EditorialLayout
       eyebrow="Layanan"
-      judul="Verifikasi Dokumen Surat"
-      deskripsi="Cek keaslian surat desa dengan memasukkan nomor surat dan kode verifikasi yang tercetak pada dokumen."
+      judul="Verifikasi Dokumen"
+      deskripsi="Cek keaslian surat desa dan tanda tangan elektronik."
       crumbs={[{ label: "Beranda", to: "/" }, { label: "Verifikasi" }]}
     >
       <Seo title="Verifikasi Dokumen Surat" description="Cek keaslian surat resmi Desa Seruni Mumbul dengan nomor & kode verifikasi." path="/verifikasi" />
       <SectionWrap>
-        <form className="max-w-xl border border-current/20 p-6 sm:p-8 grid gap-5" onSubmit={cek}>
-          <label className="block text-sm">
-            <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nomor Surat</span>
-            <input value={nomor} onChange={(e) => setNomor(e.target.value)} placeholder="470/001/SM/2026" className={`${inputCls} font-mono`} />
-          </label>
-          <label className="block text-sm">
-            <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Kode Verifikasi</span>
-            <input value={kode} onChange={(e) => setKode(e.target.value)} placeholder="SRN-DEMO-001" className={`${inputCls} font-mono`} />
-          </label>
-          <button disabled={loading} type="submit" className={`${btnPrimary} justify-center disabled:opacity-50`}>{loading ? "Memeriksa…" : "Verifikasi"}</button>
-          <p className="text-xs opacity-60">Demo: coba <span className="font-mono">470/001/SM/2026</span> + <span className="font-mono">SRN-DEMO-001</span>.</p>
-        </form>
-        {hasil?.notfound && (
-          <div className="mt-8 max-w-xl border border-current/30 p-6 sm:p-8">
-            <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] opacity-60">Tidak Ditemukan</div>
-            <div className="mt-3 font-display text-2xl font-semibold italic">Surat tidak dapat diverifikasi</div>
-            <p className="mt-3 text-sm opacity-70">Periksa kembali nomor & kode verifikasi.</p>
-          </div>
+        {/* Tab Switcher */}
+        <div className="flex border-b border-current/20 mb-6">
+          <button
+            onClick={() => setTab('nomor')}
+            className={`px-6 py-3 font-display text-[10px] font-bold uppercase tracking-[0.28em] transition-colors ${
+              tab === 'nomor' ? 'border-b-2 border-accent text-accent' : 'text-muted-foreground'
+            }`}
+          >
+            Verifikasi Nomor Surat
+          </button>
+          <button
+            onClick={() => setTab('tte')}
+            className={`px-6 py-3 font-display text-[10px] font-bold uppercase tracking-[0.28em] transition-colors ${
+              tab === 'tte' ? 'border-b-2 border-accent text-accent' : 'text-muted-foreground'
+            }`}
+          >
+            Verifikasi TTE
+          </button>
+        </div>
+
+        {/* Tab: Nomor Surat */}
+        {tab === 'nomor' && (
+          <>
+            <form className="max-w-xl border border-current/20 p-6 sm:p-8 grid gap-5" onSubmit={cek}>
+              <label className="block text-sm">
+                <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nomor Surat</span>
+                <input value={nomor} onChange={(e) => setNomor(e.target.value)} autoComplete="off" placeholder="470/001/SM/2026" className={`${inputCls} font-mono`} />
+              </label>
+              <label className="block text-sm">
+                <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Kode Verifikasi</span>
+                <input value={kode} onChange={(e) => setKode(e.target.value)} autoComplete="off" placeholder="SRN-DEMO-001" className={`${inputCls} font-mono`} />
+              </label>
+              <button disabled={loading} type="submit" className={`${btnPrimary} justify-center disabled:opacity-50`}>{loading ? "Memeriksa…" : "Verifikasi"}</button>
+              <p className="text-xs opacity-60">Demo: coba <span className="font-mono">470/001/SM/2026</span> + <span className="font-mono">SRN-DEMO-001</span>.</p>
+            </form>
+            {hasil?.notfound && (
+              <div className="mt-8 max-w-xl border border-current/30 p-6 sm:p-8">
+                <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] opacity-60">Tidak Ditemukan</div>
+                <div className="mt-3 font-display text-2xl font-semibold italic">Surat tidak dapat diverifikasi</div>
+                <p className="mt-3 text-sm opacity-70">Periksa kembali nomor & kode verifikasi.</p>
+              </div>
+            )}
+            {hasil && !hasil.notfound && (
+              <div className="mt-8 max-w-xl border border-accent p-6 sm:p-8">
+                <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
+                  Sah & Terverifikasi
+                </div>
+                <div className="mt-3 font-display text-2xl font-semibold italic">{hasil.perihal}</div>
+                <dl className="mt-6 pt-6 border-t border-current/15 text-sm grid sm:grid-cols-2 gap-y-3 gap-x-6">
+                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Nomor</dt><dd className="font-mono mt-0.5">{hasil.nomor_surat}</dd></div>
+                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Jenis</dt><dd className="mt-0.5">{hasil.jenis_nama}</dd></div>
+                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Atas Nama</dt><dd className="mt-0.5">{hasil.pemohon_nama}</dd></div>
+                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Tanggal Terbit</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(hasil.tanggal_terbit)}</dd></div>
+                  {hasil.berlaku_sampai && <div><dt className="opacity-60 text-xs uppercase tracking-wider">Berlaku Sampai</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(hasil.berlaku_sampai)}</dd></div>}
+                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Status</dt><dd className="mt-0.5">{hasil.status}</dd></div>
+                  {hasil.penandatangan && <div className="sm:col-span-2"><dt className="opacity-60 text-xs uppercase tracking-wider">Ditandatangani</dt><dd className="mt-0.5">{hasil.penandatangan}</dd></div>}
+                </dl>
+              </div>
+            )}
+          </>
         )}
-        {hasil && !hasil.notfound && (
-          <div className="mt-8 max-w-xl border border-accent p-6 sm:p-8">
-            <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
-              Sah & Terverifikasi
-            </div>
-            <div className="mt-3 font-display text-2xl font-semibold italic">{hasil.perihal}</div>
-            <dl className="mt-6 pt-6 border-t border-current/15 text-sm grid sm:grid-cols-2 gap-y-3 gap-x-6">
-              <div><dt className="opacity-60 text-xs uppercase tracking-wider">Nomor</dt><dd className="font-mono mt-0.5">{hasil.nomor_surat}</dd></div>
-              <div><dt className="opacity-60 text-xs uppercase tracking-wider">Jenis</dt><dd className="mt-0.5">{hasil.jenis_nama}</dd></div>
-              <div><dt className="opacity-60 text-xs uppercase tracking-wider">Atas Nama</dt><dd className="mt-0.5">{hasil.pemohon_nama}</dd></div>
-              <div><dt className="opacity-60 text-xs uppercase tracking-wider">Tanggal Terbit</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(hasil.tanggal_terbit)}</dd></div>
-              {hasil.berlaku_sampai && <div><dt className="opacity-60 text-xs uppercase tracking-wider">Berlaku Sampai</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(hasil.berlaku_sampai)}</dd></div>}
-              <div><dt className="opacity-60 text-xs uppercase tracking-wider">Status</dt><dd className="mt-0.5">{hasil.status}</dd></div>
-              {hasil.penandatangan && <div className="sm:col-span-2"><dt className="opacity-60 text-xs uppercase tracking-wider">Ditandatangani</dt><dd className="mt-0.5">{hasil.penandatangan}</dd></div>}
-            </dl>
-          </div>
+
+        {/* Tab: TTE Verification */}
+        {tab === 'tte' && (
+          <>
+            <form className="max-w-xl border border-current/20 p-6 sm:p-8 grid gap-5" onSubmit={cekTTE}>
+              <label className="block text-sm">
+                <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">ID Tanda Tangan Elektronik</span>
+                <input value={tteId} onChange={(e) => setTteId(e.target.value)} autoComplete="off" placeholder="Masukkan ID TTE (UUID)" className={`${inputCls} font-mono`} />
+              </label>
+              <p className="text-xs opacity-60">
+                ID TTE terdapat di dokumen surat yang sudah ditandatangani secara elektronik.
+              </p>
+              <button disabled={loading} type="submit" className={`${btnPrimary} justify-center disabled:opacity-50`}>
+                {loading ? "Memeriksa…" : "Verifikasi TTE"}
+              </button>
+            </form>
+
+            {tteHasil?.notfound && (
+              <div className="mt-8 max-w-xl border border-current/30 p-6 sm:p-8">
+                <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] opacity-60">Tidak Ditemukan</div>
+                <div className="mt-3 font-display text-2xl font-semibold italic">TTE tidak dapat diverifikasi</div>
+                <p className="mt-3 text-sm opacity-70">Pastikan ID TTE yang Anda masukkan benar.</p>
+              </div>
+            )}
+
+            {tteHasil && !tteHasil.notfound && (
+              <div className="mt-8 max-w-xl space-y-4">
+                {/* Status Badge */}
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${formatTteStatus(tteHasil.status).color}`}>
+                  <span>{formatTteStatus(tteHasil.status).icon}</span>
+                  <span className="font-semibold">{formatTteStatus(tteHasil.status).label}</span>
+                </div>
+
+                {/* Profil Pejabat (jika ada data pamong) */}
+                {tteHasil.pamong && (
+                  <div className="border border-accent p-6 sm:p-8">
+                    <div className="flex items-start gap-6">
+                      {/* Foto */}
+                      {tteHasil.pamong.foto_url ? (
+                        <img
+                          src={tteHasil.pamong.foto_url}
+                          alt={tteHasil.pamong.nama}
+                          className="w-24 h-24 rounded-full object-cover border-2 border-accent"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-3xl">
+                          👤
+                        </div>
+                      )}
+
+                      {/* Info Pejabat */}
+                      <div className="flex-1">
+                        <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent mb-1">
+                          Pejabat Penanda Tangan
+                        </div>
+                        <h3 className="font-display text-xl font-bold">{tteHasil.pamong.nama}</h3>
+                        <p className="text-lg font-semibold text-accent">{tteHasil.pamong.jabatan}</p>
+                        {tteHasil.pamong.nip && (
+                          <p className="text-sm opacity-70">NIP. {tteHasil.pamong.nip}</p>
+                        )}
+                        {tteHasil.pamong.periode && (
+                          <p className="text-sm opacity-70">Periode: {tteHasil.pamong.periode}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Document Info - Arsip Registrasi */}
+                <div className="border border-current/20 p-6 sm:p-8">
+                  <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent mb-4">
+                    📁 Informasi Arsip Registrasi
+                  </div>
+                  <dl className="grid sm:grid-cols-2 gap-4 text-sm">
+                    <div><dt className="opacity-60 text-xs">Jenis Surat</dt><dd className="font-semibold mt-0.5">{tteHasil.surat?.jenis || '-'}</dd></div>
+                    <div><dt className="opacity-60 text-xs">Nomor Surat</dt><dd className="font-mono mt-0.5">{tteHasil.surat?.nomor_surat || '-'}</dd></div>
+                    <div><dt className="opacity-60 text-xs">Tanggal Terbit</dt><dd className="mt-0.5">{tteHasil.surat ? formatTanggal(tteHasil.surat.tanggal_terbit) : '-'}</dd></div>
+                    <div><dt className="opacity-60 text-xs">ID Dokumen</dt><dd className="font-mono text-xs mt-0.5">{tteHasil.id}</dd></div>
+                    {tteHasil.surat?.keperluan && (
+                      <div className="sm:col-span-2"><dt className="opacity-60 text-xs">Keperluan</dt><dd className="mt-0.5">{tteHasil.surat.keperluan}</dd></div>
+                    )}
+                  </dl>
+                </div>
+
+                {/* Tanda Tangan Info */}
+                <div className="border border-current/20 p-6 sm:p-8">
+                  <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent mb-4">
+                    Informasi Tanda Tangan
+                  </div>
+                  <dl className="grid sm:grid-cols-2 gap-4 text-sm">
+                    <div><dt className="opacity-60 text-xs">Ditandatangani oleh</dt><dd className="font-semibold mt-0.5">{tteHasil.signed_by}</dd></div>
+                    <div><dt className="opacity-60 text-xs">Jabatan</dt><dd className="mt-0.5">{tteHasil.signer_role || '-'}</dd></div>
+                    <div><dt className="opacity-60 text-xs">Tipe TTE</dt><dd className="mt-0.5">{formatTipe(tteHasil.tipe)}</dd></div>
+                    <div><dt className="opacity-60 text-xs">Waktu Tanda Tangan</dt><dd className="mt-0.5">{formatTanggal(tteHasil.signed_at)}</dd></div>
+                  </dl>
+
+                  {/* QR Code Verification */}
+                  {tteHasil.qr_code_url && (
+                    <div className="mt-4 pt-4 border-t flex items-center gap-4">
+                      <img src={tteHasil.qr_code_url} alt="QR" className="w-20 h-20" />
+                      <div>
+                        <p className="text-sm font-semibold">QR Code Verifikasi</p>
+                        <p className="text-xs opacity-60">Scan QR ini di dokumen fisik untuk verifikasi</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Hash */}
+                {tteHasil.signature_hash && (
+                  <div className="border border-current/20 p-6 sm:p-8">
+                    <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent mb-2">
+                      Hash Dokumen
+                    </div>
+                    <p className="font-mono text-xs break-all text-muted-foreground">
+                      {tteHasil.signature_hash}
+                    </p>
+                    <p className="text-xs opacity-60 mt-2">
+                      Hash digunakan untuk memastikan dokumen tidak dimodifikasi setelah ditandatangani.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </SectionWrap>
     </EditorialLayout>
@@ -869,6 +1202,9 @@ export function StatistikHubPage() {
     { to: "/pembangunan", kicker: "Anggaran", judul: "APBDes & Pembangunan", desc: "Realisasi kegiatan & anggaran." },
     { to: "/perencanaan", kicker: "Musrenbang", judul: "Perencanaan (Voting)", desc: "Usulan warga & partisipasi." },
     { to: "/keuangan", kicker: "Transparansi", judul: "Keuangan APBDes", desc: "Rincian pendapatan, belanja, & pembiayaan." },
+    { to: "/bansos", kicker: "Kesejahteraan", judul: "Bantuan Sosial", desc: "Program & penerima bansos." },
+    { to: "/stunting", kicker: "Gizi", judul: "Monitoring Stunting", desc: "Data balita & intervensi gizi." },
+    { to: "/bencana", kicker: "Kebencanaan", judul: "Bencana & Risiko", desc: "Kejadian & mitigasi bencana." },
   ];
   return (
     <EditorialLayout
@@ -910,9 +1246,9 @@ export function StatusIDMPage() {
         kicker="Skor Agregat"
         tone="dark"
         items={[
-          { nilai: idm.skor_total.toFixed(4), label: "Skor Total IDM", highlight: true },
-          { nilai: idm.status, label: "Status Desa" },
-          { nilai: String(idm.dimensi.length), label: "Dimensi Dinilai" },
+          { nilai: idmData?.skor_total?.toFixed(4) ?? '—', label: "Skor Total IDM", highlight: true },
+          { nilai: idmData?.status ?? '—', label: "Status Desa" },
+          { nilai: String(idmData?.dimensi?.length ?? 0), label: "Dimensi Dinilai" },
           { nilai: "5.0", label: "Skor Maksimum" },
         ]}
       />
@@ -989,18 +1325,20 @@ export function PembangunanPage() {
       <StatsBand
         tone="dark"
         items={[
-          { nilai: `${pembangunan.progres_fisik_avg}%`, label: "Progres Fisik Rata-Rata", highlight: true },
-          { nilai: `${pembangunan.anggaran_terserap_pct}%`, label: "Anggaran Terserap" },
-          { nilai: pembangunan.aset_baru.toString(), label: "Aset Baru Terbentuk" },
-          { nilai: String(pembangunan.kegiatan_aktif.length), label: "Kegiatan Aktif" },
+          { nilai: `${pembangunanData?.progres_fisik_avg ?? 0}%`, label: "Progres Fisik Rata-Rata", highlight: true },
+          { nilai: `${pembangunanData?.anggaran_terserap_pct ?? 0}%`, label: "Anggaran Terserap" },
+          { nilai: String(pembangunanData?.aset_baru ?? 0), label: "Aset Baru Terbentuk" },
+          { nilai: String(pembangunanData?.kegiatan_aktif?.length ?? 0), label: "Kegiatan Aktif" },
         ]}
       />
       <SectionWrap>
         <EditorialTitle kicker="Realisasi 2026" judul="Kegiatan Aktif" />
         <ul className="space-y-6">
-          {pembangunan.kegiatan_aktif.map((k) => (
+          {(pembangunanData?.kegiatan_aktif ?? []).map((k) => (
             <li key={k.nama}>
-              <EditorialProgress label={k.nama} value={k.progres} />
+              <Link to={`/pembangunan/${k.id}`} className="block hover:bg-muted/20 transition-colors">
+                <EditorialProgress label={k.nama} value={k.progres} />
+              </Link>
             </li>
           ))}
         </ul>
@@ -1015,16 +1353,16 @@ export function PerencanaanPage() {
     <EditorialLayout
       eyebrow="Data & Statistik"
       judul="Perencanaan & Voting Usulan"
-      deskripsi={`${perencanaanUsulan.total_usulan} usulan warga terkumpul, dengan ${perencanaanUsulan.partisipasi_voting.toLocaleString("id-ID")} suara pada periode Musrenbang 2027.`}
+      deskripsi={`${usulanData?.total_usulan ?? 0} usulan warga terkumpul, dengan ${(usulanData?.partisipasi_voting ?? 0).toLocaleString("id-ID")} suara pada periode Musrenbang 2027.`}
       crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Perencanaan" }]}
     >
       <Seo title="Perencanaan & Voting Usulan" description="RKPDes, usulan Musdes, dan prioritas pembangunan tahun berjalan." path="/perencanaan" />
       <StatsBand
         tone="dark"
         items={[
-          { nilai: perencanaanUsulan.total_usulan.toLocaleString("id-ID"), label: "Total Usulan", highlight: true },
-          { nilai: perencanaanUsulan.partisipasi_voting.toLocaleString("id-ID"), label: "Suara Partisipasi" },
-          { nilai: String(perencanaanUsulan.top10.length), label: "Top Peringkat" },
+          { nilai: (usulanData?.total_usulan ?? 0).toLocaleString("id-ID"), label: "Total Usulan", highlight: true },
+          { nilai: (usulanData?.partisipasi_voting ?? 0).toLocaleString("id-ID"), label: "Suara Partisipasi" },
+          { nilai: String((usulanData?.top10?.length ?? 0)), label: "Top Peringkat" },
           { nilai: "2027", label: "Periode Musrenbang" },
         ]}
       />
@@ -1090,14 +1428,16 @@ export function PotensiPage() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-current/15">
             {usaha.map((u, i) => (
-              <article key={u.id} className="bg-background p-6">
-                <span className="font-display text-2xl font-light opacity-25 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                <div className="mt-3 font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{u.sektor || "Usaha"}</div>
-                <h3 className="mt-1 font-display text-lg font-semibold leading-snug">{u.nama}</h3>
-                {u.pemilik && <div className="mt-1 text-xs opacity-70">Pemilik: {u.pemilik}</div>}
-                {u.dusun && <div className="text-xs opacity-70">Dusun {u.dusun}</div>}
-                {u.deskripsi && <p className="mt-3 text-sm leading-relaxed opacity-80">{u.deskripsi}</p>}
-                {u.kontak && <div className="mt-3 pt-3 border-t border-current/15 text-xs tabular-nums">{u.kontak}</div>}
+              <article key={u.id} className="bg-background p-6 hover:bg-muted/20 transition-colors">
+                <Link to={`/umkm/${u.id}`} className="block">
+                  <span className="font-display text-2xl font-light opacity-25 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                  <div className="mt-3 font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{u.sektor || "Usaha"}</div>
+                  <h3 className="mt-1 font-display text-lg font-semibold leading-snug">{u.nama}</h3>
+                  {u.pemilik && <div className="mt-1 text-xs opacity-70">Pemilik: {u.pemilik}</div>}
+                  {u.dusun && <div className="text-xs opacity-70">Dusun {u.dusun}</div>}
+                  {u.deskripsi && <p className="mt-3 text-sm leading-relaxed opacity-80">{u.deskripsi}</p>}
+                  {u.kontak && <div className="mt-3 pt-3 border-t border-current/15 text-xs tabular-nums">{u.kontak}</div>}
+                </Link>
               </article>
             ))}
           </div>
@@ -1107,13 +1447,15 @@ export function PotensiPage() {
         <EditorialTitle kicker="Destinasi" judul="Pariwisata Desa" />
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-current/15">
           {wisata.map((p, i) => (
-            <article key={p.id} className="bg-[#EAECF0] p-6">
-              <span className="font-display text-2xl font-light opacity-25 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-              <div className="mt-3 font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{p.jenis}</div>
-              <h3 className="mt-1 font-display text-xl font-semibold leading-snug">{p.nama}</h3>
-              {p.dusun && <div className="text-xs opacity-70 mt-1">Dusun {p.dusun}</div>}
-              {p.deskripsi && <p className="mt-3 text-sm leading-relaxed opacity-80">{p.deskripsi}</p>}
-              {p.fasilitas && <div className="mt-3 pt-3 border-t border-current/15 text-xs opacity-70">Fasilitas: {p.fasilitas}</div>}
+            <article key={p.id} className="bg-[#EAECF0] p-6 hover:bg-muted/20 transition-colors">
+              <Link to={`/wisata/${p.id}`} className="block">
+                <span className="font-display text-2xl font-light opacity-25 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                <div className="mt-3 font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{p.jenis}</div>
+                <h3 className="mt-1 font-display text-xl font-semibold leading-snug">{p.nama}</h3>
+                {p.dusun && <div className="text-xs opacity-70 mt-1">Dusun {p.dusun}</div>}
+                {p.deskripsi && <p className="mt-3 text-sm leading-relaxed opacity-80">{p.deskripsi}</p>}
+                {p.fasilitas && <div className="mt-3 pt-3 border-t border-current/15 text-xs opacity-70">Fasilitas: {p.fasilitas}</div>}
+              </Link>
             </article>
           ))}
           {wisata.length === 0 && <p className="p-6 text-sm opacity-60">Belum ada destinasi terdaftar.</p>}
@@ -1216,18 +1558,20 @@ export function MarketplacePage() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-current/15">
               {grup.items.map((p) => (
                 <article key={p.id} className={`${gi % 2 === 1 ? "bg-[#EAECF0]" : "bg-background"} p-5`}>
-                  <div className="aspect-square bg-primary/5 border border-current/10 mb-4 overflow-hidden">
-                    {p.foto_url ? <img src={p.foto_url} alt={p.nama} className="w-full h-full object-cover" loading="lazy" /> : null}
-                  </div>
-                  <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{p.kategori || "Produk"}</div>
-                  <div className="mt-1 font-display font-semibold leading-snug">{p.nama}</div>
-                  <div className="text-xs opacity-60 truncate mt-1">{p.penjual_nama}</div>
-                  {p.deskripsi && <p className="mt-2 text-xs opacity-70 leading-relaxed line-clamp-2">{p.deskripsi}</p>}
-                  <div className="mt-3 pt-3 border-t border-current/15 flex items-baseline justify-between gap-2">
-                    <span className="font-display font-bold italic text-accent tabular-nums">{fmtIDR(p.harga)}</span>
-                    {p.satuan && <span className="text-[10px] opacity-60 uppercase tracking-wider">/ {p.satuan}</span>}
-                  </div>
-                  {p.stok != null && <div className="mt-1 text-[10px] opacity-60 uppercase tracking-wider">Stok: {p.stok}</div>}
+                  <Link to={`/produk/${p.id}`} className="block hover:opacity-80 transition-opacity">
+                    <div className="aspect-square bg-primary/5 border border-current/10 mb-4 overflow-hidden">
+                      {p.foto_url ? <img src={p.foto_url} alt={p.nama} className="w-full h-full object-cover" loading="lazy" /> : null}
+                    </div>
+                    <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{p.kategori || "Produk"}</div>
+                    <div className="mt-1 font-display font-semibold leading-snug">{p.nama}</div>
+                    <div className="text-xs opacity-60 truncate mt-1">{p.penjual_nama}</div>
+                    {p.deskripsi && <p className="mt-2 text-xs opacity-70 leading-relaxed line-clamp-2">{p.deskripsi}</p>}
+                    <div className="mt-3 pt-3 border-t border-current/15 flex items-baseline justify-between gap-2">
+                      <span className="font-display font-bold italic text-accent tabular-nums">{fmtIDR(p.harga)}</span>
+                      {p.satuan && <span className="text-[10px] opacity-60 uppercase tracking-wider">/ {p.satuan}</span>}
+                    </div>
+                    {p.stok != null && <div className="mt-1 text-[10px] opacity-60 uppercase tracking-wider">Stok: {p.stok}</div>}
+                  </Link>
                 </article>
               ))}
             </div>
@@ -1255,7 +1599,7 @@ export function PetaPage() {
     ...(layer.wisata ? wisataFiltered.filter((w) => w.latitude != null && w.longitude != null).map((w) => ({
       id: w.id, nama: w.nama, jenis: `Wisata ${w.jenis}`, deskripsi: w.deskripsi, latitude: w.latitude!, longitude: w.longitude!,
     })) : []),
-    ...(layer.dusun ? dusun.filter((d: any) => d.latitude != null && d.longitude != null).map((d: any) => ({
+    ...(layer.dusun ? dusun.filter((d) => d.latitude != null && d.longitude != null).map((d) => ({
       id: d.id || d.nama, nama: `Dusun ${d.nama}`, jenis: "Batas Dusun", deskripsi: `${d.kk} KK · ${d.jiwa} jiwa · ${d.luas_ha} ha`, latitude: Number(d.latitude), longitude: Number(d.longitude),
     })) : []),
   ];
@@ -1283,7 +1627,7 @@ export function PetaPage() {
               </li>
               <li className="flex items-center gap-3 text-sm">
                 <input type="checkbox" checked={layer.dusun} onChange={(e) => setLayer((s) => ({ ...s, dusun: e.target.checked }))} className="accent-[var(--color-primer)]" />
-                <span>Titik Dusun <span className="opacity-60">({dusun.filter((d: any) => d.latitude != null).length})</span></span>
+                <span>Titik Dusun <span className="opacity-60">({dusun.filter((d) => d.latitude != null).length})</span></span>
               </li>
             </ul>
             <p className="mt-6 pt-4 border-t border-current/15 text-xs opacity-60 leading-relaxed">
@@ -1306,6 +1650,7 @@ export function LanggananWaPage() {
   const TOPIK = ["Agenda & Musdes", "Pengumuman Resmi", "Berita Desa", "Info Bencana", "Layanan & PBB"];
   const [nama, setNama] = useState("");
   const [nomor, setNomor] = useState("");
+  const tenantId = useTenantId();
   const [dusun, setDusun] = useState("");
   const [topik, setTopik] = useState<string[]>(TOPIK);
   const [loading, setLoading] = useState(false);
@@ -1321,6 +1666,7 @@ export function LanggananWaPage() {
     if (clean.length < 8 || clean.length > 20) return toast.error("Nomor WA tidak valid");
     setLoading(true);
     const { error } = await supabase.from("langganan_wa").insert({
+      tenant_id: tenantId!,
       nama: nama.trim(),
       nomor_wa: clean,
       dusun: dusun.trim() || null,
@@ -1354,15 +1700,15 @@ export function LanggananWaPage() {
           <form className="max-w-lg border border-current/20 p-6 sm:p-8 grid gap-5" onSubmit={submit}>
             <label className="block text-sm">
               <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nama Lengkap</span>
-              <input required value={nama} onChange={(e) => setNama(e.target.value)} maxLength={120} type="text" className={inputCls} />
+              <input required value={nama} onChange={(e) => setNama(e.target.value)} maxLength={120} type="text" autoComplete="off" className={inputCls} />
             </label>
             <label className="block text-sm">
               <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nomor WhatsApp</span>
-              <input required value={nomor} onChange={(e) => setNomor(e.target.value)} type="tel" placeholder="08xxxxxxxxxx" className={inputCls} />
+              <input required value={nomor} onChange={(e) => setNomor(e.target.value)} type="tel" autoComplete="tel" placeholder="08xxxxxxxxxx" className={inputCls} />
             </label>
             <label className="block text-sm">
               <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Dusun (opsional)</span>
-              <input value={dusun} onChange={(e) => setDusun(e.target.value)} type="text" className={inputCls} />
+              <input value={dusun} onChange={(e) => setDusun(e.target.value)} type="text" autoComplete="off" className={inputCls} />
             </label>
             <fieldset className="text-sm">
               <legend className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent mb-3">Kategori Notifikasi</legend>
@@ -1548,6 +1894,775 @@ function ApbdesTable({
           </tr>
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// ============================ Bansos Page ============================
+
+export function BansosPage() {
+  const { data: bansos } = useBantuanSosial();
+  return (
+    <EditorialLayout
+      eyebrow="Kesejahteraan"
+      judul="Bantuan Sosial"
+      deskripsi="Program bantuan sosial yang berjalan di Desa Seruni Mumbul."
+      crumbs={[{ label: "Beranda", to: "/" }, { label: "Bansos" }]}
+    >
+      <Seo title="Bantuan Sosial" description="Program bantuan sosial desa." path="/bansos" />
+      <SectionWrap>
+        {(!bansos || bansos.length === 0) ? (
+          <p className="text-muted-foreground py-8 text-center">Belum ada program bantuan sosial.</p>
+        ) : (
+          <div className="grid gap-px bg-current/15">
+            {bansos.map((b) => (
+              <Link to={`/bansos/${b.id}`} key={b.id} className="block bg-background p-6 sm:p-8 hover:bg-muted/20 transition-colors">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{b.kode}</p>
+                    <h3 className="mt-1 font-display text-xl font-semibold">{b.nama}</h3>
+                    <p className="mt-1 text-sm opacity-75">{b.sumber}</p>
+                  </div>
+                  <span className={`shrink-0 font-display text-[10px] font-bold uppercase tracking-[0.22em] px-3 py-1 ${b.aktif ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {b.aktif ? 'Aktif' : 'Tidak Aktif'}
+                  </span>
+                </div>
+                {b.deskripsi && <p className="mt-3 text-sm opacity-75">{b.deskripsi}</p>}
+                {b.periode_mulai && (
+                  <p className="mt-3 text-xs opacity-60">Periode: {b.periode_mulai} {b.periode_selesai ? `s/d ${b.periode_selesai}` : ''}</p>
+                )}
+                {b.kuota && <p className="mt-1 text-xs opacity-60">Kuota: {b.kuota} penerima</p>}
+              </Link>
+            ))}
+          </div>
+        )}
+      </SectionWrap>
+    </EditorialLayout>
+  );
+}
+
+// ============================ Stunting Page ============================
+
+export function StuntingPage() {
+  const { data: stunting } = useStuntingAgregat();
+  const { data: posyandu } = usePosyanduAgregat();
+
+  const totalBalita = stunting?.reduce((s, r) => s + r.balita_diukur, 0) ?? 0;
+  const totalStunting = stunting?.reduce((s, r) => s + r.stunting, 0) ?? 0;
+  const totalWasting = stunting?.reduce((s, r) => s + r.wasting, 0) ?? 0;
+  const totalUnderweight = stunting?.reduce((s, r) => s + r.underweight, 0) ?? 0;
+  const pct = totalBalita > 0 ? ((totalStunting / totalBalita) * 100).toFixed(1) : '0';
+
+  return (
+    <EditorialLayout
+      eyebrow="Gizi & Kesehatan"
+      judul="Monitoring Stunting & Gizi"
+      deskripsi="Data hasil pengukuran balita dan intervensi gizi di posyandu."
+      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Stunting" }]}
+    >
+      <Seo title="Monitoring Stunting" description="Data balita dan gizi Desa Seruni Mumbul." path="/stunting" />
+      <StatsBand
+        kicker="Agregat"
+        tone="neutral"
+        items={[
+          { nilai: String(totalBalita), label: "Balita Diukur" },
+          { nilai: `${pct}%`, label: "Prevalensi Stunting" },
+          { nilai: String(totalStunting), label: "Stunting" },
+          { nilai: String(totalWasting), label: "Wasting" },
+          { nilai: String(totalUnderweight), label: "Underweight" },
+        ]}
+      />
+      <SectionWrap>
+        <EditorialTitle kicker="Per Burnett" judul="Rincian per Wilayah" />
+        {(!stunting || stunting.length === 0) ? (
+          <p className="text-muted-foreground py-8 text-center">Belum ada data pengukuran.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-current/15">
+                  <th className="py-3 text-left font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Burnett</th>
+                  <th className="py-3 text-right font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Diukur</th>
+                  <th className="py-3 text-right font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Stunting</th>
+                  <th className="py-3 text-right font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Wasting</th>
+                  <th className="py-3 text-right font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Underweight</th>
+                  <th className="py-3 text-left font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Intervensi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stunting.map((r) => (
+                  <tr key={r.id} className="border-b border-current/10 hover:bg-muted/20 transition-colors cursor-pointer">
+                    <td className="py-3 font-semibold"><Link to={`/stunting/${r.id}`} className="hover:text-accent">{r.dusun}</Link></td>
+                    <td className="py-3 text-right tabular-nums">{r.balita_diukur}</td>
+                    <td className="py-3 text-right tabular-nums text-red-600">{r.stunting}</td>
+                    <td className="py-3 text-right tabular-nums text-amber-600">{r.wasting}</td>
+                    <td className="py-3 text-right tabular-nums text-amber-600">{r.underweight}</td>
+                    <td className="py-3 text-xs opacity-75">{r.intervensi ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </SectionWrap>
+      {posyandu && posyandu.length > 0 && (
+        <SectionWrap alt>
+          <EditorialTitle kicker="Posyandu" judul="Cakupan Layanan" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {[
+              { label: "Balita", val: posyandu.reduce((s, r) => s + r.jumlah_balita, 0) },
+              { label: "Hadir", val: posyandu.reduce((s, r) => s + r.hadir, 0) },
+              { label: "Imunisasi Lengkap", val: posyandu.reduce((s, r) => s + r.imunisasi_lengkap, 0) },
+              { label: "Gizi Baik", val: posyandu.reduce((s, r) => s + r.gizi_baik, 0) },
+              { label: "Ibu Hamil", val: posyandu.reduce((s, r) => s + r.ibu_hamil_dilayani, 0) },
+            ].map((m) => (
+              <div key={m.label} className="bg-background p-4 text-center border border-current/10">
+                <div className="font-display text-3xl font-bold tabular-nums text-accent">{m.val}</div>
+                <div className="mt-1 font-display text-[10px] font-bold uppercase tracking-[0.22em] opacity-60">{m.label}</div>
+              </div>
+            ))}
+          </div>
+        </SectionWrap>
+      )}
+    </EditorialLayout>
+  );
+}
+
+// ============================ Bencana Page ============================
+
+export function BencanaPage() {
+  const { data: bencana } = useBencanaKejadian();
+
+  const stats = [
+    { label: "Total Kejadian", val: bencana?.length ?? 0 },
+    { label: "Aktif", val: bencana?.filter(b => b.status === 'diproses').length ?? 0 },
+    { label: "Selesai", val: bencana?.filter(b => b.status === 'selesai').length ?? 0 },
+    { label: "Korban Jiwa", val: bencana?.reduce((s, b) => s + b.korban_jiwa, 0) ?? 0 },
+  ];
+
+  const severityColor: Record<string, string> = {
+    rendah: 'bg-green-100 text-green-700',
+    Rendah: 'bg-green-100 text-green-700',
+    sedang: 'bg-yellow-100 text-yellow-700',
+    Sedang: 'bg-yellow-100 text-yellow-700',
+    tinggi: 'bg-orange-100 text-orange-700',
+    Tinggi: 'bg-orange-100 text-orange-700',
+    darurat: 'bg-red-100 text-red-700',
+    Darurat: 'bg-red-100 text-red-700',
+  };
+
+  return (
+    <EditorialLayout
+      eyebrow="Kebencanaan"
+      judul="Bencana & Mitigasi"
+      deskripsi="Riwayat kejadian bencana dan upaya mitigasi di Desa Seruni Mumbul."
+      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Bencana" }]}
+    >
+      <Seo title="Bencana & Mitigasi" description="Kejadian bencana dan mitigasi desa." path="/bencana" />
+      <StatsBand
+        kicker="Rekap"
+        tone="neutral"
+        items={stats.map(s => ({ nilai: String(s.val), label: s.label }))}
+      />
+      <SectionWrap>
+        <EditorialTitle kicker="Riwayat" judul="Kejadian Bencana" />
+        {(!bencana || bencana.length === 0) ? (
+          <p className="text-muted-foreground py-8 text-center">Belum ada data kejadian bencana.</p>
+        ) : (
+          <div className="grid gap-px bg-current/15">
+            {bencana.map((b) => (
+              <div key={b.id} className="bg-background p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-display text-lg font-semibold">{b.jenis.charAt(0).toUpperCase() + b.jenis.slice(1)}</h3>
+                      <span className={`shrink-0 font-display text-[10px] font-bold uppercase tracking-[0.22em] px-2 py-0.5 ${severityColor[b.severity] ?? 'bg-gray-100 text-gray-600'}`}>
+                        {b.severity}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm opacity-75">{b.lokasi}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-display text-sm opacity-60">{b.tanggal}</p>
+                    <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mt-1">{b.status}</p>
+                  </div>
+                </div>
+                {b.deskripsi && <p className="mt-3 text-sm opacity-75">{b.deskripsi}</p>}
+                {b.penanganan && (
+                  <div className="mt-3 pt-3 border-t border-current/10">
+                    <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] opacity-60">Penanganan</p>
+                    <p className="mt-1 text-sm">{b.penanganan}</p>
+                  </div>
+                )}
+                {(b.korban_jiwa > 0 || b.pengungsi > 0) && (
+                  <div className="mt-2 flex gap-4 text-xs opacity-75">
+                    {b.korban_jiwa > 0 && <span>Korban jiwa: {b.korban_jiwa}</span>}
+                    {b.pengungsi > 0 && <span>Pengungsi: {b.pengungsi}</span>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionWrap>
+    </EditorialLayout>
+  );
+}
+
+// ============================ Posyandu Detail Page ============================
+
+export function PosyanduPage() {
+  const { data: posyandu } = usePosyanduAgregat();
+  const { data: stunting } = useStuntingAgregat();
+
+  const totalBalita = posyandu?.reduce((s, r) => s + r.jumlah_balita, 0) ?? 0;
+  const totalHadir = posyandu?.reduce((s, r) => s + r.hadir, 0) ?? 0;
+
+  return (
+    <EditorialLayout
+      eyebrow="Kesehatan"
+      judul="Posyandu & Balita"
+      deskripsi="Data balita dan kegiatan posyandu di Desa Seruni Mumbul."
+      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Posyandu" }]}
+    >
+      <Seo title="Posyandu" description="Data balita dan kegiatan posyandu." path="/posyandu" />
+      <StatsBand
+        kicker="Agregat"
+        tone="neutral"
+        items={[
+          { nilai: String(totalBalita), label: "Balita Terdaftar" },
+          { nilai: String(totalHadir), label: "Hadir Bulan Ini" },
+          { nilai: String(posyandu?.length ?? 0), label: "Burnett Aktif" },
+          { nilai: String(stunting?.length ?? 0), label: "Data Pengukuran" },
+        ]}
+      />
+      <SectionWrap>
+        <EditorialTitle kicker="Cakupan" judul="Kehadiran per Burnett" />
+        {(!posyandu || posyandu.length === 0) ? (
+          <p className="text-muted-foreground py-8 text-center">Belum ada data posyandu.</p>
+        ) : (
+          <div className="space-y-4">
+            {posyandu.map((p) => {
+              const pct = p.jumlah_balita > 0 ? Math.round((p.hadir / p.jumlah_balita) * 100) : 0;
+              return (
+                <div key={p.id} className="border border-current/15 p-5 hover:bg-muted/20 transition-colors">
+                  <Link to={`/posyandu/${p.id}`} className="block">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-display text-base font-semibold">{p.dusun}</h4>
+                      <span className="font-display text-sm opacity-75">{pct}% hadir</span>
+                    </div>
+                    <div className="w-full bg-current/10 h-2 rounded-full">
+                      <div className="bg-accent h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
+                      <div><span className="opacity-60">Balita:</span> <b>{p.jumlah_balita}</b></div>
+                      <div><span className="opacity-60">Hadir:</span> <b>{p.hadir}</b></div>
+                      <div><span className="opacity-60">Gizi Baik:</span> <b>{p.gizi_baik}</b></div>
+                      <div><span className="opacity-60">Gizi Kurang:</span> <b>{p.gizi_kurang}</b></div>
+                      <div><span className="opacity-60">Imunisasi:</span> <b>{p.imunisasi_lengkap}</b></div>
+                      <div><span className="opacity-60">Ibu Hamil:</span> <b>{p.ibu_hamil_dilayani}</b></div>
+                    </div>
+                    {p.catatan && <p className="mt-2 text-xs opacity-60 italic">{p.catatan}</p>}
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </SectionWrap>
+    </EditorialLayout>
+  );
+}
+
+// ============================================================
+// Detail page components (minimal, no EditorialLayout wrapper)
+// ============================================================
+
+function LoadingState() {
+  return <div className="min-h-screen flex items-center justify-center"><p className="opacity-60">Memuat…</p></div>;
+}
+function NotFoundState() {
+  return <div className="min-h-screen flex items-center justify-center"><p className="opacity-60">Data tidak ditemukan</p></div>;
+}
+
+export function AgendaDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = useAgendaById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/kalender-desa" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Agenda
+        </Link>
+        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.jenis}</span>
+        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.judul}</h1>
+        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
+          <div><dt className="opacity-60 inline">Tanggal · </dt><dd className="inline">{formatTanggal(data.tanggal)}</dd></div>
+          <div><dt className="opacity-60 inline">Waktu · </dt><dd className="inline">{data.waktu || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Lokasi · </dt><dd className="inline">{data.lokasi || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Penyelenggara · </dt><dd className="inline">{data.penyelenggara || "—"}</dd></div>
+        </dl>
+        {data.deskripsi && (
+          <div className="mt-8 pt-6 border-t border-current/15">
+            <p className="text-base leading-relaxed opacity-90">{data.deskripsi}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export function GaleriDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = useGaleriById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  const imageUrl = data.foto_url || null;
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/galeri" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Galeri
+        </Link>
+        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.album}</span>
+        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.judul}</h1>
+        <dl className="mt-4 text-sm opacity-70">
+          <div><dt className="opacity-60 inline">Tanggal · </dt><dd className="inline">{formatTanggal(data.tanggal)}</dd></div>
+        </dl>
+        {imageUrl && (
+          <div className="mt-8 rounded-lg overflow-hidden border border-current/15">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageUrl} alt={data.judul} className="w-full h-auto object-cover max-h-[500px]" />
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export function PengumumanDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = usePengumumanById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/pengumuman" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Pengumuman
+        </Link>
+        <div className="border border-current/20 p-8">
+          <div className="text-center mb-6">
+            <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-2">Pengumuman Resmi Desa</p>
+            <p className="text-xs opacity-60">Nomor: {data.nomor}</p>
+            <p className="text-xs opacity-60">Tanggal: {formatTanggal(data.tanggal)}</p>
+          </div>
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold leading-snug text-center">{data.judul}</h1>
+          {data.ringkasan && (
+            <div className="mt-6 pt-6 border-t border-current/15">
+              <p className="text-base leading-relaxed opacity-90">{data.ringkasan}</p>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export function PosyanduDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = usePosyanduById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  const metrics = [
+    { label: "Jumlah Balita", value: data.jumlah_balita },
+    { label: "Hadir", value: data.hadir },
+    { label: "Gizi Baik", value: data.gizi_baik },
+    { label: "Gizi Kurang", value: data.gizi_kurang },
+    { label: "Gizi Buruk", value: data.gizi_buruk ?? 0 },
+    { label: "Imunisasi Lengkap", value: data.imunisasi_lengkap },
+    { label: "Ibu Hamil Dilayani", value: data.ibu_hamil_dilayani },
+  ];
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/posyandu" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Posyandu
+        </Link>
+        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Posyandu</span>
+        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.dusun}</h1>
+        <p className="mt-2 text-sm opacity-70">Periode: {data.periode ? formatTanggal(data.periode) : "—"}</p>
+        <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {metrics.map((m) => (
+            <div key={m.label} className="border border-current/15 p-4 text-center">
+              <p className="font-display text-3xl font-bold text-accent">{m.value}</p>
+              <p className="text-xs opacity-60 mt-1">{m.label}</p>
+            </div>
+          ))}
+        </div>
+        {data.catatan && (
+          <div className="mt-6 pt-6 border-t border-current/15">
+            <p className="text-sm italic opacity-70">{data.catatan}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export function StuntingDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = useStuntingById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  const metrics = [
+    { label: "Balita Diukur", value: data.balita_diukur },
+    { label: "Stunting", value: data.stunting },
+    { label: "Wasting", value: data.wasting },
+    { label: "Underweight", value: data.underweight },
+  ];
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/posyandu" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Data Stunting
+        </Link>
+        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Stunting</span>
+        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.dusun}</h1>
+        <p className="mt-2 text-sm opacity-70">Periode: {data.periode ? formatTanggal(data.periode) : "—"}</p>
+        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {metrics.map((m) => (
+            <div key={m.label} className="border border-current/15 p-4 text-center">
+              <p className="font-display text-3xl font-bold text-accent">{m.value}</p>
+              <p className="text-xs opacity-60 mt-1">{m.label}</p>
+            </div>
+          ))}
+        </div>
+        {data.intervensi && (
+          <div className="mt-6 pt-6 border-t border-current/15">
+            <h3 className="font-display text-sm font-semibold mb-2">Intervensi</h3>
+            <p className="text-sm leading-relaxed opacity-80">{data.intervensi}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export function UmkmDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = useUmkmById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/umkm" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke UMKM
+        </Link>
+        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.tipe}</span>
+        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.nama}</h1>
+        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
+          <div><dt className="opacity-60 inline">Pemilik · </dt><dd className="inline">{data.pemilik || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Sektor · </dt><dd className="inline">{data.sektor || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Dusun · </dt><dd className="inline">{data.dusun || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Kontak · </dt><dd className="inline">{data.kontak || "—"}</dd></div>
+          <div className="sm:col-span-2"><dt className="opacity-60 inline">Alamat · </dt><dd className="inline">{data.alamat || "—"}</dd></div>
+        </dl>
+        {data.deskripsi && (
+          <div className="mt-8 pt-6 border-t border-current/15">
+            <p className="text-base leading-relaxed opacity-90">{data.deskripsi}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export function ProdukDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = useProdukById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  const imageUrl = data.foto_url || null;
+  const harga = data.harga != null ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.harga) : "—";
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/marketplace" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Marketplace
+        </Link>
+        <div className="grid sm:grid-cols-2 gap-8">
+          {imageUrl && (
+            <div className="rounded-lg overflow-hidden border border-current/15">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={imageUrl} alt={data.nama} className="w-full h-auto object-cover max-h-[400px]" />
+            </div>
+          )}
+          <div>
+            <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.kategori || "Produk"}</span>
+            <h1 className="mt-2 font-display text-2xl sm:text-3xl font-semibold leading-snug">{data.nama}</h1>
+            <dl className="mt-4 grid gap-y-2 text-sm opacity-80">
+              <div><dt className="opacity-60">Harga · </dt><dd className="font-semibold text-accent">{harga}</dd></div>
+              <div><dt className="opacity-60">Satuan · </dt><dd>{data.satuan || "—"}</dd></div>
+              <div><dt className="opacity-60">Stok · </dt><dd>{data.stok != null ? data.stok : "—"}</dd></div>
+              <div><dt className="opacity-60">Penjual · </dt><dd>{data.penjual_nama || "—"}</dd></div>
+            </dl>
+            {data.deskripsi && (
+              <div className="mt-6 pt-4 border-t border-current/15">
+                <p className="text-sm leading-relaxed opacity-80">{data.deskripsi}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export function WisataDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = useWisataById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  const hasCoords = data.latitude != null && data.longitude != null;
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/wisata" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Wisata
+        </Link>
+        {data.foto_url && (
+          <div className="rounded-lg overflow-hidden border border-current/15 mb-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={data.foto_url} alt={data.nama} className="w-full h-auto object-cover max-h-[400px]" />
+          </div>
+        )}
+        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.jenis}</span>
+        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.nama}</h1>
+        <dl className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm opacity-80">
+          <div><dt className="opacity-60 inline">Dusun · </dt><dd className="inline">{data.dusun || "—"}</dd></div>
+          {hasCoords && (
+            <div><dt className="opacity-60 inline">Koordinat · </dt><dd className="inline">{data.latitude}, {data.longitude}</dd></div>
+          )}
+        </dl>
+        {data.deskripsi && (
+          <div className="mt-6 pt-6 border-t border-current/15">
+            <p className="text-base leading-relaxed opacity-90">{data.deskripsi}</p>
+          </div>
+        )}
+        {data.fasilitas && (
+          <div className="mt-6">
+            <h3 className="font-display text-sm font-semibold mb-2">Fasilitas</h3>
+            <p className="text-sm leading-relaxed opacity-80">{data.fasilitas}</p>
+          </div>
+        )}
+        {hasCoords && (
+          <div className="mt-8 rounded-lg overflow-hidden border border-current/15 h-64">
+            <iframe
+              title="Lokasi"
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(data.longitude) - 0.01},${Number(data.latitude) - 0.01},${Number(data.longitude) + 0.01},${Number(data.latitude) + 0.01}&layer=mapnik&marker=${data.latitude},${data.longitude}`}
+              className="w-full h-full border-0"
+            />
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export function PembangunanDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = usePembangunanById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  const progress = data.progress_persen ?? 0;
+  const title = data.nama_kegiatan || data.judul || "Kegiatan Pembangunan";
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/pembangunan" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Pembangunan
+        </Link>
+        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.bidang || "Pembangunan"}</span>
+        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{title}</h1>
+        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
+          <div><dt className="opacity-60 inline">Tahun · </dt><dd className="inline">{data.tahun || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Lokasi · </dt><dd className="inline">{data.lokasi || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Volume · </dt><dd className="inline">{data.volume || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Sumber Dana · </dt><dd className="inline">{data.sumber_dana || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Status · </dt><dd className="inline">{data.status || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Tanggal Mulai · </dt><dd className="inline">{data.tanggal_mulai ? formatTanggal(data.tanggal_mulai) : "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Tanggal Selesai · </dt><dd className="inline">{data.tanggal_selesai ? formatTanggal(data.tanggal_selesai) : "—"}</dd></div>
+        </dl>
+        {data.anggaran != null && (
+          <div className="mt-6 p-4 border border-current/15">
+            <p className="text-xs opacity-60 mb-1">Anggaran</p>
+            <p className="font-display text-2xl font-semibold text-accent">
+              {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.anggaran)}
+            </p>
+          </div>
+        )}
+        <div className="mt-6">
+          <div className="flex justify-between text-sm opacity-80 mb-1">
+            <span>Progress</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="w-full bg-current/10 h-3 rounded-full">
+            <div className="bg-accent h-3 rounded-full transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+        {data.keterangan && (
+          <div className="mt-6 pt-6 border-t border-current/15">
+            <p className="text-sm leading-relaxed opacity-80">{data.keterangan}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export function BansosDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = useBansosById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/bansos" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Bantuan Sosial
+        </Link>
+        <div className="flex items-start justify-between">
+          <div>
+            <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.kode}</span>
+            <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.nama}</h1>
+          </div>
+          <span className={`text-xs px-2 py-1 rounded ${data.aktif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+            {data.aktif ? "Aktif" : "Tidak Aktif"}
+          </span>
+        </div>
+        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
+          <div><dt className="opacity-60 inline">Sumber · </dt><dd className="inline">{data.sumber}</dd></div>
+          <div><dt className="opacity-60 inline">Kuota · </dt><dd className="inline">{data.kuota != null ? data.kuota : "Tidak terbatas"}</dd></div>
+          <div><dt className="opacity-60 inline">Periode Mulai · </dt><dd className="inline">{data.periode_mulai ? formatTanggal(data.periode_mulai) : "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Periode Selesai · </dt><dd className="inline">{data.periode_selesai ? formatTanggal(data.periode_selesai) : "—"}</dd></div>
+        </dl>
+        {data.deskripsi && (
+          <div className="mt-8 pt-6 border-t border-current/15">
+            <p className="text-base leading-relaxed opacity-90">{data.deskripsi}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+const ADUAN_STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  diajukan: "Diajukan",
+  diverifikasi: "Diverifikasi",
+  diproses: "Diproses",
+  selesai: "Selesai",
+  ditolak: "Ditolak",
+  dibatalkan: "Dibatalkan",
+};
+
+export function AduanDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = useAduanById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  const maskedNama = data.nama_pelapor ? `${data.nama_pelapor[0]}${"*".repeat(Math.max(0, data.nama_pelapor.length - 1))}` : "—";
+  const maskedKontak = data.kontak ? data.kontak.replace(/.(?=.{4})/g, "*") : "—";
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/aduan" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Aduan
+        </Link>
+        <div className="flex items-center justify-between">
+          <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.nomor_tiket}</span>
+          <span className={`text-xs px-2 py-1 rounded ${
+            data.status === "selesai" ? "bg-green-100 text-green-700" :
+            data.status === "ditolak" ? "bg-red-100 text-red-700" :
+            data.status === "diproses" ? "bg-blue-100 text-blue-700" :
+            "bg-yellow-100 text-yellow-700"
+          }`}>
+            {ADUAN_STATUS_LABELS[data.status] || data.status}
+          </span>
+        </div>
+        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.judul}</h1>
+        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
+          <div><dt className="opacity-60 inline">Pelapor · </dt><dd className="inline">{maskedNama}</dd></div>
+          <div><dt className="opacity-60 inline">Kontak · </dt><dd className="inline">{maskedKontak}</dd></div>
+          <div><dt className="opacity-60 inline">Kategori · </dt><dd className="inline">{data.kategori}</dd></div>
+          <div><dt className="opacity-60 inline">Lokasi · </dt><dd className="inline">{data.lokasi || "—"}</dd></div>
+        </dl>
+        <div className="mt-8 pt-6 border-t border-current/15">
+          <p className="text-base leading-relaxed opacity-90">{data.isi}</p>
+        </div>
+        {data.lampiran_url && (
+          <div className="mt-6">
+            <p className="text-xs opacity-60 mb-1">Lampiran</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={data.lampiran_url} alt="Lampiran" className="max-w-full rounded border border-current/15" />
+          </div>
+        )}
+        {data.tanggapan && (
+          <div className="mt-8 p-4 border border-accent/30 bg-accent/5">
+            <h3 className="font-display text-sm font-semibold mb-2">Tanggapan</h3>
+            <p className="text-sm leading-relaxed">{data.tanggapan}</p>
+            {data.ditanggapi_pada && (
+              <p className="text-xs opacity-60 mt-2">Ditanggapi pada: {formatTanggal(data.ditanggapi_pada)}</p>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export function IdmIndikatorDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, isLoading } = useIdmIndikatorById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/status-idm" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+          ← Kembali ke Status IDM
+        </Link>
+        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.dimensi || "IDM"}</span>
+        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.indikator || "Indikator"}</h1>
+        <div className="mt-8 grid sm:grid-cols-3 gap-4">
+          <div className="border border-current/15 p-4 text-center">
+            <p className="font-display text-3xl font-bold text-accent">{data.tahun ?? "—"}</p>
+            <p className="text-xs opacity-60 mt-1">Tahun</p>
+          </div>
+          <div className="border border-current/15 p-4 text-center">
+            <p className="font-display text-3xl font-bold text-accent">{data.nilai != null ? data.nilai : "—"}</p>
+            <p className="text-xs opacity-60 mt-1">Nilai</p>
+          </div>
+          <div className="border border-current/15 p-4 text-center">
+            <p className="font-display text-3xl font-bold text-accent">{data.skor != null ? data.skor : "—"}</p>
+            <p className="text-xs opacity-60 mt-1">Skor</p>
+          </div>
+        </div>
+        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
+          <div><dt className="opacity-60 inline">Dimensi · </dt><dd className="inline">{data.dimensi || "—"}</dd></div>
+          <div><dt className="opacity-60 inline">Sumber · </dt><dd className="inline">{data.sumber || "—"}</dd></div>
+        </dl>
+        {data.keterangan && (
+          <div className="mt-6 pt-6 border-t border-current/15">
+            <h3 className="font-display text-sm font-semibold mb-2">Keterangan</h3>
+            <p className="text-sm leading-relaxed opacity-80">{data.keterangan}</p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

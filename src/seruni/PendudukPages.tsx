@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { EditorialLayout, SectionWrap } from "./ui";
@@ -101,17 +102,19 @@ export function IDMLivePage() {
         {!kini.length && <p className="text-sm opacity-70">Belum ada indikator IDM yang dipublikasikan.</p>}
         <div className="grid md:grid-cols-3 gap-px bg-current/15">
           {Object.entries(perDim).map(([dim, arr]) => (
-            <div key={dim} className="bg-background p-6">
-              <div className="font-display font-semibold">{dim}</div>
-              <div className="mt-2 font-display text-4xl font-bold italic text-accent tabular-nums">{skorRata(arr).toFixed(4)}</div>
-              <ul className="mt-4 space-y-2 text-xs opacity-80">
-                {arr.map((r) => (
-                  <li key={r.id} className="flex justify-between gap-4">
-                    <span className="truncate">{r.indikator}</span>
-                    <span className="tabular-nums">{Number(r.skor || 0).toFixed(3)}</span>
-                  </li>
-                ))}
-              </ul>
+            <div key={dim} className="bg-background p-6 hover:bg-muted/20 transition-colors">
+              <Link to={`/idm-detail/${dim.toLowerCase().replace(/\s+/g, '-')}`} className="block">
+                <div className="font-display font-semibold">{dim}</div>
+                <div className="mt-2 font-display text-4xl font-bold italic text-accent tabular-nums">{skorRata(arr).toFixed(4)}</div>
+                <ul className="mt-4 space-y-2 text-xs opacity-80">
+                  {arr.map((r) => (
+                    <li key={r.id} className="flex justify-between gap-4">
+                      <span className="truncate">{r.indikator}</span>
+                      <span className="tabular-nums">{Number(r.skor || 0).toFixed(3)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Link>
             </div>
           ))}
         </div>
@@ -188,13 +191,13 @@ export function SuplesiPage() {
             )}
             <form onSubmit={submit} className="space-y-3">
               <label className="block text-sm"><span className="block text-xs mb-1">Nama Lengkap</span>
-                <input required value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className={inp} /></label>
+                <input required value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} autoComplete="off" className={inp} /></label>
               <label className="block text-sm"><span className="block text-xs mb-1">NIK (opsional)</span>
-                <input value={form.nik} onChange={(e) => setForm({ ...form, nik: e.target.value })} className={inp} /></label>
+                <input value={form.nik} onChange={(e) => setForm({ ...form, nik: e.target.value })} autoComplete="off" className={inp} /></label>
               <label className="block text-sm"><span className="block text-xs mb-1">Kontak (WA/HP)</span>
-                <input value={form.kontak} onChange={(e) => setForm({ ...form, kontak: e.target.value })} className={inp} /></label>
+                <input value={form.kontak} onChange={(e) => setForm({ ...form, kontak: e.target.value })} autoComplete="off" className={inp} /></label>
               <label className="block text-sm"><span className="block text-xs mb-1">Jenis Pengajuan</span>
-                <select value={form.jenis} onChange={(e) => setForm({ ...form, jenis: e.target.value })} className={inp}>
+                <select value={form.jenis} onChange={(e) => setForm({ ...form, jenis: e.target.value })} autoComplete="off" className={inp}>
                   <option value="koreksi_data">Koreksi Data</option>
                   <option value="pindah_datang">Pindah Datang</option>
                   <option value="pindah_keluar">Pindah Keluar</option>
@@ -203,9 +206,9 @@ export function SuplesiPage() {
                   <option value="lainnya">Lainnya</option>
                 </select></label>
               <label className="block text-sm"><span className="block text-xs mb-1">Uraian</span>
-                <textarea required rows={5} value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} className={inp} /></label>
+                <textarea required rows={5} value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} autoComplete="off" className={inp} /></label>
               <label className="block text-sm"><span className="block text-xs mb-1">Lampiran (URL foto/scan, opsional)</span>
-                <input value={form.lampiran_url} onChange={(e) => setForm({ ...form, lampiran_url: e.target.value })} className={inp} /></label>
+                <input value={form.lampiran_url} onChange={(e) => setForm({ ...form, lampiran_url: e.target.value })} autoComplete="off" className={inp} /></label>
               <button disabled={loading} className={btn}>{loading ? "Mengirim…" : "Kirim Pengajuan"}</button>
             </form>
           </div>
