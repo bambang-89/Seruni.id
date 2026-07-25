@@ -9,24 +9,36 @@ import InitAdminPage from "./seruni/admin/InitAdminPage";
 import { Toaster } from "sonner";
 import { supabase } from "./integrations/supabase/client";
 
-// Error Boundary component
-class ErrorBoundary_disabled extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: ReactNode }) {
+// Error Boundary - catches React component errors gracefully
+class ErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }, { hasError: boolean; error?: Error }> {
+  constructor(props: { children: ReactNode; fallback?: ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error) {
+    console.error("React Error Boundary caught:", error);
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Error Boundary error:", error, errorInfo);
   }
   render() {
     if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-          <div className="text-center p-8">
-            <h1 className="text-2xl font-bold mb-4">Terjadi kesalahan</h1>
-            <p className="text-gray-600 mb-4">Halaman sedang dimuat ulang...</p>
-            <button onClick={() => window.location.reload()} className="px-4 py-2 bg-primary text-white rounded">
-              Reload
+      return this.props.fallback || (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center p-8 max-w-md">
+            <div className="mb-4">
+              <svg className="w-16 h-16 mx-auto text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.833-3.464-1.833A2.5 2.5 0 002.5 4.5c0 1.023.2 1.985.563 2.81M12 21a9 9 0 100-18 9 9 9 0 0018 9z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Terjadi Kesalahan</h1>
+            <p className="text-gray-600 mb-6">Kami mohon maaf, terjadi kesalahan tak terduga. Silakan coba muat ulang halaman.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            >
+              Muat Ulang Halaman
             </button>
           </div>
         </div>
@@ -69,6 +81,9 @@ const ProdukMarketplaceAdmin = lazy(() => AO().then((m) => ({ default: m.ProdukM
 const WisataAdmin = lazy(() => AO().then((m) => ({ default: m.WisataAdmin })));
 const PbbAdmin = lazy(() => AO().then((m) => ({ default: m.PbbAdmin })));
 const ApbdesAdmin = lazy(() => AO().then((m) => ({ default: m.ApbdesAdmin })));
+const SuratAjuanAdmin = lazy(() => AO().then((m) => ({ default: m.SuratAjuanAdmin })));
+const BalitaAdmin = lazy(() => AO().then((m) => ({ default: m.BalitaAdmin })));
+const WaChatbotAdmin = lazy(() => AO().then((m) => ({ default: m.WaChatbotAdmin })));
 const AS = () => import("./seruni/admin/AdminSite");
 const PageConfigAdmin = lazy(() => AS().then((m) => ({ default: m.PageConfigAdmin })));
 const NavAdmin = lazy(() => AS().then((m) => ({ default: m.NavAdmin })));
@@ -118,6 +133,7 @@ const GaleriPage = lazy(() => P().then((m) => ({ default: m.GaleriPage })));
 const PengumumanPage = lazy(() => P().then((m) => ({ default: m.PengumumanPage })));
 const LayananPage = lazy(() => P().then((m) => ({ default: m.LayananPage })));
 const LayananSuratPage = lazy(() => P().then((m) => ({ default: m.LayananSuratPage })));
+const SuratAjuanFormPage = lazy(() => import("./seruni/SuratAjuanPage").then((m) => ({ default: m.default })));
 const LayananPBBPage = lazy(() => P().then((m) => ({ default: m.LayananPBBPage })));
 const ServiceCenterPage = lazy(() => P().then((m) => ({ default: m.ServiceCenterPage })));
 const VerifikasiPage = lazy(() => P().then((m) => ({ default: m.VerifikasiPage })));
@@ -129,7 +145,25 @@ const MarketplacePage = lazy(() => P().then((m) => ({ default: m.MarketplacePage
 const PetaPage = lazy(() => P().then((m) => ({ default: m.PetaPage })));
 const LanggananWaPage = lazy(() => P().then((m) => ({ default: m.LanggananWaPage })));
 const KeuanganPage = lazy(() => P().then((m) => ({ default: m.KeuanganPage })));
+const BansosPage = lazy(() => P().then((m) => ({ default: m.BansosPage })));
+const StuntingPage = lazy(() => P().then((m) => ({ default: m.StuntingPage })));
+const PosyanduPage = lazy(() => P().then((m) => ({ default: m.PosyanduPage })));
+const BencanaPage = lazy(() => P().then((m) => ({ default: m.BencanaPage })));
 const NotFoundPage = lazy(() => P().then((m) => ({ default: m.NotFoundPage })));
+
+// Task F3 — Detail page lazy imports
+const AgendaDetailPage = lazy(() => P().then((m) => ({ default: m.AgendaDetailPage })));
+const GaleriDetailPage = lazy(() => P().then((m) => ({ default: m.GaleriDetailPage })));
+const PengumumanDetailPage = lazy(() => P().then((m) => ({ default: m.PengumumanDetailPage })));
+const PosyanduDetailPage = lazy(() => P().then((m) => ({ default: m.PosyanduDetailPage })));
+const StuntingDetailPage = lazy(() => P().then((m) => ({ default: m.StuntingDetailPage })));
+const UmkmDetailPage = lazy(() => P().then((m) => ({ default: m.UmkmDetailPage })));
+const ProdukDetailPage = lazy(() => P().then((m) => ({ default: m.ProdukDetailPage })));
+const WisataDetailPage = lazy(() => P().then((m) => ({ default: m.WisataDetailPage })));
+const PembangunanDetailPage = lazy(() => P().then((m) => ({ default: m.PembangunanDetailPage })));
+const BansosDetailPage = lazy(() => P().then((m) => ({ default: m.BansosDetailPage })));
+const AduanDetailPage = lazy(() => P().then((m) => ({ default: m.AduanDetailPage })));
+const IdmIndikatorDetailPage = lazy(() => P().then((m) => ({ default: m.IdmIndikatorDetailPage })));
 
 // Phase 11 — Perencanaan & Partisipasi
 const PP = () => import("./seruni/PartisipasiPages");
@@ -145,7 +179,7 @@ function RouteFallback() {
 
 export default function App() {
   return (
-    <div>
+    <ErrorBoundary>
       <AuthProvider>
         <TenantProvider supabaseClient={supabase} defaultTenantSlug="seruni-mumbul">
           <Toaster position="top-right" richColors />
@@ -185,6 +219,9 @@ export default function App() {
             <Route path="wisata" element={<WisataAdmin />} />
             <Route path="pbb" element={<PbbAdmin />} />
             <Route path="apbdes" element={<ApbdesAdmin />} />
+            <Route path="surat-ajuan" element={<SuratAjuanAdmin />} />
+            <Route path="balita" element={<BalitaAdmin />} />
+            <Route path="wa-chatbot" element={<WaChatbotAdmin />} />
             <Route path="event-log" element={<EventLogAdmin />} />
             <Route path="site/pages" element={<PageConfigAdmin />} />
             <Route path="site/nav" element={<NavAdmin />} />
@@ -230,6 +267,7 @@ export default function App() {
           {/* Layanan */}
           <Route path="layanan" element={<LayananPage />} />
           <Route path="layanan/surat" element={<LayananSuratPage />} />
+          <Route path="layanan/surat/:id" element={<SuratAjuanFormPage />} />
           <Route path="layanan/pbb" element={<LayananPBBPage />} />
           <Route path="service-center" element={<ServiceCenterPage />} />
           <Route path="verifikasi" element={<VerifikasiPage />} />
@@ -239,6 +277,10 @@ export default function App() {
           <Route path="status-idm" element={<IDMLivePage />} />
           <Route path="statistik/penduduk" element={<StatistikPendudukLivePage />} />
           <Route path="analisis" element={<AnalisisPage />} />
+          <Route path="bansos" element={<BansosPage />} />
+          <Route path="stunting" element={<StuntingPage />} />
+          <Route path="posyandu" element={<PosyanduPage />} />
+          <Route path="bencana" element={<BencanaPage />} />
           <Route path="pembangunan" element={<PembangunanPage />} />
           <Route path="perencanaan" element={<PerencanaanPage />} />
           <Route path="perencanaan/rpjmdes" element={<RPJMDesPage />} />
@@ -259,6 +301,20 @@ export default function App() {
           <Route path="langganan-wa" element={<LanggananWaPage />} />
           <Route path="layanan/suplesi" element={<SuplesiPage />} />
 
+          {/* Task F3 — Detail Pages */}
+          <Route path="agenda/:id" element={<AgendaDetailPage />} />
+          <Route path="galeri/:id" element={<GaleriDetailPage />} />
+          <Route path="pengumuman/:id" element={<PengumumanDetailPage />} />
+          <Route path="posyandu/:id" element={<PosyanduDetailPage />} />
+          <Route path="stunting/:id" element={<StuntingDetailPage />} />
+          <Route path="umkm/:id" element={<UmkmDetailPage />} />
+          <Route path="produk/:id" element={<ProdukDetailPage />} />
+          <Route path="wisata/:id" element={<WisataDetailPage />} />
+          <Route path="pembangunan/:id" element={<PembangunanDetailPage />} />
+          <Route path="bansos/:id" element={<BansosDetailPage />} />
+          <Route path="aduan/:id" element={<AduanDetailPage />} />
+          <Route path="idm-detail/:id" element={<IdmIndikatorDetailPage />} />
+
           {/* Redirects & 404 */}
           <Route path="kontak" element={<Navigate to="/service-center" replace />} />
           <Route path="*" element={<NotFoundPage />} />
@@ -268,6 +324,6 @@ export default function App() {
         </BrowserRouter>
       </TenantProvider>
     </AuthProvider>
-    </div>
+    </ErrorBoundary>
   );
 }
