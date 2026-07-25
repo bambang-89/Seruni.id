@@ -56,7 +56,7 @@ const TENANT_TABLES = [
   'desa_pamong', 'lembaga_desa', 'apotek_desa', 'apotek_obat', 'apotek_resep',
   'perpustakaan_desa', 'buku_perpustakaan', 'pemilihan', 'calon_kades',
   'idm_scoring_log', 'pbb_pembayaran', 'penerima_bansos', 'posyandu_balita',
-  'bencana_bantuan', 'audit_log', 'user_profiles', 'voting_topik', 'voting_opsi',
+  'bencana_bantuan', 'audit_trail', 'user_profiles', 'voting_topik', 'voting_opsi',
   'voting_suara', 'usulan_warga', 'usulan_vote', 'aduan_warga', 'bantuan_sosial',
   'posyandu_agregat', 'stunting_agregat', 'infrastruktur',
   'kegiatan_pembangunan',
@@ -214,6 +214,9 @@ async function auditCRUDPilot() {
   const testTitle = `[AUDIT TEST ${testId.slice(0, 8)}]`;
   const now = new Date().toISOString();
 
+  // Use the known tenant UUID for Seruni Mumbul
+  const TENANT_ID = 'd532ae95-0ad9-42bb-a6e8-5c840447c90e';
+
   try {
     // INSERT
     const insertRes = await fetch(`${BASE}/rest/v1/berita`, {
@@ -224,6 +227,7 @@ async function auditCRUDPilot() {
         slug: `audit-test-${testId.slice(0, 8)}`,
         konten: 'Audit pilot test - will be deleted',
         status: 'draft',
+        tenant_id: TENANT_ID,
         created_at: now,
         updated_at: now
       })
@@ -364,7 +368,7 @@ async function audit() {
     // Auth
     'user_roles', 'admin_profiles',
     // Audit
-    'audit_log', 'user_profiles',
+    'audit_trail', 'user_profiles',
     // WA
     'wa_broadcast', 'wa_broadcast_target',
     // Analytics
@@ -616,7 +620,7 @@ async function audit() {
   // ════════════════════════════════════════════════════════════
   section(11, 'SECURITY AUDIT');
 
-  const auditLogCount = await countTable('audit_log');
+  const auditLogCount = await countTable('audit_trail');
   console.log(`  Row Level Security : ENABLED (via migration)`);
   console.log(`  RLS Policies       : Defined per table`);
   console.log(`  Tenant Isolation   : ENABLED`);

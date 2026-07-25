@@ -494,7 +494,7 @@ export function TableCrud({
       return;
     }
     // Auto-inject tenant_id for tables that need it
-    const tenantTables = ["penduduk", "keluarga", "surat_ajuan", "berita", "aduan_warga", "usulan_warga", "apbdes", "kegiatan_pembangunan"];
+    const tenantTables = ["penduduk", "keluarga", "surat_ajuan", "berita", "aduan_warga", "usulan_warga", "apbdes", "kegiatan_pembangunan", "agenda", "pengumuman", "galeri"];
     if (tenantTables.includes(table) && !payload.tenant_id && tenantId) {
       payload.tenant_id = tenantId;
     }
@@ -563,7 +563,7 @@ export function TableCrud({
         });
         if (Object.keys(row).length > 0) {
           // Auto-inject tenant_id for known multi-tenant tables during CSV import
-          const tenantTables = ["penduduk", "keluarga", "surat_ajuan", "berita", "aduan_warga", "usulan_warga", "apbdes", "kegiatan_pembangunan"];
+          const tenantTables = ["penduduk", "keluarga", "surat_ajuan", "berita", "aduan_warga", "usulan_warga", "apbdes", "kegiatan_pembangunan", "agenda", "pengumuman", "galeri"];
           if (tenantTables.includes(table) && tenantId && !row.tenant_id) {
             row.tenant_id = tenantId;
           }
