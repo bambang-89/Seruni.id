@@ -144,7 +144,7 @@ export function buildSubdomainUrl(subdomain: string, path: string = "/"): string
 interface TenantProviderProps {
   children: ReactNode;
   defaultTenantSlug?: string;
-  supabaseClient?: any; // Supabase client
+  supabaseClient?: unknown; // Supabase client
 }
 
 export function TenantProvider({
@@ -159,6 +159,7 @@ export function TenantProvider({
   // Initialize tenant on mount
   useEffect(() => {
     initTenant();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function initTenant() {
@@ -237,6 +238,14 @@ export function TenantProvider({
         setTenant(t);
         localStorage.setItem("seruni:tenant_id", t.id);
         localStorage.setItem(`seruni:tenant:${slug}`, JSON.stringify(t));
+        // Propagate tenant context to database session
+        if (supabaseClient) {
+          try {
+            await (supabaseClient as any).rpc('set_tenant_session', { p_tenant_id: t.id });
+          } catch (e) {
+            console.warn("Failed to set tenant session:", e);
+          }
+        }
         return;
       }
     }
@@ -252,6 +261,14 @@ export function TenantProvider({
     setTenant(defaultTenant);
     localStorage.setItem("seruni:tenant_id", defaultTenant.id);
     localStorage.setItem(`seruni:tenant:${slug}`, JSON.stringify(defaultTenant));
+    // Propagate tenant context to database session
+    if (supabaseClient) {
+      try {
+        await (supabaseClient as any).rpc('set_tenant_session', { p_tenant_id: defaultTenant.id });
+      } catch (e) {
+        console.warn("Failed to set tenant session:", e);
+      }
+    }
   }
 
   async function setTenantById(id: string): Promise<void> {
@@ -303,6 +320,14 @@ export function TenantProvider({
         setTenant(t);
         localStorage.setItem("seruni:tenant_id", t.id);
         localStorage.setItem("seruni:tenant:" + t.slug, JSON.stringify(t));
+        // Propagate tenant context to database session
+        if (supabaseClient) {
+          try {
+            await (supabaseClient as any).rpc('set_tenant_session', { p_tenant_id: t.id });
+          } catch (e) {
+            console.warn("Failed to set tenant session:", e);
+          }
+        }
         return;
       }
     }
@@ -317,6 +342,14 @@ export function TenantProvider({
     };
     setTenant(defaultTenant);
     localStorage.setItem("seruni:tenant_id", id);
+    // Propagate tenant context to database session
+    if (supabaseClient) {
+      try {
+        await (supabaseClient as any).rpc('set_tenant_session', { p_tenant_id: defaultTenant.id });
+      } catch (e) {
+        console.warn("Failed to set tenant session:", e);
+      }
+    }
   }
 
   return (
@@ -418,22 +451,23 @@ export function TenantSwitcher({ supabaseClient }: { supabaseClient: any }) {
 
   useEffect(() => {
     loadTenants();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadTenants() {
     if (!supabaseClient) return;
     setLoading(true);
 
-    const { data } = await supabaseClient
+    const { data } = await (supabaseClient as any)
       .from("tenants")
-      .select("id, slug, nama_resmi")
-      .eq("is_active", true);
+      .select("id, subdomain, nama_desa")
+      .eq("aktif", true);
 
     setTenants(
-      (data ?? []).map((t: any) => ({
+      (data ?? []).map((t: { id: string; subdomain: string; nama_desa: string }) => ({
         id: t.id,
-        slug: t.slug,
-        nama_resmi: t.nama_resmi,
+        slug: t.subdomain,
+        nama_resmi: t.nama_desa,
         is_active: true,
       })),
     );
