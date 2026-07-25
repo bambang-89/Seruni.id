@@ -18,7 +18,7 @@ Memperbaiki semua gap kesehatan database di project Seruni.id secara bertahap da
 
 ## Tenant UUID Reference
 
-Tenant Seruni Mumbul: `d532ae95-0ad9-42a6e8-5c840447c90e`
+Tenant Seruni Mumbul: `d532ae95-0ad9-42bb-a6e8-5c840447c90e`
 
 ---
 
@@ -50,7 +50,7 @@ Tenant Seruni Mumbul: `d532ae95-0ad9-42a6e8-5c840447c90e`
 
 ### Strategy per tabel
 1. Check apakah kolom `tenant_id` sudah ada (idempotent)
-2. Jika belum, `ALTER TABLE ADD COLUMN IF NOT EXISTS tenant_id uuid NOT NULL DEFAULT 'd532ae95-0ad9-42a6e8-5c840447c90e'`
+2. Jika belum, `ALTER TABLE ADD COLUMN IF NOT EXISTS tenant_id uuid NOT NULL DEFAULT 'd532ae95-0ad9-42bb-a6e8-5c840447c90e'`
 3. Jika `NOT NULL` tapi ada null rows, backfill dulu
 4. Buat RLS policy: `tenant_filter(tenant_id)`
 5. Hapus default after backfill (optional)
@@ -144,7 +144,7 @@ Migration dibuat (idempotent) → di-review → di-run ke Supabase → dicek has
 
 ## Referensi
 
-- Tenant UUID: `d532ae95-0ad9-42a6e8-5c840447c90e`
+- Tenant UUID: `d532ae95-0ad9-42bb-a6e8-5c840447c90e`
 - Migration utama: `20260721000004_add_tenant_id.sql`
 - RLS function: `get_tenant_id()`, `tenant_filter()`
 - Specs existing: `docs/superpowers/specs/2026-07-24-surat-identitas-autofill-design.md`

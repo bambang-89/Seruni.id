@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Tenant UUID Seruni Mumbul: `d532ae95-0ad9-42a6e8-5c840447c90e`
+- Tenant UUID Seruni Mumbul: `d532ae95-0ad9-42bb-a6e8-5c840447c90e`
 - Next migration number: `20260826000001_*`
 - Migration pattern (from `20260721000004_add_tenant_id.sql`): `ADD COLUMN IF NOT EXISTS` → backfill → `SET NOT NULL` → `CREATE INDEX`
 - Reference tables (`ref_*`, `tenants`, `user_roles`) are GLOBAL — tidak punya `tenant_id`
@@ -59,7 +59,7 @@
 ```sql
 DO $$
 DECLARE
-  v_tenant_id UUID := 'd532ae95-0ad9-42a6e8-5c840447c90e';
+  v_tenant_id UUID := 'd532ae95-0ad9-42bb-a6e8-5c840447c90e';
 BEGIN
   -- berita
   ALTER TABLE public.berita ADD COLUMN IF NOT EXISTS tenant_id UUID;
@@ -93,7 +93,7 @@ END $$;
 ```sql
 DO $$
 DECLARE
-  v_tenant_id UUID := 'd532ae95-0ad9-42a6e8-5c840447c90e';
+  v_tenant_id UUID := 'd532ae95-0ad9-42bb-a6e8-5c840447c90e';
 BEGIN
   -- Fix event_log.tenant_id
   UPDATE public.event_log SET tenant_id = v_tenant_id WHERE tenant_id IS NULL;
