@@ -19,7 +19,7 @@ import {
   Legend,
 } from "recharts";
 
-function PageTitle({ title, desc }: { title: string; desc?: string }) {
+export function PageTitle({ title, desc }: { title: string; desc?: string }) {
   return (
     <div className="mb-6">
       <h1 className="font-display text-2xl font-bold text-foreground">{title}</h1>
@@ -263,6 +263,7 @@ export function ProfilDesaAdmin() {
   const [sejarah, setSejarah] = useState<string[]>([""]);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const tenantId = useTenantId();
 
   useEffect(() => {
     supabase.from("profil_desa").select("*").eq("singleton", true).maybeSingle().then(({ data }) => {
@@ -277,13 +278,17 @@ export function ProfilDesaAdmin() {
 
   const save = async () => {
     setBusy(true);
-    const payload = {
+    const payload: Record<string, any> = {
       singleton: true,
       visi: visi.trim(),
       misi: misi.map((s) => s.trim()).filter(Boolean),
       sejarah: sejarah.map((s) => s.trim()).filter(Boolean),
     };
-    const { error } = await supabase.from("profil_desa").upsert(payload as any, { onConflict: "singleton" });
+    // Auto-inject tenant_id for INSERT (upsert path: only inject if no existing row for this tenant)
+    if (tenantId && !payload.tenant_id) {
+      payload.tenant_id = tenantId;
+    }
+    const { error } = await supabase.from("profil_desa").upsert(payload, { onConflict: "singleton" });
     setBusy(false);
     if (error) toast.error(error.message);
     else toast.success("Profil desa tersimpan.");
@@ -557,6 +562,11 @@ export function TableCrud({
           if (col) row[col.key] = values[i] || null;
         });
         if (Object.keys(row).length > 0) {
+          // Auto-inject tenant_id for known multi-tenant tables during CSV import
+          const tenantTables = ["penduduk", "keluarga", "surat_ajuan", "berita", "aduan_warga", "usulan_warga", "apbdes", "kegiatan_pembangunan"];
+          if (tenantTables.includes(table) && tenantId && !row.tenant_id) {
+            row.tenant_id = tenantId;
+          }
           const { error } = await (supabase.from(table as any) as any).insert(row);
           if (error) failed++; else imported++;
         }
@@ -932,6 +942,7 @@ function BeritaCrud() {
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<any | null>(null);
   const [isiText, setIsiText] = useState("");
+  const tenantId = useTenantId();
 
   const load = () => {
     setLoading(true);
@@ -952,7 +963,11 @@ function BeritaCrud() {
   };
 
   const save = async () => {
-    const payload = { ...draft, isi: isiText.split(/\n\n+/).map((s) => s.trim()).filter(Boolean) };
+    const payload: Record<string, any> = { ...draft, isi: isiText.split(/\n\n+/).map((s) => s.trim()).filter(Boolean) };
+    // Auto-inject tenant_id on INSERT
+    if (!payload.id && tenantId && !payload.tenant_id) {
+      payload.tenant_id = tenantId;
+    }
     const { id, ...rest } = payload;
     const q = id ? supabase.from("berita").update(rest).eq("id", id) : supabase.from("berita").insert(rest);
     const { error } = await q;
