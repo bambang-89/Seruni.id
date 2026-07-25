@@ -2207,23 +2207,91 @@ export function AgendaDetailPage() {
   const { data, isLoading } = useAgendaById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
+  const imageUrl = data.foto_url || null;
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/kalender-desa" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Agenda
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/kalender-desa" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Agenda
         </Link>
-        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.jenis}</span>
-        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.judul}</h1>
-        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
-          <div><dt className="opacity-60 inline">Tanggal · </dt><dd className="inline">{formatTanggal(data.tanggal)}</dd></div>
-          <div><dt className="opacity-60 inline">Waktu · </dt><dd className="inline">{data.waktu || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Lokasi · </dt><dd className="inline">{data.lokasi || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Penyelenggara · </dt><dd className="inline">{data.penyelenggara || "—"}</dd></div>
-        </dl>
+
+        {/* Hero image */}
+        {imageUrl && (
+          <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageUrl} alt={data.judul} className="w-full aspect-video object-cover" />
+          </div>
+        )}
+
+        {/* Header zone */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {data.jenis && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] bg-accent/10 text-accent">
+                {data.jenis}
+              </span>
+            )}
+          </div>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
+            {data.judul}
+          </h1>
+        </div>
+
+        {/* Meta info row */}
+        <div className="mt-5 flex flex-wrap gap-y-2 gap-x-6 text-sm text-foreground/60">
+          {data.tanggal && (
+            <div className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+              <span>{formatTanggal(data.tanggal)}</span>
+            </div>
+          )}
+          {data.waktu && (
+            <div className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd" /></svg>
+              <span>{data.waktu}</span>
+            </div>
+          )}
+          {data.lokasi && (
+            <div className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.976.734l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" /></svg>
+              <span>{data.lokasi}</span>
+            </div>
+          )}
+          {data.penyelenggara && (
+            <div className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
+              <span>{data.penyelenggara}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="mt-8 border-t border-current/15" />
+
+        {/* Description */}
         {data.deskripsi && (
-          <div className="mt-8 pt-6 border-t border-current/15">
-            <p className="text-base leading-relaxed opacity-90">{data.deskripsi}</p>
+          <div className="mt-8">
+            <h2 className="font-display text-sm font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi</h2>
+            <div className="prose prose-sm max-w-none text-foreground/80 leading-relaxed">
+              <p>{data.deskripsi}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Location link */}
+        {data.lokasi && (
+          <div className="mt-8">
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.lokasi + " Seruni Mumbul Lombok Timur")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-current/20 text-sm font-medium hover:bg-accent/5 transition-colors text-foreground/70 hover:text-foreground"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.976.734l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" /></svg>
+              Lihat di Peta
+            </a>
           </div>
         )}
       </main>
@@ -2237,22 +2305,84 @@ export function GaleriDetailPage() {
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
   const imageUrl = data.foto_url || null;
+  const videoUrl = data.video_url || null;
+
+  // Extract YouTube video ID for embed
+  const getYouTubeId = (url: string) => {
+    const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
+  };
+  const youtubeId = videoUrl ? getYouTubeId(videoUrl) : null;
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/galeri" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Galeri
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/galeri" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Galeri
         </Link>
-        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.album}</span>
-        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.judul}</h1>
-        <dl className="mt-4 text-sm opacity-70">
-          <div><dt className="opacity-60 inline">Tanggal · </dt><dd className="inline">{formatTanggal(data.tanggal)}</dd></div>
-        </dl>
+
+        {/* Hero image */}
         {imageUrl && (
-          <div className="mt-8 rounded-lg overflow-hidden border border-current/15">
+          <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageUrl} alt={data.judul} className="w-full h-auto object-cover max-h-[500px]" />
+            <img src={imageUrl} alt={data.judul} className="w-full aspect-video object-cover" />
           </div>
+        )}
+
+        {/* Video embed */}
+        {youtubeId && (
+          <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-6">
+            <div className="relative aspect-video">
+              <iframe
+                src={`https://www.youtube.com/embed/${youtubeId}`}
+                title={data.judul}
+                className="absolute inset-0 w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="space-y-2">
+          {data.album && (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] bg-accent/10 text-accent">
+              {data.album}
+            </span>
+          )}
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
+            {data.judul}
+          </h1>
+          <p className="text-sm text-foreground/50">
+            {data.tanggal ? formatTanggal(data.tanggal) : ""}
+          </p>
+        </div>
+
+        {/* Photo metadata */}
+        {(data.fotografer || data.sumber || data.deskripsi) && (
+          <>
+            <div className="mt-8 border-t border-current/15" />
+            <div className="mt-6 grid sm:grid-cols-2 gap-4 text-sm">
+              {data.fotografer && (
+                <div className="flex items-center gap-2 text-foreground/60">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /></svg>
+                  <span>Fotografer: <b className="text-foreground">{data.fotografer}</b></span>
+                </div>
+              )}
+              {data.sumber && (
+                <div className="flex items-center gap-2 text-foreground/60">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
+                  <span>Sumber: <b className="text-foreground">{data.sumber}</b></span>
+                </div>
+              )}
+            </div>
+            {data.deskripsi && (
+              <p className="mt-4 text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
+            )}
+          </>
         )}
       </main>
     </div>
@@ -2266,22 +2396,51 @@ export function PengumumanDetailPage() {
   if (!data) return <NotFoundState />;
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/pengumuman" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Pengumuman
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/pengumuman" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Pengumuman
         </Link>
-        <div className="border border-current/20 p-8">
-          <div className="text-center mb-6">
-            <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-2">Pengumuman Resmi Desa</p>
-            <p className="text-xs opacity-60">Nomor: {data.nomor}</p>
-            <p className="text-xs opacity-60">Tanggal: {formatTanggal(data.tanggal)}</p>
-          </div>
-          <h1 className="font-display text-2xl sm:text-3xl font-semibold leading-snug text-center">{data.judul}</h1>
-          {data.ringkasan && (
-            <div className="mt-6 pt-6 border-t border-current/15">
-              <p className="text-base leading-relaxed opacity-90">{data.ringkasan}</p>
+
+        {/* Document card */}
+        <div className="border border-current/20 rounded-xl overflow-hidden shadow-sm bg-background mt-2">
+          {/* Document header */}
+          <div className="bg-accent/5 border-b border-current/15 px-6 sm:px-10 py-8 text-center">
+            {/* Coat of arms placeholder */}
+            <div className="mx-auto w-12 h-12 rounded-full border-2 border-current/20 flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-foreground/30"><path fillRule="evenodd" d="M3 6a3 3 0 013-3h2.25a3 3 0 013 3v2.25a3 3 0 01-3 3H6a3 3 0 01-3-3V6zM3.75 15.75A1.5 1.5 0 015.25 14.25h13.5a1.5 1.5 0 011.5 1.5v3a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-3zM9 11.25a1.5 1.5 0 103 0 1.5 1.5 0 00-3 0z" clipRule="evenodd" /></svg>
             </div>
-          )}
+            <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-1">Pengumuman Resmi Desa</p>
+            <p className="text-xs text-foreground/50 font-mono">{data.nomor || "Tanpa Nomor"}</p>
+            <p className="text-xs text-foreground/40 mt-1">{data.tanggal ? formatTanggal(data.tanggal) : ""}</p>
+          </div>
+
+          {/* Document body */}
+          <div className="px-6 sm:px-10 py-8">
+            <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-semibold leading-snug text-center text-foreground mb-8">
+              {data.judul}
+            </h1>
+            {data.ringkasan && (
+              <div className="text-sm leading-[1.9] text-foreground/80 space-y-4">
+                {data.ringkasan.split('\n').map((para, i) => para.trim() ? (
+                  <p key={i}>{para}</p>
+                ) : <div key={i} className="h-2" />)}
+              </div>
+            )}
+            {data.lampiran_url && (
+              <div className="mt-8 pt-6 border-t border-current/15">
+                <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-3">Lampiran</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={data.lampiran_url} alt="Lampiran pengumuman" className="max-w-full rounded border border-current/15 max-h-96" />
+              </div>
+            )}
+          </div>
+
+          {/* Document footer */}
+          <div className="px-6 sm:px-10 py-4 bg-accent/3 border-t border-current/10 text-center">
+            <p className="text-[10px] text-foreground/40 uppercase tracking-widest">Kantor Desa Seruni Mumbul</p>
+          </div>
         </div>
       </main>
     </div>
@@ -2293,35 +2452,119 @@ export function PosyanduDetailPage() {
   const { data, isLoading } = usePosyanduById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
+
+  const totalBalita = data.jumlah_balita || 0;
+  const hadir = data.hadir || 0;
+  const hadirPct = totalBalita > 0 ? Math.round((hadir / totalBalita) * 100) : 0;
+
+  // Color helper for nutrition status
+  const nutritionColor = (field: string, value: number | null | undefined) => {
+    if (value == null) return "text-foreground";
+    if (field === "gizi_baik") return value >= 80 ? "text-green-600" : value >= 60 ? "text-amber-500" : "text-red-500";
+    if (field === "gizi_kurang" || field === "gizi_buruk") return value === 0 ? "text-green-600" : value <= 5 ? "text-amber-500" : "text-red-500";
+    return "text-foreground";
+  };
+
   const metrics = [
-    { label: "Jumlah Balita", value: data.jumlah_balita },
-    { label: "Hadir", value: data.hadir },
-    { label: "Gizi Baik", value: data.gizi_baik },
-    { label: "Gizi Kurang", value: data.gizi_kurang },
-    { label: "Gizi Buruk", value: data.gizi_buruk ?? 0 },
-    { label: "Imunisasi Lengkap", value: data.imunisasi_lengkap },
-    { label: "Ibu Hamil Dilayani", value: data.ibu_hamil_dilayani },
+    { label: "Jumlah Balita", value: data.jumlah_balita, icon: "👶", color: "bg-accent/10 text-accent" },
+    { label: "Hadir", value: data.hadir, icon: "✓", color: "bg-green-100 text-green-700", pct: hadirPct },
+    { label: "Gizi Baik", value: data.gizi_baik, icon: "✅", color: "bg-green-100 text-green-700" },
+    { label: "Gizi Kurang", value: data.gizi_kurang, icon: "⚠", color: "bg-amber-100 text-amber-700" },
+    { label: "Gizi Buruk", value: data.gizi_buruk ?? 0, icon: "❌", color: "bg-red-100 text-red-700" },
+    { label: "Imunisasi Lengkap", value: data.imunisasi_lengkap, icon: "💉", color: "bg-blue-100 text-blue-700" },
+    { label: "Ibu Hamil Dilayani", value: data.ibu_hamil_dilayani, icon: "🤰", color: "bg-purple-100 text-purple-700" },
   ];
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/posyandu" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Posyandu
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/posyandu" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Posyandu
         </Link>
-        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Posyandu</span>
-        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.dusun}</h1>
-        <p className="mt-2 text-sm opacity-70">Periode: {data.periode ? formatTanggal(data.periode) : "—"}</p>
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4">
+
+        {/* Header */}
+        <div className="space-y-1 mb-8">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] bg-accent/10 text-accent">
+              Posyandu
+            </span>
+          </div>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
+            {data.dusun}
+          </h1>
+          <p className="text-sm text-foreground/50">
+            {data.periode ? `Periode: ${formatTanggal(data.periode)}` : "—"}
+          </p>
+        </div>
+
+        {/* Metrics grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {metrics.map((m) => (
-            <div key={m.label} className="border border-current/15 p-4 text-center">
-              <p className="font-display text-3xl font-bold text-accent">{m.value}</p>
-              <p className="text-xs opacity-60 mt-1">{m.label}</p>
+            <div key={m.label} className="bg-background border border-current/15 rounded-xl p-4 flex flex-col gap-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold ${m.color}`}>
+                  {m.icon}
+                </span>
+                {m.pct != null && (
+                  <span className="text-[10px] font-semibold text-foreground/40">{m.pct}%</span>
+                )}
+              </div>
+              <p className={`font-display text-2xl font-bold ${m.value != null && m.value > 0 ? m.color : "text-foreground/40"}`}>
+                {m.value ?? "—"}
+              </p>
+              <p className="text-xs text-foreground/50 leading-tight">{m.label}</p>
+              {/* Progress bar for Hadir */}
+              {m.pct != null && (
+                <div className="w-full bg-current/10 h-1.5 rounded-full mt-1">
+                  <div className="bg-green-500 h-1.5 rounded-full transition-all" style={{ width: `${m.pct}%` }} />
+                </div>
+              )}
             </div>
           ))}
         </div>
+
+        {/* Nutrition summary bar */}
+        {totalBalita > 0 && (
+          <div className="mt-6 bg-background border border-current/15 rounded-xl p-5 shadow-sm">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Ringkasan Gizi</h3>
+            <div className="flex gap-1 h-6 rounded-full overflow-hidden">
+              {data.gizi_baik != null && totalBalita > 0 && (
+                <div
+                  className="bg-green-500 h-full transition-all rounded-l-full"
+                  style={{ width: `${Math.round((data.gizi_baik / totalBalita) * 100)}%` }}
+                  title={`Gizi Baik: ${data.gizi_baik}`}
+                />
+              )}
+              {data.gizi_kurang != null && totalBalita > 0 && (
+                <div
+                  className="bg-amber-500 h-full transition-all"
+                  style={{ width: `${Math.round((data.gizi_kurang / totalBalita) * 100)}%` }}
+                  title={`Gizi Kurang: ${data.gizi_kurang}`}
+                />
+              )}
+              {data.gizi_buruk != null && totalBalita > 0 && (
+                <div
+                  className="bg-red-500 h-full transition-all rounded-r-full"
+                  style={{ width: `${Math.round((data.gizi_buruk / totalBalita) * 100)}%` }}
+                  title={`Gizi Buruk: ${data.gizi_buruk}`}
+                />
+              )}
+            </div>
+            <div className="flex gap-4 mt-3 text-xs text-foreground/60">
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> Gizi Baik {data.gizi_baik ?? 0}</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> Gizi Kurang {data.gizi_kurang ?? 0}</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Gizi Buruk {data.gizi_buruk ?? 0}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Notes */}
         {data.catatan && (
-          <div className="mt-6 pt-6 border-t border-current/15">
-            <p className="text-sm italic opacity-70">{data.catatan}</p>
+          <div className="mt-6 bg-accent/5 border border-accent/20 rounded-xl p-5">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-accent mb-2">Catatan</h3>
+            <p className="text-sm text-foreground/70 leading-relaxed italic">{data.catatan}</p>
           </div>
         )}
       </main>
@@ -2334,33 +2577,113 @@ export function StuntingDetailPage() {
   const { data, isLoading } = useStuntingById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
+
+  const totalDiukur = data.balita_diukur || 0;
+
+  // Severity coloring
+  const severityClass = (value: number | null | undefined, label: string) => {
+    if (value == null || totalDiukur === 0) return "bg-foreground/5 text-foreground/50";
+    const pct = (value / totalDiukur) * 100;
+    if (label === "Stunting" || label === "Wasting" || label === "Underweight") {
+      if (pct === 0) return "bg-green-100 text-green-700";
+      if (pct <= 10) return "bg-amber-100 text-amber-700";
+      return "bg-red-100 text-red-700";
+    }
+    return "bg-foreground/5 text-foreground/50";
+  };
+
   const metrics = [
-    { label: "Balita Diukur", value: data.balita_diukur },
-    { label: "Stunting", value: data.stunting },
-    { label: "Wasting", value: data.wasting },
-    { label: "Underweight", value: data.underweight },
+    { label: "Balita Diukur", value: data.balita_diukur, icon: "👶", color: "bg-accent/10 text-accent" },
+    { label: "Stunting", value: data.stunting, icon: "📏", color: "bg-red-100 text-red-700" },
+    { label: "Wasting", value: data.wasting, icon: "⚖", color: "bg-amber-100 text-amber-700" },
+    { label: "Underweight", value: data.underweight, icon: "📉", color: "bg-orange-100 text-orange-700" },
   ];
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/stunting" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Data Stunting
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/stunting" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Data Stunting
         </Link>
-        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Stunting</span>
-        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.dusun}</h1>
-        <p className="mt-2 text-sm opacity-70">Periode: {data.periode ? formatTanggal(data.periode) : "—"}</p>
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {metrics.map((m) => (
-            <div key={m.label} className="border border-current/15 p-4 text-center">
-              <p className="font-display text-3xl font-bold text-accent">{m.value}</p>
-              <p className="text-xs opacity-60 mt-1">{m.label}</p>
-            </div>
-          ))}
+
+        {/* Header */}
+        <div className="space-y-1 mb-8">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] bg-red-100 text-red-700">
+              Stunting
+            </span>
+          </div>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
+            {data.dusun}
+          </h1>
+          <p className="text-sm text-foreground/50">
+            {data.periode ? `Periode: ${formatTanggal(data.periode)}` : "—"}
+          </p>
         </div>
+
+        {/* Metrics grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {metrics.map((m) => {
+            const pct = totalDiukur > 0 && m.value != null ? Math.round((m.value / totalDiukur) * 100) : null;
+            return (
+              <div key={m.label} className="bg-background border border-current/15 rounded-xl p-4 flex flex-col gap-2 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold ${m.color}`}>
+                    {m.icon}
+                  </span>
+                  {pct != null && m.label !== "Balita Diukur" && (
+                    <span className="text-[10px] font-semibold text-foreground/40">{pct}%</span>
+                  )}
+                </div>
+                <p className={`font-display text-2xl font-bold ${severityClass(m.value, m.label)}`}>
+                  {m.value ?? "—"}
+                </p>
+                <p className="text-xs text-foreground/50 leading-tight">{m.label}</p>
+                {/* Progress bar */}
+                {pct != null && m.label !== "Balita Diukur" && (
+                  <div className="w-full bg-current/10 h-1.5 rounded-full mt-1">
+                    <div className={`h-1.5 rounded-full transition-all ${m.label === "Stunting" ? "bg-red-500" : m.label === "Wasting" ? "bg-amber-500" : "bg-orange-500"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Severity legend */}
+        {totalDiukur > 0 && (
+          <div className="mt-6 bg-background border border-current/15 rounded-xl p-5 shadow-sm">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Persentase Terhadap Total Diukur</h3>
+            <div className="space-y-3">
+              {[
+                { label: "Stunting", value: data.stunting, color: "bg-red-500" },
+                { label: "Wasting", value: data.wasting, color: "bg-amber-500" },
+                { label: "Underweight", value: data.underweight, color: "bg-orange-500" },
+              ].map((item) => {
+                const pct = totalDiukur > 0 && item.value != null ? Math.round((item.value / totalDiukur) * 100) : 0;
+                return (
+                  <div key={item.label}>
+                    <div className="flex justify-between text-xs text-foreground/60 mb-1">
+                      <span>{item.label}</span>
+                      <span>{pct}% ({item.value ?? 0} dari {totalDiukur})</span>
+                    </div>
+                    <div className="w-full bg-current/10 h-2 rounded-full">
+                      <div className={`${item.color} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Intervensi */}
         {data.intervensi && (
-          <div className="mt-6 pt-6 border-t border-current/15">
-            <h3 className="font-display text-sm font-semibold mb-2">Intervensi</h3>
-            <p className="text-sm leading-relaxed opacity-80">{data.intervensi}</p>
+          <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-5">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-red-700 mb-2">Intervensi</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.intervensi}</p>
           </div>
         )}
       </main>
@@ -2373,26 +2696,145 @@ export function UmkmDetailPage() {
   const { data, isLoading } = useUmkmById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
+
+  // WhatsApp link if kontak exists
+  const waLink = data.kontak
+    ? `https://wa.me/${data.kontak.replace(/\D/g, "")}`
+    : null;
+
+  // Map link for address
+  const mapLink = data.alamat
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((data.alamat || "") + " Seruni Mumbul Lombok Timur")}`
+    : null;
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/potensi-desa" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke UMKM
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/potensi-desa" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Potensi Desa
         </Link>
-        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.tipe}</span>
-        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.nama}</h1>
-        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
-          <div><dt className="opacity-60 inline">Pemilik · </dt><dd className="inline">{data.pemilik || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Sektor · </dt><dd className="inline">{data.sektor || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Dusun · </dt><dd className="inline">{data.dusun || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Kontak · </dt><dd className="inline">{data.kontak || "—"}</dd></div>
-          <div className="sm:col-span-2"><dt className="opacity-60 inline">Alamat · </dt><dd className="inline">{data.alamat || "—"}</dd></div>
-        </dl>
-        {data.deskripsi && (
-          <div className="mt-8 pt-6 border-t border-current/15">
-            <p className="text-base leading-relaxed opacity-90">{data.deskripsi}</p>
+
+        {/* Profile card */}
+        <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm mt-2">
+          {/* Card header with type badge */}
+          <div className="px-6 pt-6 pb-4 border-b border-current/10">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                {data.tipe && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] bg-accent/10 text-accent">
+                    {data.tipe}
+                  </span>
+                )}
+                <h1 className="font-display text-2xl sm:text-3xl font-semibold leading-tight text-foreground">
+                  {data.nama}
+                </h1>
+              </div>
+              {/* Owner avatar placeholder */}
+              <div className="w-14 h-14 rounded-full bg-accent/10 border-2 border-accent/20 flex items-center justify-center flex-shrink-0">
+                {data.pemilik ? (
+                  <span className="text-lg font-bold text-accent">{data.pemilik[0].toUpperCase()}</span>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-foreground/30"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" /></svg>
+                )}
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Info grid */}
+          <div className="px-6 py-5 grid sm:grid-cols-2 gap-4">
+            {data.pemilik && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Pemilik</p>
+                  <p className="text-sm font-medium text-foreground">{data.pemilik}</p>
+                </div>
+              </div>
+            )}
+            {data.sektor && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Sektor</p>
+                  <p className="text-sm font-medium text-foreground">{data.sektor}</p>
+                </div>
+              </div>
+            )}
+            {data.dusun && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.976.734l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Dusun</p>
+                  <p className="text-sm font-medium text-foreground">{data.dusun}</p>
+                </div>
+              </div>
+            )}
+            {data.kontak && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Kontak</p>
+                  <p className="text-sm font-medium text-foreground">{data.kontak}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Address */}
+          {data.alamat && (
+            <div className="px-6 pb-5">
+              <div className="bg-foreground/5 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40 flex-shrink-0 mt-0.5"><path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.976.734l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" /></svg>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Alamat</p>
+                    <p className="text-sm text-foreground/80">{data.alamat}</p>
+                    {mapLink && (
+                      <a href={mapLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:underline mt-2">
+                        Lihat di Peta
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="none" className="w-3 h-3"><path d="M3 1h6m0 0v6M9 1l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          {data.deskripsi && (
+            <div className="px-6 pb-6">
+              <div className="border-t border-current/15 pt-5">
+                <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Action */}
+          {waLink && (
+            <div className="px-6 pb-6">
+              <a
+                href={waLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold text-sm transition-colors shadow-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                Hubungi via WhatsApp
+              </a>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
@@ -2404,32 +2846,110 @@ export function ProdukDetailPage() {
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
   const imageUrl = data.foto_url || null;
-  const harga = data.harga != null ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.harga) : "—";
+  const harga = data.harga != null ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.harga) : null;
+  const waLink = data.kontak_penjual
+    ? `https://wa.me/${data.kontak_penjual.replace(/\D/g, "")}?text=${encodeURIComponent(`Halo, saya tertarik dengan produk: ${data.nama}`)}`
+    : null;
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/marketplace" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Marketplace
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/marketplace" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Marketplace
         </Link>
-        <div className="grid sm:grid-cols-2 gap-8">
-          {imageUrl && (
-            <div className="rounded-lg overflow-hidden border border-current/15">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imageUrl} alt={data.nama} className="w-full h-auto object-cover max-h-[400px]" />
+
+        {/* Product layout: image left, info right (mobile: stacked) */}
+        <div className="grid sm:grid-cols-2 gap-8 mt-2">
+          {/* Image column */}
+          <div className="space-y-3">
+            {imageUrl ? (
+              <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm bg-foreground/5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageUrl} alt={data.nama} className="w-full aspect-square object-cover" />
+              </div>
+            ) : (
+              <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm bg-foreground/5 flex items-center justify-center aspect-square">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-16 h-16 text-foreground/20"><path fillRule="evenodd" d="M3 3.5A1.5 1.5 0 014.5 2h15A1.5 1.5 0 0121 3.5v16.5a1.5 1.5 0 01-1.5 1.5H4.5A1.5 1.5 0 013 20V3.5zM12 7a3 3 0 100 6 3 3 0 000-6z" clipRule="evenodd" /></svg>
+              </div>
+            )}
+            {/* Seller card */}
+            {data.penjual_nama && (
+              <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
+                <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-bold text-accent">{data.penjual_nama[0].toUpperCase()}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">{data.penjual_nama}</p>
+                  <p className="text-[10px] text-foreground/40">Penjual</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Info column */}
+          <div className="space-y-5">
+            {/* Category badge */}
+            {data.kategori && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] bg-accent/10 text-accent">
+                {data.kategori}
+              </span>
+            )}
+
+            {/* Product name */}
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold leading-tight text-foreground">
+              {data.nama}
+            </h1>
+
+            {/* Price */}
+            {harga && (
+              <div className="bg-accent/5 border border-accent/15 rounded-xl p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Harga</p>
+                <p className="font-display text-2xl sm:text-3xl font-bold text-accent">
+                  {harga}
+                </p>
+              </div>
+            )}
+
+            {/* Info chips */}
+            <div className="grid grid-cols-2 gap-2">
+              {data.satuan && (
+                <div className="bg-foreground/5 rounded-lg px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Satuan</p>
+                  <p className="text-sm font-medium text-foreground mt-0.5">{data.satuan}</p>
+                </div>
+              )}
+              {data.stok != null && (
+                <div className="bg-foreground/5 rounded-lg px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Stok</p>
+                  <p className={`text-sm font-medium mt-0.5 ${data.stok > 0 ? "text-green-600" : "text-red-500"}`}>
+                    {data.stok > 0 ? `${data.stok} unit` : "Habis"}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-          <div>
-            <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.kategori || "Produk"}</span>
-            <h1 className="mt-2 font-display text-2xl sm:text-3xl font-semibold leading-snug">{data.nama}</h1>
-            <dl className="mt-4 grid gap-y-2 text-sm opacity-80">
-              <div><dt className="opacity-60">Harga · </dt><dd className="font-semibold text-accent">{harga}</dd></div>
-              <div><dt className="opacity-60">Satuan · </dt><dd>{data.satuan || "—"}</dd></div>
-              <div><dt className="opacity-60">Stok · </dt><dd>{data.stok != null ? data.stok : "—"}</dd></div>
-              <div><dt className="opacity-60">Penjual · </dt><dd>{data.penjual_nama || "—"}</dd></div>
-            </dl>
+
+            {/* Description */}
             {data.deskripsi && (
-              <div className="mt-6 pt-4 border-t border-current/15">
-                <p className="text-sm leading-relaxed opacity-80">{data.deskripsi}</p>
+              <div className="border-t border-current/15 pt-5">
+                <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-2">Deskripsi</h3>
+                <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
+              </div>
+            )}
+
+            {/* Order action */}
+            {waLink && data.stok !== 0 && (
+              <div className="pt-2">
+                <a
+                  href={waLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold text-sm transition-colors shadow-sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  Pesan via WhatsApp
+                </a>
               </div>
             )}
           </div>
@@ -2445,44 +2965,120 @@ export function WisataDetailPage() {
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
   const hasCoords = data.latitude != null && data.longitude != null;
+
+  // Parse fasilitas as comma-separated string or array
+  const fasilitasList = data.fasilitas
+    ? (Array.isArray(data.fasilitas) ? data.fasilitas : data.fasilitas.split(',').map((s: string) => s.trim()).filter(Boolean))
+    : [];
+
+  // Map link
+  const mapLink = hasCoords
+    ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
+    : data.alamat
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((data.alamat || "") + " Seruni Mumbul Lombok Timur")}`
+    : null;
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/potensi-desa" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Wisata
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/potensi-desa" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Potensi Desa
         </Link>
+
+        {/* Hero image */}
         {data.foto_url && (
-          <div className="rounded-lg overflow-hidden border border-current/15 mb-8">
+          <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-8">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={data.foto_url} alt={data.nama} className="w-full h-auto object-cover max-h-[400px]" />
+            <img src={data.foto_url} alt={data.nama} className="w-full aspect-video object-cover" />
           </div>
         )}
-        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.jenis}</span>
-        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.nama}</h1>
-        <dl className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm opacity-80">
-          <div><dt className="opacity-60 inline">Dusun · </dt><dd className="inline">{data.dusun || "—"}</dd></div>
-          {hasCoords && (
-            <div><dt className="opacity-60 inline">Koordinat · </dt><dd className="inline">{data.latitude}, {data.longitude}</dd></div>
+
+        {/* Header */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {data.jenis && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] bg-accent/10 text-accent">
+                {data.jenis}
+              </span>
+            )}
+            {data.verified && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-green-100 text-green-700">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M9.965 3.035a.75.75 0 010 1.06L7.052 6.81l2.913 2.914a.75.75 0 11-1.06 1.06L6 7.87 4.035 9.836a.75.75 0 01-1.06-1.06l2.913-2.914L3.075 4.095a.75.75 0 111.06-1.06l2.913 2.914 2.914-2.913a.75.75 0 01.003 0z" clipRule="evenodd" /></svg>
+                Terverifikasi
+              </span>
+            )}
+          </div>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
+            {data.nama}
+          </h1>
+        </div>
+
+        {/* Info chips row */}
+        <div className="mt-5 flex flex-wrap gap-y-2 gap-x-6 text-sm text-foreground/60">
+          {data.dusun && (
+            <div className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.976.734l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" /></svg>
+              <span>{data.dusun}</span>
+            </div>
           )}
-        </dl>
-        {data.deskripsi && (
-          <div className="mt-6 pt-6 border-t border-current/15">
-            <p className="text-base leading-relaxed opacity-90">{data.deskripsi}</p>
-          </div>
-        )}
-        {data.fasilitas && (
+          {hasCoords && (
+            <div className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.976.734l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" /></svg>
+              <span>{data.latitude}, {data.longitude}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Facilities */}
+        {fasilitasList.length > 0 && (
           <div className="mt-6">
-            <h3 className="font-display text-sm font-semibold mb-2">Fasilitas</h3>
-            <p className="text-sm leading-relaxed opacity-80">{data.fasilitas}</p>
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Fasilitas</h3>
+            <div className="flex flex-wrap gap-2">
+              {fasilitasList.map((f: string, i: number) => (
+                <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground/5 border border-current/15 text-xs font-medium text-foreground/70">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="none" className="w-3 h-3"><path d="M10 3.5v5L6 10.5 2 8.5V3.5l4 2.5V4.5L3 2.5 6 1l3 1.5-3 1.5v1.5L10 3.5z" fill="currentColor"/></svg>
+                  {f}
+                </span>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Description */}
+        {data.deskripsi && (
+          <>
+            <div className="mt-8 border-t border-current/15" />
+            <div className="mt-6">
+              <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi</h3>
+              <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
+            </div>
+          </>
+        )}
+
+        {/* Map embed */}
         {hasCoords && (
-          <div className="mt-8 rounded-lg overflow-hidden border border-current/15 h-64">
-            <iframe
-              title="Lokasi"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(data.longitude) - 0.01},${Number(data.latitude) - 0.01},${Number(data.longitude) + 0.01},${Number(data.latitude) + 0.01}&layer=mapnik&marker=${data.latitude},${data.longitude}`}
-              className="w-full h-full border-0"
-            />
+          <div className="mt-8">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Lokasi</h3>
+            <div className="rounded-xl overflow-hidden border border-current/15 h-64">
+              <iframe
+                title={`Lokasi ${data.nama}`}
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(data.longitude) - 0.01},${Number(data.latitude) - 0.01},${Number(data.longitude) + 0.01},${Number(data.latitude) + 0.01}&layer=mapnik&marker=${data.latitude},${data.longitude}`}
+                className="w-full h-full border-0"
+              />
+            </div>
+            {mapLink && (
+              <a
+                href={mapLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-3 text-sm text-accent hover:underline"
+              >
+                Buka di Google Maps
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="none" className="w-3 h-3"><path d="M3 1h6m0 0v6M9 1l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </a>
+            )}
           </div>
         )}
       </main>
@@ -2497,43 +3093,154 @@ export function PembangunanDetailPage() {
   if (!data) return <NotFoundState />;
   const progress = data.progress_persen ?? 0;
   const title = data.nama_kegiatan || data.judul || "Kegiatan Pembangunan";
+
+  const anggaranFmt = data.anggaran != null
+    ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.anggaran)
+    : null;
+
+  // Status badge color
+  const statusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "selesai": return "bg-green-100 text-green-700";
+      case "sedang berjalan": return "bg-blue-100 text-blue-700";
+      case "gagal": return "bg-red-100 text-red-700";
+      default: return "bg-foreground/10 text-foreground/70";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/pembangunan" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Pembangunan
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/pembangunan" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Pembangunan
         </Link>
-        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.bidang || "Pembangunan"}</span>
-        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{title}</h1>
-        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
-          <div><dt className="opacity-60 inline">Tahun · </dt><dd className="inline">{data.tahun || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Lokasi · </dt><dd className="inline">{data.lokasi || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Volume · </dt><dd className="inline">{data.volume || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Sumber Dana · </dt><dd className="inline">{data.sumber_dana || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Status · </dt><dd className="inline">{data.status || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Tanggal Mulai · </dt><dd className="inline">{data.tanggal_mulai ? formatTanggal(data.tanggal_mulai) : "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Tanggal Selesai · </dt><dd className="inline">{data.tanggal_selesai ? formatTanggal(data.tanggal_selesai) : "—"}</dd></div>
-        </dl>
-        {data.anggaran != null && (
-          <div className="mt-6 p-4 border border-current/15">
-            <p className="text-xs opacity-60 mb-1">Anggaran</p>
-            <p className="font-display text-2xl font-semibold text-accent">
-              {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.anggaran)}
-            </p>
+
+        {/* Header */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {data.bidang && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] bg-accent/10 text-accent">
+                {data.bidang}
+              </span>
+            )}
+            {data.status && (
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] ${statusColor(data.status)}`}>
+                {data.status}
+              </span>
+            )}
+          </div>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
+            {title}
+          </h1>
+        </div>
+
+        {/* Financial card */}
+        {anggaranFmt && (
+          <div className="mt-6 bg-accent/5 border border-accent/15 rounded-xl p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Anggaran</p>
+                <p className="font-display text-2xl sm:text-3xl font-bold text-accent">
+                  {anggaranFmt}
+                </p>
+              </div>
+              {data.sumber_dana && (
+                <div className="text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Sumber Dana</p>
+                  <p className="text-sm font-medium text-foreground">{data.sumber_dana}</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
-        <div className="mt-6">
-          <div className="flex justify-between text-sm opacity-80 mb-1">
-            <span>Progress</span>
-            <span>{progress}%</span>
+
+        {/* Progress card */}
+        <div className="mt-4 bg-background border border-current/15 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/50">Progress</span>
+            <span className={`text-xs font-bold ${progress === 100 ? "text-green-600" : progress > 50 ? "text-blue-600" : "text-amber-600"}`}>
+              {progress}%
+            </span>
           </div>
-          <div className="w-full bg-current/10 h-3 rounded-full">
-            <div className="bg-accent h-3 rounded-full transition-all" style={{ width: `${progress}%` }} />
+          <div className="w-full bg-current/10 h-3 rounded-full overflow-hidden">
+            <div
+              className={`h-3 rounded-full transition-all ${progress === 100 ? "bg-green-500" : progress > 50 ? "bg-blue-500" : "bg-amber-500"}`}
+              style={{ width: `${progress}%` }}
+            />
           </div>
         </div>
+
+        {/* Info grid */}
+        <div className="mt-6 grid sm:grid-cols-2 gap-3">
+          {data.tahun && (
+            <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
+              <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Tahun</p>
+                <p className="text-sm font-medium text-foreground">{data.tahun}</p>
+              </div>
+            </div>
+          )}
+          {data.lokasi && (
+            <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
+              <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.976.734l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Lokasi</p>
+                <p className="text-sm font-medium text-foreground">{data.lokasi}</p>
+              </div>
+            </div>
+          )}
+          {data.volume && (
+            <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
+              <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M4 4a2 2 0 011-1.617l7-3.5a2 2 0 011.765 0l7 3.5A2 2 0 0122 4v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h12V4H6z" clipRule="evenodd" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Volume</p>
+                <p className="text-sm font-medium text-foreground">{data.volume}</p>
+              </div>
+            </div>
+          )}
+          {(data.tanggal_mulai || data.tanggal_selesai) && (
+            <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
+              <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Durasi</p>
+                <p className="text-sm font-medium text-foreground">
+                  {data.tanggal_mulai ? formatTanggal(data.tanggal_mulai) : "—"}
+                  {data.tanggal_selesai ? ` — ${formatTanggal(data.tanggal_selesai)}` : ""}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Documentation images */}
+        {data.foto_url && (
+          <div className="mt-6">
+            <div className="border-t border-current/15 pt-6">
+              <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Dokumentasi</h3>
+              <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={data.foto_url} alt={`Dokumentasi ${title}`} className="w-full aspect-video object-cover" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Description */}
         {data.keterangan && (
-          <div className="mt-6 pt-6 border-t border-current/15">
-            <p className="text-sm leading-relaxed opacity-80">{data.keterangan}</p>
+          <div className="mt-6 border-t border-current/15 pt-6">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Keterangan</h3>
+            <p className="text-sm text-foreground/70 leading-relaxed">{data.keterangan}</p>
           </div>
         )}
       </main>
@@ -2546,32 +3253,104 @@ export function BansosDetailPage() {
   const { data, isLoading } = useBansosById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
+  const isActive = data.aktif === true || data.aktif === 1;
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/bansos" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Bantuan Sosial
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/bansos" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Bantuan Sosial
         </Link>
-        <div className="flex items-start justify-between">
-          <div>
-            <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.kode}</span>
-            <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.nama}</h1>
+
+        {/* Program card */}
+        <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm mt-2">
+          {/* Card header */}
+          <div className="px-6 pt-6 pb-4 border-b border-current/10">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                {data.kode && (
+                  <p className="text-[10px] font-mono font-semibold text-foreground/40 uppercase tracking-wider">{data.kode}</p>
+                )}
+                <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-semibold leading-snug text-foreground">
+                  {data.nama}
+                </h1>
+              </div>
+              <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                <span className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`} />
+                {isActive ? "Aktif" : "Tidak Aktif"}
+              </span>
+            </div>
           </div>
-          <span className={`text-xs px-2 py-1 rounded ${data.aktif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-            {data.aktif ? "Aktif" : "Tidak Aktif"}
-          </span>
+
+          {/* Info grid */}
+          <div className="px-6 py-5 grid sm:grid-cols-2 gap-4">
+            {data.sumber && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Sumber</p>
+                  <p className="text-sm font-medium text-foreground">{data.sumber}</p>
+                </div>
+              </div>
+            )}
+            {data.kuota != null && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Kuota</p>
+                  <p className="text-sm font-medium text-foreground">{data.kuota} orang</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Period */}
+          {(data.periode_mulai || data.periode_selesai) && (
+            <div className="px-6 pb-5">
+              <div className="bg-foreground/5 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40 flex-shrink-0"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Periode</p>
+                    <p className="text-sm text-foreground/80">
+                      {data.periode_mulai ? formatTanggal(data.periode_mulai) : "—"}
+                      {data.periode_selesai ? ` — ${formatTanggal(data.periode_selesai)}` : " — selesai"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          {data.deskripsi && (
+            <div className="px-6 pb-6">
+              <div className="border-t border-current/15 pt-5">
+                <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi Program</h3>
+                <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
+              </div>
+            </div>
+          )}
+
+          {/* How to apply */}
+          <div className="px-6 pb-6">
+            <div className="bg-accent/5 border border-accent/15 rounded-xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-accent"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" /></svg>
+                <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-accent">Cara Mendaftar</h3>
+              </div>
+              <p className="text-sm text-foreground/60 leading-relaxed">
+                Hubungi kantor desa untuk informasi dan pendaftaran program {data.nama}. Kuota terbatas, pastikan memenuhi syarat yang berlaku.
+              </p>
+            </div>
+          </div>
         </div>
-        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
-          <div><dt className="opacity-60 inline">Sumber · </dt><dd className="inline">{data.sumber}</dd></div>
-          <div><dt className="opacity-60 inline">Kuota · </dt><dd className="inline">{data.kuota != null ? data.kuota : "Tidak terbatas"}</dd></div>
-          <div><dt className="opacity-60 inline">Periode Mulai · </dt><dd className="inline">{data.periode_mulai ? formatTanggal(data.periode_mulai) : "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Periode Selesai · </dt><dd className="inline">{data.periode_selesai ? formatTanggal(data.periode_selesai) : "—"}</dd></div>
-        </dl>
-        {data.deskripsi && (
-          <div className="mt-8 pt-6 border-t border-current/15">
-            <p className="text-base leading-relaxed opacity-90">{data.deskripsi}</p>
-          </div>
-        )}
       </main>
     </div>
   );
@@ -2592,49 +3371,149 @@ export function AduanDetailPage() {
   const { data, isLoading } = useAduanById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
-  const maskedNama = data.nama_pelapor ? `${data.nama_pelapor[0]}${"*".repeat(Math.max(0, data.nama_pelapor.length - 1))}` : "—";
-  const maskedKontak = data.kontak ? data.kontak.replace(/.(?=.{4})/g, "*") : "—";
+  const maskedNama = data.nama_pelapor ? `${data.nama_pelapor[0]}${"*".repeat(Math.max(0, data.nama_pelapor.length - 1))}` : null;
+  const maskedKontak = data.kontak ? data.kontak.replace(/.(?=.{4})/g, "*") : null;
+
+  // Status badge color
+  const statusConfig: Record<string, { bg: string; text: string; dot: string }> = {
+    selesai: { bg: "bg-green-100", text: "text-green-700", dot: "bg-green-500" },
+    ditolak: { bg: "bg-red-100", text: "text-red-700", dot: "bg-red-500" },
+    diproses: { bg: "bg-blue-100", text: "text-blue-700", dot: "bg-blue-500" },
+    diverifikasi: { bg: "bg-purple-100", text: "text-purple-700", dot: "bg-purple-500" },
+    diajukan: { bg: "bg-yellow-100", text: "text-yellow-700", dot: "bg-yellow-500" },
+    draft: { bg: "bg-gray-100", text: "text-gray-700", dot: "bg-gray-400" },
+    dibatalkan: { bg: "bg-gray-100", text: "text-gray-500", dot: "bg-gray-300" },
+  };
+  const statusCfg = statusConfig[data.status] || { bg: "bg-gray-100", text: "text-gray-700", dot: "bg-gray-400" };
+
+  // Tanggal submission
+  const submittedDate = data.tanggal ? formatTanggal(data.tanggal) : null;
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/aduan" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Aduan
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/aduan" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Aduan
         </Link>
-        <div className="flex items-center justify-between">
-          <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.nomor_tiket}</span>
-          <span className={`text-xs px-2 py-1 rounded ${
-            data.status === "selesai" ? "bg-green-100 text-green-700" :
-            data.status === "ditolak" ? "bg-red-100 text-red-700" :
-            data.status === "diproses" ? "bg-blue-100 text-blue-700" :
-            "bg-yellow-100 text-yellow-700"
-          }`}>
-            {ADUAN_STATUS_LABELS[data.status] || data.status}
-          </span>
+
+        {/* Ticket header card */}
+        <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm mt-2">
+          <div className="px-6 pt-6 pb-5 border-b border-current/10">
+            {/* Ticket number + status row */}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                {data.nomor_tiket && (
+                  <p className="text-[10px] font-mono font-semibold text-foreground/40 uppercase tracking-wider mb-1">Tiket #{data.nomor_tiket}</p>
+                )}
+                <h1 className="font-display text-xl sm:text-2xl font-semibold leading-snug text-foreground">
+                  {data.judul}
+                </h1>
+              </div>
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${statusConfig.bg} ${statusConfig.text}`}>
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${statusConfig.dot}`} />
+                {ADUAN_STATUS_LABELS[data.status] || data.status}
+              </div>
+            </div>
+          </div>
+
+          {/* Reporter info */}
+          <div className="px-6 py-5 grid sm:grid-cols-2 gap-4">
+            {maskedNama && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Pelapor</p>
+                  <p className="text-sm font-medium text-foreground">{maskedNama}</p>
+                </div>
+              </div>
+            )}
+            {maskedKontak && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Kontak</p>
+                  <p className="text-sm font-medium text-foreground">{maskedKontak}</p>
+                </div>
+              </div>
+            )}
+            {data.kategori && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M17.25 6.622L14 3.372l-3.25 3.25A5.46 5.46 0 007.5 9.872a5.5 5.5 0 005.872 7.5 5.46 5.46 0 003.25-3.25L18.5 9l-1.25-2.378zM9.5 12.872a3.5 3.5 0 110-7 3.5 3.5 0 010 7z" clipRule="evenodd" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Kategori</p>
+                  <p className="text-sm font-medium text-foreground">{data.kategori}</p>
+                </div>
+              </div>
+            )}
+            {submittedDate && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Diajukan</p>
+                  <p className="text-sm font-medium text-foreground">{submittedDate}</p>
+                </div>
+              </div>
+            )}
+            {data.lokasi && (
+              <div className="sm:col-span-2 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.976.734l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" /></svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Lokasi</p>
+                  <p className="text-sm font-medium text-foreground">{data.lokasi}</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.judul}</h1>
-        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
-          <div><dt className="opacity-60 inline">Pelapor · </dt><dd className="inline">{maskedNama}</dd></div>
-          <div><dt className="opacity-60 inline">Kontak · </dt><dd className="inline">{maskedKontak}</dd></div>
-          <div><dt className="opacity-60 inline">Kategori · </dt><dd className="inline">{data.kategori}</dd></div>
-          <div><dt className="opacity-60 inline">Lokasi · </dt><dd className="inline">{data.lokasi || "—"}</dd></div>
-        </dl>
-        <div className="mt-8 pt-6 border-t border-current/15">
-          <p className="text-base leading-relaxed opacity-90">{data.isi}</p>
+
+        {/* Complaint text */}
+        <div className="mt-6">
+          <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Isi Pengaduan</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{data.isi}</p>
+          </div>
         </div>
+
+        {/* Attachments */}
         {data.lampiran_url && (
-          <div className="mt-6">
-            <p className="text-xs opacity-60 mb-1">Lampiran</p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={data.lampiran_url} alt="Lampiran" className="max-w-full rounded border border-current/15" />
+          <div className="mt-4">
+            <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
+              <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Lampiran</h3>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={data.lampiran_url} alt="Lampiran pengaduan" className="max-w-full rounded border border-current/15 max-h-72 object-contain" />
+            </div>
           </div>
         )}
+
+        {/* Admin response */}
         {data.tanggapan && (
-          <div className="mt-8 p-4 border border-accent/30 bg-accent/5">
-            <h3 className="font-display text-sm font-semibold mb-2">Tanggapan</h3>
-            <p className="text-sm leading-relaxed">{data.tanggapan}</p>
-            {data.ditanggapi_pada && (
-              <p className="text-xs opacity-60 mt-2">Ditanggapi pada: {formatTanggal(data.ditanggapi_pada)}</p>
-            )}
+          <div className="mt-4">
+            <div className="bg-accent/5 border border-accent/20 rounded-xl p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="currentColor" className="w-3 h-3 text-accent"><path fillRule="evenodd" d="M10.53 2.47a.75.75 0 00-1.06 0L6.75 5.19 5.22 3.66a.75.75 0 00-1.06 1.06l1.78 1.78-1.78 1.78a.75.75 0 001.06 1.06l2.22-2.22 3.72 3.72a.75.75 0 001.06 0l4.25-4.25a.75.75 0 000-1.06.75.75 0 00-1.06 0L10.53 2.47z" clipRule="evenodd" /></svg>
+                </div>
+                <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-accent">Tanggapan Admin</h3>
+              </div>
+              <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{data.tanggapan}</p>
+              {data.ditanggapi_pada && (
+                <p className="text-[10px] text-foreground/40 mt-3">
+                  Ditanggapi pada: {formatTanggal(data.ditanggapi_pada)}
+                </p>
+              )}
+            </div>
           </div>
         )}
       </main>
@@ -2647,36 +3526,135 @@ export function IdmIndikatorDetailPage() {
   const { data, isLoading } = useIdmIndikatorById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
+
+  // Score percentage (assuming score max is 100)
+  const scorePct = data.skor != null ? Math.min(Math.max(data.skor, 0), 100) : 0;
+  const scoreColor = scorePct >= 80 ? "text-green-600" : scorePct >= 60 ? "text-amber-500" : "text-red-500";
+  const scoreBg = scorePct >= 80 ? "bg-green-500" : scorePct >= 60 ? "bg-amber-500" : "bg-red-500";
+
+  // Score label
+  const scoreLabel = scorePct >= 80 ? "Baik" : scorePct >= 60 ? "Cukup" : "Kurang";
+
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/status-idm" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
-          ← Kembali ke Status IDM
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Back link */}
+        <Link to="/status-idm" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Status IDM
         </Link>
-        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.dimensi || "IDM"}</span>
-        <h1 className="mt-2 font-display text-3xl sm:text-4xl font-semibold leading-snug">{data.indikator || "Indikator"}</h1>
-        <div className="mt-8 grid sm:grid-cols-3 gap-4">
-          <div className="border border-current/15 p-4 text-center">
-            <p className="font-display text-3xl font-bold text-accent">{data.tahun ?? "—"}</p>
-            <p className="text-xs opacity-60 mt-1">Tahun</p>
+
+        {/* Header */}
+        <div className="space-y-1 mb-8">
+          <div className="flex items-center gap-2">
+            {data.dimensi && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] bg-accent/10 text-accent">
+                {data.dimensi}
+              </span>
+            )}
           </div>
-          <div className="border border-current/15 p-4 text-center">
-            <p className="font-display text-3xl font-bold text-accent">{data.nilai != null ? data.nilai : "—"}</p>
-            <p className="text-xs opacity-60 mt-1">Nilai</p>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
+            {data.indikator}
+          </h1>
+        </div>
+
+        {/* Score dashboard card */}
+        <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm">
+          {/* Score display */}
+          <div className="px-6 pt-6 pb-5 text-center">
+            <div className="relative inline-flex items-center justify-center">
+              {/* Progress ring (SVG) */}
+              <svg className="w-40 h-40 -rotate-90" viewBox="0 0 160 160">
+                <circle cx="80" cy="80" r="70" fill="none" stroke="currentColor" strokeWidth="12" className="text-foreground/10" />
+                <circle
+                  cx="80" cy="80" r="70" fill="none"
+                  stroke={scorePct >= 80 ? "#16a34a" : scorePct >= 60 ? "#d97706" : "#dc2626"}
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 70}`}
+                  strokeDashoffset={`${2 * Math.PI * 70 * (1 - scorePct / 100)}`}
+                  className="transition-all"
+                />
+              </svg>
+              {/* Score center text */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className={`font-display text-4xl font-bold ${scoreColor}`}>
+                  {data.skor != null ? data.skor : "—"}
+                </span>
+                <span className="text-xs text-foreground/40 mt-1">dari 100</span>
+              </div>
+            </div>
+            <div className="mt-4">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${scorePct >= 80 ? "bg-green-100 text-green-700" : scorePct >= 60 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                {scoreLabel}
+              </span>
+            </div>
           </div>
-          <div className="border border-current/15 p-4 text-center">
-            <p className="font-display text-3xl font-bold text-accent">{data.skor != null ? data.skor : "—"}</p>
-            <p className="text-xs opacity-60 mt-1">Skor</p>
+
+          {/* Metrics row */}
+          <div className="grid grid-cols-2 gap-px bg-current/10 border-t border-current/10">
+            <div className="bg-background px-6 py-4 text-center">
+              <p className={`font-display text-2xl font-bold ${scoreColor}`}>
+                {data.nilai != null ? data.nilai : "—"}
+              </p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-foreground/40 mt-1">Nilai</p>
+            </div>
+            <div className="bg-background px-6 py-4 text-center border-l border-current/10">
+              <p className={`font-display text-2xl font-bold ${scoreColor}`}>
+                {data.tahun ?? "—"}
+              </p>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-foreground/40 mt-1">Tahun</p>
+            </div>
+          </div>
+
+          {/* Progress bar below */}
+          <div className="px-6 pb-6 pt-2">
+            <div className="flex justify-between text-xs text-foreground/50 mb-1.5">
+              <span>Skor</span>
+              <span>{scorePct}%</span>
+            </div>
+            <div className="w-full bg-foreground/10 h-2.5 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${scoreBg}`}
+                style={{ width: `${scorePct}%` }}
+              />
+            </div>
           </div>
         </div>
-        <dl className="mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-80">
-          <div><dt className="opacity-60 inline">Dimensi · </dt><dd className="inline">{data.dimensi || "—"}</dd></div>
-          <div><dt className="opacity-60 inline">Sumber · </dt><dd className="inline">{data.sumber || "—"}</dd></div>
-        </dl>
+
+        {/* Info grid */}
+        <div className="mt-6 grid sm:grid-cols-2 gap-3">
+          {data.dimensi && (
+            <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
+              <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Dimensi</p>
+                <p className="text-sm font-medium text-foreground">{data.dimensi}</p>
+              </div>
+            </div>
+          )}
+          {data.sumber && (
+            <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
+              <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Sumber</p>
+                <p className="text-sm font-medium text-foreground">{data.sumber}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Keterangan */}
         {data.keterangan && (
-          <div className="mt-6 pt-6 border-t border-current/15">
-            <h3 className="font-display text-sm font-semibold mb-2">Keterangan</h3>
-            <p className="text-sm leading-relaxed opacity-80">{data.keterangan}</p>
+          <div className="mt-6">
+            <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
+              <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Keterangan</h3>
+              <p className="text-sm text-foreground/70 leading-relaxed">{data.keterangan}</p>
+            </div>
           </div>
         )}
       </main>
