@@ -1274,11 +1274,24 @@ export function useWisataById(id?: string) {
 }
 
 export type PembangunanDetail = {
-  id: string; nama_kegiatan: string; tahun: number; lokasi: string | null;
-  dusun: string | null; volume: string | null; anggaran: number; realized: number;
-  sumber_dana: string | null; pelaku: string | null; waktu: string | null;
-  status: string; deskripsi: string | null; foto_url: string | null;
-  created_at: string; updated_at: string;
+  id: string;
+  tenant_id?: string;
+  tahun: number;
+  bidang: string;
+  nama_kegiatan: string;
+  lokasi: string | null;
+  volume: string | null;
+  anggaran: number;
+  realisasi: number;
+  sumber_dana: string | null;
+  status: string;
+  tanggal_mulai: string | null;
+  tanggal_selesai: string | null;
+  keterangan: string | null;
+  gambar_dokumentasi: string[] | null;
+  progress_persen: number | null;
+  created_at: string;
+  updated_at?: string;
 };
 
 export function usePembangunanById(id?: string) {
@@ -1291,7 +1304,7 @@ export function usePembangunanById(id?: string) {
         if (r) {
           setData({
             ...r,
-            realized: Number((r as Record<string, unknown>)['realisasi'] ?? 0),
+            gambar_dokumentasi: (r as Record<string, unknown>)['gambar_dokumentasi'] as string[] | null ?? null,
           } as unknown as PembangunanDetail);
         } else {
           setData(null);
@@ -1317,10 +1330,21 @@ export function useBansosById(id?: string) {
 }
 
 export type AduanWarga = {
-  id: string; nomor_tiket: string; nama: string; nik: string | null;
-  kontak: string | null; dusun: string | null; kategori: string; judul: string;
-  deskripsi: string; foto_url: string | null; status: string; tanggapan: string | null;
-  created_at: string; updated_at: string;
+  id: string;
+  tenant_id?: string;
+  nomor_tiket: string;
+  nama_pelapor: string;
+  kontak: string;
+  kategori: string;
+  judul: string;
+  isi: string;
+  lokasi: string | null;
+  lampiran_url: string | null;
+  status: string;
+  tanggapan: string | null;
+  ditanggapi_pada: string | null;
+  created_at: string;
+  updated_at?: string;
 };
 
 export function useAduanById(id?: string) {
@@ -1338,10 +1362,18 @@ export function useAduanById(id?: string) {
 }
 
 export type IdmIndikator = {
-  id: string; kode: string; nama: string; kategori: string;
-  sub_kategori: string | null; indikator: string; tipe: string;
-  skor_min: number; skor_max: number; bobot: number;
-  sumber_data: string | null; deskripsi: string | null;
+  id: string;
+  tenant_id?: string;
+  tahun: number;
+  dimensi: string;
+  indikator: string;
+  nilai: number;
+  skor: number;
+  sumber: string | null;
+  keterangan: string | null;
+  published: boolean;
+  created_at: string;
+  updated_at?: string;
 };
 
 export function useIdmIndikatorById(id?: string) {

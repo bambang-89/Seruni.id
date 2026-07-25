@@ -2326,7 +2326,7 @@ export function StuntingDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/posyandu" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+        <Link to="/stunting" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
           ← Kembali ke Data Stunting
         </Link>
         <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Stunting</span>
@@ -2359,7 +2359,7 @@ export function UmkmDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/umkm" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+        <Link to="/potensi-desa" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
           ← Kembali ke UMKM
         </Link>
         <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">{data.tipe}</span>
@@ -2431,7 +2431,7 @@ export function WisataDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <Link to="/wisata" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
+        <Link to="/potensi-desa" className="inline-flex items-center gap-2 text-sm text-accent hover:underline mb-8">
           ← Kembali ke Wisata
         </Link>
         {data.foto_url && (
