@@ -467,9 +467,30 @@ export function PengumumanPage() {
 
 // ============================ Layanan ============================
 
+const KODE_TO_LAYANAN: Record<string, string> = {
+  F1: "surat",
+  F5: "pbb",
+  SC: "aduan",
+  BS: "bansos",
+};
+
+function getLayananJenis(kode: string): string {
+  const prefix = kode.split("_")[0] || "";
+  return KODE_TO_LAYANAN[prefix] ?? "surat";
+}
+
 export function LayananPage() {
   const { data: suratList } = useSuratJenis();
+  const { data: statList } = useLayananStatistik();
   const suratCount = suratList.length;
+
+  // Build a lookup: jenis_layanan -> jumlah_selesai (bulan ini)
+  const statMap = new Map<string, number>();
+  for (const s of statList ?? []) {
+    if (!statMap.has(s.jenis_layanan)) {
+      statMap.set(s.jenis_layanan, s.jumlah_selesai ?? 0);
+    }
+  }
 
   const catalog = [
     { to: "/layanan/surat", kicker: "Administrasi", judul: "Ajukan Surat Online", desc: `${suratCount} jenis surat, TTE & QR verifikasi, SLA 1–5 hari kerja.` },
@@ -504,32 +525,28 @@ export function LayananPage() {
       <SectionWrap alt>
         <EditorialTitle kicker="Bulan Ini" judul="Layanan Terlaris" />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-current/15">
-          {suratList.slice(0, 4).map((l, i) => (
-            <div key={l.nama} className="bg-[#EAECF0] p-6">
-              <div className="font-display text-4xl font-bold tabular-nums text-accent leading-none">
-                {Math.floor(Math.random() * 50) + 10} {/* Placeholder stat */}
+          {suratList.slice(0, 4).map((l) => {
+            const statKey = getLayananJenis(l.kode_surat);
+            const count = statMap.get(statKey) ?? 0;
+            return (
+              <div key={l.nama} className="bg-[#EAECF0] p-6">
+                <div className="font-display text-4xl font-bold tabular-nums text-accent leading-none">
+                  {count > 0 ? count.toLocaleString("id-ID") : "—"}
+                </div>
+                <div className="mt-2 font-display text-[10px] font-bold uppercase tracking-[0.22em] opacity-60">
+                  permohonan bulan ini
+                </div>
+                <div className="mt-4 pt-4 border-t border-current/15 font-display text-sm font-semibold">
+                  {l.nama}
+                </div>
               </div>
-              <div className="mt-2 font-display text-[10px] font-bold uppercase tracking-[0.22em] opacity-60">
-                permohonan bulan ini
-              </div>
-              <div className="mt-4 pt-4 border-t border-current/15 font-display text-sm font-semibold">
-                {l.nama}
-              </div>
+            );
+          })}
+          {suratList.length === 0 && (
+            <div className="sm:col-span-2 lg:col-span-4 p-6 text-sm opacity-60">
+              Data layanan belum tersedia.
             </div>
-          ))}
-          {suratList.length === 0 && layananTerlaris.map((l) => (
-            <div key={l.nama} className="bg-[#EAECF0] p-6">
-              <div className="font-display text-4xl font-bold tabular-nums text-accent leading-none">
-                {l.jumlah_bulan}
-              </div>
-              <div className="mt-2 font-display text-[10px] font-bold uppercase tracking-[0.22em] opacity-60">
-                permohonan bulan ini
-              </div>
-              <div className="mt-4 pt-4 border-t border-current/15 font-display text-sm font-semibold">
-                {l.nama}
-              </div>
-            </div>
-          ))}
+          )}
         </div>
       </SectionWrap>
     </EditorialLayout>

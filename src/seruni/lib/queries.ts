@@ -1057,19 +1057,32 @@ export function useSuratJenis(aktifOnly = true) {
 }
 
 export type LayananStat = {
-  jenis_layanan: string; count_bulan_ini: number; count_bulan_lalu: number;
+  jenis_layanan: string;
+  periode: string;
+  jumlah_ajuan: number;
+  jumlah_proses: number;
+  jumlah_selesai: number;
 };
 
-export function useLayananStatistik() {
+export function useLayananStatistik(jenis?: string) {
   const [data, setData] = useState<LayananStat[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    supabase.from("layanan_statistik").select("*").then(({ data }) => {
+    let q = supabase.from("layanan_statistik").select("*").order("periode", { ascending: false });
+    if (jenis) q = q.eq("jenis_layanan", jenis);
+    q.then(({ data }) => {
       setData((data || []) as LayananStat[]);
       setLoading(false);
     });
-  }, []);
+  }, [jenis]);
   return { data, loading };
+}
+
+export function useLayananStatBulanIni(jenis?: string) {
+  const { data } = useLayananStatistik(jenis);
+  if (!data || data.length === 0) return 0;
+  const latest = data[0];
+  return latest.jumlah_selesai ?? 0;
 }
 
 export type AduanKategori = { id: string; kode: string; nama: string };

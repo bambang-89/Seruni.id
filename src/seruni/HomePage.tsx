@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   siteSettings as seedSettings,
-  marketplaceProduk,
 } from "./data";
 import { SectionWrap, formatTanggal } from "./ui";
 import { Seo } from "./lib/seo";
@@ -18,6 +17,8 @@ import {
   usePotensiProduk,
   usePotensiWisata,
   usePotensiUmkm,
+  useSuratJenis,
+  useLayananStatistik,
 } from "./lib/queries";
 import {
   Band,
@@ -121,7 +122,7 @@ function TaglineBar() {
  * S1 · Sambutan + selayang pandang (editorial split)
  * ============================================================ */
 
-function S1() { return null; // 
+function S1() {
   return (
     <EditorialSplit
       kicker="Bagian Satu — Tentang"
@@ -171,7 +172,7 @@ function StatistikBand() {
  * S2 · Indeks Desa Membangun (editorial ledger)
  * ============================================================ */
 
-function S2() { return null; // 
+function S2() {
   const { data: idmData } = useIdmData();
   return (
     <Band id="idm" tone="neutral">
@@ -226,7 +227,7 @@ function S2() { return null; //
  * S3 · Agenda mendatang (numbered list, navy)
  * ============================================================ */
 
-function S3() { return null; // 
+function S3() {
   const { data: agendaData } = useAgenda();
   return (
     <Band id="agenda" tone="dark">
@@ -270,7 +271,7 @@ function S3() { return null; //
  * S4 · Berita terbaru (featured card + list, paper)
  * ============================================================ */
 
-function S4() { return null; // 
+function S4() {
   const { data: beritaData } = useBerita();
   const [utama, ...lainnya] = beritaData || [];
   return (
@@ -319,14 +320,36 @@ function S4() { return null; //
  * S5 · Layanan (editorial tile grid, navy)
  * ============================================================ */
 
-function S5() { return null; // 
-  // TODO: Wire to useSuratAggregate hook
-  const { data: layananData } = useState<Array<{kode: string; nama: string; jumlah_bulan: number}>>([
-    { kode: "SKD", nama: "Surat Keterangan Domisili", jumlah_bulan: 128 },
-    { kode: "F5_PBB", nama: "Pembayaran PBB Online", jumlah_bulan: 96 },
-    { kode: "SPN", nama: "Surat Pengantar Nikah", jumlah_bulan: 42 },
-    { kode: "INFRASTRUKTUR", nama: "Aduan Infrastruktur", jumlah_bulan: 37 },
-  ]);
+function S5() {
+  const { data: suratList } = useSuratJenis();
+  const { data: statList } = useLayananStatistik();
+
+  // Build lookup: prefix -> jumlah_selesai
+  const statMap = new Map<string, number>();
+  for (const s of statList ?? []) {
+    if (!statMap.has(s.jenis_layanan)) {
+      statMap.set(s.jenis_layanan, s.jumlah_selesai ?? 0);
+    }
+  }
+
+  const prefixMap: Record<string, string> = {
+    F1: "surat", F5: "pbb", SC: "aduan", BS: "bansos",
+  };
+  const getLayanan = (kode: string) => prefixMap[kode.split("_")[0]] ?? "surat";
+
+  const dynamicData = suratList.slice(0, 4).map((s) => ({
+    kode: s.kode_surat,
+    nama: s.nama,
+    jumlah_bulan: statMap.get(getLayanan(s.kode_surat)) ?? 0,
+  }));
+
+  const layananData = dynamicData.length > 0 ? dynamicData : [
+    { kode: "SKD", nama: "Surat Keterangan Domisili", jumlah_bulan: 0 },
+    { kode: "F5_PBB", nama: "Pembayaran PBB Online", jumlah_bulan: 0 },
+    { kode: "SPN", nama: "Surat Pengantar Nikah", jumlah_bulan: 0 },
+    { kode: "INFRASTRUKTUR", nama: "Aduan Infrastruktur", jumlah_bulan: 0 },
+  ];
+
   return (
     <Band id="layanan" tone="navy">
       <EditorialTitle
@@ -369,7 +392,7 @@ function S5() { return null; //
  * S6 · Marketplace UMKM (editorial split, paper)
  * ============================================================ */
 
-function S6() { return null; // 
+function S6() {
   const { data: produkData } = usePotensiProduk({ featuredOnly: true });
   const Kolom = ({ judul, items }: { judul: string; items: { nama: string; harga: string; penjual: string; emoji: string }[] }) => (
     <div>
@@ -403,8 +426,8 @@ function S6() { return null; //
       hrefLabel="Jelajahi Marketplace"
     >
       <div className="grid sm:grid-cols-2 gap-10">
-        <Kolom judul="Terlaris" items={marketplaceProduk.terlaris} />
-        <Kolom judul="Terbaru" items={marketplaceProduk.terbaru} />
+        <Kolom judul="Terlaris" items={produkData.slice(0, 5).map((p) => ({ nama: p.nama, harga: p.harga ? `Rp ${Number(p.harga).toLocaleString('id-ID')}` : '—', penjual: p.penjual_nama ?? '—', emoji: '' }))} />
+        <Kolom judul="Terbaru" items={produkData.slice(0, 5).map((p) => ({ nama: p.nama, harga: p.harga ? `Rp ${Number(p.harga).toLocaleString('id-ID')}` : '—', penjual: p.penjual_nama ?? '—', emoji: '' }))} />
       </div>
     </EditorialSplit>
   );
@@ -414,7 +437,7 @@ function S6() { return null; //
  * S7 · Realisasi pembangunan (dark band, editorial ledger)
  * ============================================================ */
 
-function S7() { return null; // 
+function S7() {
   const { data: pembangunanData } = usePembangunanData();
   return (
     <Band id="pembangunan" tone="dark">
@@ -473,7 +496,7 @@ function S7() { return null; //
  * S8 · Perencanaan / usulan warga (numbered, paper)
  * ============================================================ */
 
-function S8() { return null; // 
+function S8() {
   const { data: usulanData } = useUsulanStats();
   const max = Math.max(...(usulanData.top10 || []).map((u) => u.suara));
   return (
@@ -518,7 +541,7 @@ function S8() { return null; //
  * S9 · Potensi desa (editorial split w/ landscape)
  * ============================================================ */
 
-function S9() { return null; // 
+function S9() {
   const { data: wisataData } = usePotensiWisata();
   const { data: umkmData } = usePotensiUmkm();
   // Transform data for display
@@ -619,7 +642,7 @@ function QuoteKades() {
  * S10 · Galeri (editorial gallery)
  * ============================================================ */
 
-function S10() { return null; // 
+function S10() {
   const { data: galeriData } = useGaleri();
   const covers = [wartaPasar, umkmTenun, potensiLansekap, heroImg, portraitKades, wartaPasar];
   return (
@@ -663,7 +686,7 @@ function S10() { return null; //
  * S11 · Aduan warga (editorial form, neutral)
  * ============================================================ */
 
-function S11() { return null; // 
+function S11() {
   // TODO: Wire to ref_aduan_kategori table
   const aduanKategori = [
     { kode: "infrastruktur", label: "Infrastruktur (jalan, jembatan, PJU)" },
@@ -733,6 +756,7 @@ function S11() { return null; //
                 <select
                   value={kategori}
                   onChange={(e) => setKategori(e.target.value)}
+                  autoComplete="off"
                   className={inputCls}
                 >
                   {aduanKategori.map((k) => (
@@ -747,6 +771,7 @@ function S11() { return null; //
                 <input
                   required
                   type="text"
+                  autoComplete="off"
                   placeholder="Dusun Karang Baru, RT 04"
                   className={inputCls}
                 />
@@ -756,6 +781,7 @@ function S11() { return null; //
               <span className={labelCls}>Uraian Aduan</span>
               <textarea
                 required
+                autoComplete="off"
                 rows={4}
                 placeholder="Ceritakan kejadian, kapan terjadi, dan dampaknya."
                 className={inputCls}
@@ -766,6 +792,7 @@ function S11() { return null; //
               <input
                 required
                 type="tel"
+                autoComplete="tel"
                 placeholder="08xxxxxxxxxx"
                 className={inputCls}
               />
@@ -792,7 +819,7 @@ function S11() { return null; //
  * S12 · Peta desa (editorial split with layers)
  * ============================================================ */
 
-function S12() { return null; // 
+function S12() {
   // Default layers - can be fetched from site_settings
   const petaLayer = [
     { kode: "wilayah", label: "Batas Wilayah & Burnett", aktif: true },
