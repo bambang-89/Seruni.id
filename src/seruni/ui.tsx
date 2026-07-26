@@ -1,6 +1,8 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 import { useEffect, type ReactNode } from "react";
-import heroImg from "@/assets/hero-village.jpg";
+import { ChevronLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
 import { ToneProvider, toneOf } from "./lib/tone";
 import { usePageConfig } from "./lib/pageConfig";
 
@@ -28,7 +30,7 @@ export function SplitTitle({
   useEffect(() => {
     if (import.meta.env.PROD) return;
     if (parts.length !== 2) {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         `[seruni/title] Judul section wajib 2 kata (kata pertama regular + kata kedua italic amber). ` +
           `Judul "${text}" memiliki ${parts.length} kata — otomatis dipotong menjadi 2 kata pertama.`,
@@ -158,22 +160,28 @@ export function PageHeader({
   crumbs: { label: string; to?: string }[];
   image?: string;
 }) {
-  const bg = image ?? heroImg;
+  const bg = image ? supabase.storage.from('seruni-media').getPublicUrl(image).data.publicUrl : undefined;
   return (
     <ToneProvider tone="dark" label="PageHeader">
-    <section className="relative isolate overflow-hidden bg-[#0F0E0E] text-white border-b border-white/10 min-h-[60vh] flex items-end">
-      <img
-        src={bg}
-        alt=""
-        aria-hidden
-        className="absolute inset-0 h-full w-full object-cover"
-        loading="eager"
-        fetchPriority="high"
-      />
+    {/* PageHeader hero background dengan tinggi 50vh */}
+    <section className="relative isolate overflow-hidden bg-[#0F0E0E] text-white border-b border-white/10 min-h-[50vh] flex items-end">
+      {bg ? (
+        <img
+          src={bg}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="eager"
+          fetchPriority="high"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-accent/20" />
+      )}
       {/* Dark scrim so hero copy is always legible over any image */}
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/85" />
-      <div aria-hidden className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/80 to-transparent" />
-      <div className="relative w-full mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 pt-[160px] pb-16 sm:pt-[200px] sm:pb-24">
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/85" />
+      <div aria-hidden className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/90 to-transparent" />
+      {/* Padding top 120px-140px untuk memberikan ruang bagi fixed navbar */}
+      <div className="relative w-full mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 pt-32 sm:pt-40 pb-16 sm:pb-24">
         <Crumbs items={crumbs} />
         <p className="mt-10 font-display text-[11px] sm:text-xs font-bold uppercase tracking-[0.32em] text-accent">
           {eyebrow}
@@ -220,6 +228,7 @@ export function EditorialLayout({
   const loc = useLocation();
   const effectiveRoute = route ?? loc.pathname;
   const cfg = usePageConfig(effectiveRoute);
+  
   return (
     <>
       <PageHeader
@@ -294,3 +303,26 @@ export function EditorialProgress({
     </div>
   );
 }
+
+export function StandaloneLayout() {
+  const navigate = useNavigate();
+  return (
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
+        <div className="max-w-4xl mx-auto px-4 md:px-6 h-14 flex items-center">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="flex items-center gap-2 text-sm font-medium hover:text-accent transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            <span>Kembali</span>
+          </button>
+        </div>
+      </div>
+      <main className="flex-1">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+

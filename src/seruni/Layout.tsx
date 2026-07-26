@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { navigation } from "./data";
-import logoDesa from "@/assets/logo-desa.png";
 import { useOnlineStatus } from "./lib/useOnlineStatus";
 import { useNavItems, useFooterColumns } from "./lib/siteCms";
 import { useCmsStatus } from "./lib/cmsStatus";
 import { usePreviewMode, exitPreview } from "./lib/preview";
 import { useSiteSettings } from "./lib/zeroHardcode";
+import { useProfilDesa } from "./lib/queries";
 import { useTenant, useTenantSettings, TenantSwitcher } from "./lib/tenant";
 import { supabase } from "@/integrations/supabase/client";
-import { PageHero } from "./components/PageHero";
+
 
 function OfflineBanner() {
   const online = useOnlineStatus();
@@ -66,6 +66,9 @@ function Header() {
   }, []);
   const loc = useLocation();
   const { data: settings } = useSiteSettings();
+  const { data: profilDesa } = useProfilDesa();
+  const logoUrl = profilDesa?.gambar_logo_url ? supabase.storage.from('seruni-media').getPublicUrl(profilDesa.gambar_logo_url).data.publicUrl : undefined;
+  
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const toggleBtnRef = useRef<HTMLButtonElement | null>(null);
   const megaRef = useRef<HTMLDivElement | null>(null);
@@ -228,16 +231,19 @@ function Header() {
           {/* Left: Logo */}
           <Link
             to="/"
-            aria-label={`Beranda ${siteName}`}
             className="group shrink-0 flex items-center justify-start"
           >
-            <img
-              src={logoDesa}
-              alt={`Logo ${siteName}`}
-              width={512}
-              height={512}
-              className="h-20 w-20 lg:h-24 lg:w-24 object-contain drop-shadow-lg transition-transform group-hover:scale-105"
-            />
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={`Logo ${siteName}`}
+                className="h-12 w-auto max-w-[160px] object-contain drop-shadow-sm transition-transform group-hover:scale-105"
+                loading="eager"
+                fetchPriority="high"
+              />
+            ) : (
+              <div className="font-display text-xl font-bold tracking-tight">{siteName}</div>
+            )}
           </Link>
 
           {/* Center mega nav */}
@@ -312,7 +318,7 @@ function Header() {
         {/* Mobile top bar */}
         <div className="md:hidden flex items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logoDesa} alt="" width={512} height={512} className="h-10 w-10 object-contain" />
+            {logoUrl ? <img src={logoUrl} alt={`Logo ${siteName}`} className="h-10 w-auto max-w-[120px] object-contain" /> : <div className="h-10 w-10 bg-accent/20 rounded" />}
             <span className="font-display text-sm font-semibold">{siteName}</span>
           </Link>
           <button
@@ -351,7 +357,7 @@ function Header() {
                   <div className="grid grid-cols-10 gap-8">
                     {/* Kolom Kiri 20% — Logo + deskripsi */}
                     <div className="col-span-2 flex flex-col items-start gap-4 pr-4 border-r border-primary-foreground/15">
-                      <img src={logoDesa} alt="" width={512} height={512} className="h-24 w-24 object-contain" />
+                      {logoUrl ? <img src={logoUrl} alt="" className="h-24 w-auto object-contain" /> : <div className="h-24 w-24 bg-accent/20 rounded" />}
                       <div>
                         <div className="text-[11px] uppercase tracking-[0.22em] text-accent font-display font-semibold mb-2">
                           {parent.label}
@@ -630,7 +636,7 @@ export default function Layout() {
       <OfflineBanner />
       <ScrollToTop />
       <Header />
-      <PageHero route={useLocation().pathname} />
+
       <main id="main" className="flex-1">
         <Outlet />
       </main>
