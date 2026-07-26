@@ -33,6 +33,118 @@ const btnSec = "rounded-md border border-border bg-background px-3 py-1.5 text-s
 const btnDanger = "rounded-md border border-destructive/40 text-destructive bg-background px-3 py-1.5 text-sm hover:bg-destructive/10";
 const inp = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary";
 
+// ============ Reusable Input Components with proper autocomplete ============
+function FInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+  step,
+  placeholder,
+  autoComplete,
+  className = "",
+  required,
+  readOnly,
+}: {
+  label?: string;
+  value: string | number;
+  onChange: (v: string) => void;
+  type?: "text" | "number" | "date" | "email" | "tel";
+  step?: string;
+  placeholder?: string;
+  autoComplete?: string;
+  className?: string;
+  required?: boolean;
+  readOnly?: boolean;
+}) {
+  const cls = `w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${className}`;
+  return (
+    <label className="block text-xs font-medium mb-1">
+      {label && <span className="block mb-1 font-medium">{label}{required ? " *" : ""}</span>}
+      <input
+        type={type}
+        step={step}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete ?? "off"}
+        className={cls}
+        required={required}
+        readOnly={readOnly}
+      />
+    </label>
+  );
+}
+
+function FSelect({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder = "— pilih —",
+  autoComplete,
+  className = "",
+  required,
+}: {
+  label?: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  autoComplete?: string;
+  className?: string;
+  required?: boolean;
+}) {
+  return (
+    <label className="block text-xs font-medium mb-1">
+      {label && <span className="block mb-1 font-medium">{label}{required ? " *" : ""}</span>}
+      <select
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete={autoComplete ?? "off"}
+        className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${className}`}
+        required={required}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function FTextarea({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+  className = "",
+}: {
+  label?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  rows?: number;
+  className?: string;
+}) {
+  return (
+    <label className="block text-xs font-medium mb-1">
+      {label && <span className="block mb-1 font-medium">{label}</span>}
+      <textarea
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        autoComplete="off"
+        className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${className}`}
+      />
+    </label>
+  );
+}
+const inpAuto = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary autocomplete-[off]";
+
 // ============ Dashboard ============
 export function AdminDashboard() {
   const { user } = useAuth();
@@ -302,7 +414,7 @@ export function ProfilDesaAdmin() {
       <div className="space-y-6">
         <section className="rounded-xl bg-card border border-border p-5">
           <h2 className="font-display font-semibold mb-3">Visi</h2>
-          <textarea value={visi} onChange={(e) => setVisi(e.target.value)} rows={3} maxLength={500} className={inp} />
+          <textarea value={visi} onChange={(e) => setVisi(e.target.value)} rows={3} maxLength={500} className={inp} autoComplete="off" />
         </section>
 
         <ListEditor
@@ -335,9 +447,9 @@ function ListEditor({ title, items, setItems, placeholder, multiline }: { title:
           <div key={i} className="flex gap-2 items-start">
             <span className="mt-2 text-xs text-muted-foreground tabular-nums w-6">{i + 1}.</span>
             {multiline ? (
-              <textarea value={v} onChange={(e) => setItems(items.map((x, j) => j === i ? e.target.value : x))} rows={2} className={inp} placeholder={placeholder} />
+              <textarea value={v} onChange={(e) => setItems(items.map((x, j) => j === i ? e.target.value : x))} rows={2} className={inp} placeholder={placeholder} autoComplete="off" />
             ) : (
-              <input value={v} onChange={(e) => setItems(items.map((x, j) => j === i ? e.target.value : x))} className={inp} placeholder={placeholder} />
+              <input value={v} onChange={(e) => setItems(items.map((x, j) => j === i ? e.target.value : x))} className={inp} placeholder={placeholder} autoComplete="off" />
             )}
             <button type="button" onClick={() => setItems(items.filter((_, j) => j !== i))} className={btnDanger}>Hapus</button>
           </div>
@@ -352,29 +464,35 @@ function ListEditor({ title, items, setItems, placeholder, multiline }: { title:
 export type Column = {
   key: string;
   label: string;
-  type?: "text" | "number" | "date" | "textarea" | "checkbox" | "select" | "image" | "relation";
+  type?: "text" | "number" | "date" | "textarea" | "checkbox" | "select" | "image" | "video" | "relation";
   step?: string;
   hideInTable?: boolean;
   options?: { value: string; label: string }[];
-  relation?: { table: string; labelCol: string; valueCol: string };
+  relation?: { table: string; labelCol: string; valueCol: string; filterBy?: string; filterField?: string };
   imageFolder?: string;
   render?: (row: any) => ReactNode;
 };
 
-export function RelationSelect({ 
-  relation, 
-  value, 
-  onChange, 
-  className 
-}: { 
-  relation: { table: string; labelCol: string; valueCol: string }; 
-  value: string; 
+export function RelationSelect({
+  relation,
+  value,
+  onChange,
+  className,
+  filterValue,
+}: {
+  relation: { table: string; labelCol: string; valueCol: string; filterBy?: string };
+  value: string;
   onChange: (val: string) => void;
   className?: string;
+  filterValue?: string;
 }) {
   const [opts, setOpts] = useState<{value: string, label: string}[]>([]);
   useEffect(() => {
-    supabase.from(relation.table as any).select(`${relation.labelCol},${relation.valueCol}`).then(({ data }) => {
+    const q = supabase.from(relation.table as any).select(`${relation.labelCol},${relation.valueCol}`).eq("aktif", true);
+    if (relation.filterBy && filterValue) {
+      q.eq(relation.filterBy, filterValue);
+    }
+    q.then(({ data }) => {
       if (data) {
         setOpts(data.map((d: any) => ({
           value: d[relation.valueCol],
@@ -382,7 +500,7 @@ export function RelationSelect({
         })));
       }
     });
-  }, [relation.table, relation.labelCol, relation.valueCol]);
+  }, [relation.table, relation.labelCol, relation.valueCol, relation.filterBy, filterValue]);
 
   return (
     <select
@@ -590,6 +708,7 @@ export function TableCrud({
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             className="rounded-md border border-input bg-background px-3 py-2 text-sm w-48"
+            autoComplete="off"
           />
           <span className="text-xs text-muted-foreground">{totalCount} data</span>
         </div>
@@ -609,16 +728,19 @@ export function TableCrud({
           <div className="grid sm:grid-cols-2 gap-3">
             {columns.map((c) => (
               <div key={String(c.key)} className={c.type === "textarea" ? "sm:col-span-2" : ""}>
-                <label className="block text-xs font-medium mb-1">{c.label}</label>
                 {c.type === "textarea" ? (
-                  <textarea
-                    rows={4}
-                    value={(draft[c.key] ?? "") as string}
-                    onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
-                    className={inp}
-                  />
+                  <label className="block text-xs font-medium mb-1">
+                    <span className="block mb-1 font-medium">{c.label}</span>
+                    <textarea
+                      rows={4}
+                      value={(draft[c.key] ?? "") as string}
+                      onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
+                      className={inp}
+                      autoComplete="off"
+                    />
+                  </label>
                 ) : c.type === "checkbox" ? (
-                  <label className="inline-flex items-center gap-2 text-sm">
+                  <label className="inline-flex items-center gap-2 text-sm mt-6">
                     <input
                       type="checkbox"
                       checked={Boolean(draft[c.key])}
@@ -627,105 +749,140 @@ export function TableCrud({
                     Aktif
                   </label>
                 ) : c.type === "select" ? (
-                  <select
-                    value={(draft[c.key] ?? "") as string}
-                    onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
-                    className={inp}
-                  >
-                    <option value="" disabled>— pilih —</option>
-                    {(c.options ?? []).map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-medium mb-1">
+                    <span className="block mb-1 font-medium">{c.label}</span>
+                    <select
+                      value={(draft[c.key] ?? "") as string}
+                      onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
+                      className={inp}
+                      autoComplete="off"
+                    >
+                      <option value="" disabled>— pilih —</option>
+                      {(c.options ?? []).map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </label>
                 ) : c.type === "relation" && c.relation ? (
-                  <RelationSelect
-                    relation={c.relation}
-                    value={(draft[c.key] ?? "") as string}
-                    onChange={(val) => setDraft({ ...draft, [c.key]: val })}
-                    className={inp}
-                  />
+                  <label className="block text-xs font-medium mb-1">
+                    <span className="block mb-1 font-medium">{c.label}</span>
+                    <RelationSelect
+                      relation={c.relation}
+                      value={(draft[c.key] ?? "") as string}
+                      onChange={(val) => setDraft({ ...draft, [c.key]: val })}
+                      className={inp}
+                      filterValue={c.relation?.filterField ? (draft[c.relation.filterField] as string) : undefined}
+                    />
+                  </label>
                 ) : c.type === "image" ? (
-                  <ImageField
-                    value={(draft[c.key] as string) || ""}
-                    folder={c.imageFolder || table}
-                    onChange={(url) => setDraft({ ...draft, [c.key]: url })}
-                  />
+                  <label className="block text-xs font-medium mb-1">
+                    <span className="block mb-1 font-medium">{c.label}</span>
+                    <ImageField
+                      value={(draft[c.key] as string) || ""}
+                      folder={c.imageFolder || table}
+                      onChange={(url) => setDraft({ ...draft, [c.key]: url })}
+                    />
+                  </label>
+                ) : c.type === "video" ? (
+                  <label className="block text-xs font-medium mb-1">
+                    <span className="block mb-1 font-medium">{c.label}</span>
+                    <VideoField
+                      value={(draft[c.key] as string) || ""}
+                      folder={c.imageFolder || table}
+                      onChange={(url) => setDraft({ ...draft, [c.key]: url })}
+                    />
+                  </label>
                 ) : (
                   <div>
                     {(() => {
                       const isNikField = c.key === "nik" || c.label.toLowerCase().includes("nik");
+                      const isNamaField = /nama/i.test(c.label);
+                      const isAlamatField = /alamat/i.test(c.label);
+                      const isEmailField = /email/i.test(c.label);
+                      const isTeleponField = /telepon|telp|kontak|nomor.?wa|hp/i.test(c.label);
+                      const isTanggalField = /tanggal|tgl/i.test(c.label);
+
+                      const autoComplete = isNikField ? "off"
+                        : isNamaField ? "name"
+                        : isAlamatField ? "street-address"
+                        : isEmailField ? "email"
+                        : isTeleponField ? "tel"
+                        : isTanggalField ? "off"
+                        : isNamaField ? "name"
+                        : "off";
+
                       return (
-                        <input
-                          type={c.type === "number" ? "number" : c.type === "date" ? "date" : "text"}
-                          step={c.step}
-                          value={(draft[c.key] ?? "") as string | number}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            const val = c.type === "number" ? (raw === "" ? 0 : Number(raw)) : raw;
-                            setDraft({ ...draft, [c.key]: val });
-                            if (isNikField) {
-                              setNikError(null);
-                              setNikLoading(false);
-                              if (nikDebounceRef.current) clearTimeout(nikDebounceRef.current);
-                              if (/^\d{16}$/.test(raw)) {
-                                nikDebounceRef.current = setTimeout(async () => {
-                                  setNikLoading(true);
-                                  const { data: p } = await (supabase.from("penduduk") as any)
-                                    .select("*").eq("nik", raw).maybeSingle();
-                                  if (!p) { setNikLoading(false); return; }
-                                  const genderMap: Record<string, string> = { L: "L", P: "P" };
-                                  const next: Record<string, unknown> = { ...draft };
+                        <label className="block text-xs font-medium mb-1">
+                          <span className="block mb-1 font-medium">{c.label}</span>
+                          <input
+                            type={c.type === "number" ? "number" : isTeleponField ? "tel" : isEmailField ? "email" : "text"}
+                            step={c.step}
+                            value={(draft[c.key] ?? "") as string | number}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const val = c.type === "number" ? (raw === "" ? 0 : Number(raw)) : raw;
+                              setDraft({ ...draft, [c.key]: val });
+                              if (isNikField) {
+                                setNikError(null);
+                                setNikLoading(false);
+                                if (nikDebounceRef.current) clearTimeout(nikDebounceRef.current);
+                                if (/^\d{16}$/.test(raw)) {
+                                  nikDebounceRef.current = setTimeout(async () => {
+                                    setNikLoading(true);
+                                    const { data: p } = await (supabase.from("penduduk") as any)
+                                      .select("*").eq("nik", raw).maybeSingle();
+                                    if (!p) { setNikLoading(false); return; }
+                                    const genderMap: Record<string, string> = { L: "L", P: "P" };
+                                    const next: Record<string, unknown> = { ...draft };
 
-                                  // Plain text fields — direct copy
-                                  for (const k of ["nama", "tempat_lahir", "tanggal_lahir", "alamat"]) {
-                                    if (p[k] !== undefined && p[k] !== null) next[k] = p[k];
-                                  }
-                                  next.jenis_kelamin = genderMap[p.jenis_kelamin] ?? p.jenis_kelamin ?? "L";
-                                  next.keluarga_id = p.keluarga_id ?? null;
+                                    for (const k of ["nama", "tempat_lahir", "tanggal_lahir", "alamat"]) {
+                                      if (p[k] !== undefined && p[k] !== null) next[k] = p[k];
+                                    }
+                                    next.jenis_kelamin = genderMap[p.jenis_kelamin] ?? p.jenis_kelamin ?? "L";
+                                    next.keluarga_id = p.keluarga_id ?? null;
 
-                                  // Relation fields — penduduk stores plain text names; RelationSelect
-                                  // expects valueCol (kode or nama depending on table). We try to
-                                  // resolve name->kode for ref tables that use kode as value.
-                                  if (p.agama) {
-                                    const { data: ref } = await (supabase.from("ref_agama") as any)
-                                      .select("kode").ilike("nama", String(p.agama)).maybeSingle();
-                                    next.agama = ref?.kode ?? String(p.agama);
-                                  }
-                                  if (p.pendidikan) {
-                                    const { data: ref } = await (supabase.from("ref_pendidikan") as any)
-                                      .select("nama").ilike("nama", String(p.pendidikan)).maybeSingle();
-                                    if (ref?.nama) next.pendidikan = ref.nama;
-                                  }
-                                  if (p.pekerjaan) {
-                                    const { data: ref } = await (supabase.from("ref_pekerjaan") as any)
-                                      .select("nama").ilike("nama", String(p.pekerjaan)).maybeSingle();
-                                    if (ref?.nama) next.pekerjaan = ref.nama;
-                                  }
-                                  if (p.status_kawin) {
-                                    const { data: ref } = await (supabase.from("ref_status_perkawinan") as any)
-                                      .select("kode").ilike("nama", String(p.status_kawin)).maybeSingle();
-                                    next.status_kawin = ref?.kode ?? String(p.status_kawin);
-                                  }
-                                  if (p.hubungan_kk) {
-                                    const { data: ref } = await (supabase.from("ref_hubungan_keluarga") as any)
-                                      .select("nama").ilike("nama", String(p.hubungan_kk)).maybeSingle();
-                                    if (ref?.nama) next.hubungan_kk = ref.nama;
-                                  }
+                                    if (p.agama) {
+                                      const { data: ref } = await (supabase.from("ref_agama") as any)
+                                        .select("kode").ilike("nama", String(p.agama)).maybeSingle();
+                                      next.agama = ref?.kode ?? String(p.agama);
+                                    }
+                                    if (p.pendidikan) {
+                                      const { data: ref } = await (supabase.from("ref_pendidikan") as any)
+                                        .select("nama").ilike("nama", String(p.pendidikan)).maybeSingle();
+                                      if (ref?.nama) next.pendidikan = ref.nama;
+                                    }
+                                    if (p.pekerjaan) {
+                                      const { data: ref } = await (supabase.from("ref_pekerjaan") as any)
+                                        .select("nama").ilike("nama", String(p.pekerjaan)).maybeSingle();
+                                      if (ref?.nama) next.pekerjaan = ref.nama;
+                                    }
+                                    if (p.status_kawin) {
+                                      const { data: ref } = await (supabase.from("ref_status_perkawinan") as any)
+                                        .select("kode").ilike("nama", String(p.status_kawin)).maybeSingle();
+                                      next.status_kawin = ref?.kode ?? String(p.status_kawin);
+                                    }
+                                    if (p.hubungan_kk) {
+                                      const { data: ref } = await (supabase.from("ref_hubungan_keluarga") as any)
+                                        .select("nama").ilike("nama", String(p.hubungan_kk)).maybeSingle();
+                                      if (ref?.nama) next.hubungan_kk = ref.nama;
+                                    }
 
-                                  setNikLoading(false);
-                                  setDraft(next);
-                                  toast.success("Data ditemukan — field otomatis terisi.");
-                                }, 500);
+                                    setNikLoading(false);
+                                    setDraft(next);
+                                    toast.success("Data ditemukan — field otomatis terisi.");
+                                  }, 500);
+                                }
                               }
-                            }
-                          }}
-                          className={inp}
-                        />
+                            }}
+                            autoComplete={autoComplete}
+                            className={inp}
+                          />
+                          {isNikField && (nikError || nikLoading) && (
+                            <p className="text-xs mt-1">{nikLoading ? <span className="text-blue-500">Mencari data penduduk...</span> : <span className="text-red-500">{nikError}</span>}</p>
+                          )}
+                        </label>
                       );
                     })()}
-                    {columns.some(c => c.key === "nik" || c.label.toLowerCase().includes("nik")) && (nikError || nikLoading) && (
-                      <p className="text-xs mt-1">{nikLoading ? <span className="text-blue-500">Mencari data penduduk...</span> : <span className="text-red-500">{nikError}</span>}</p>
-                    )}
                   </div>
                 )}
               </div>
@@ -995,14 +1152,14 @@ function BeritaCrud() {
         <div className="mb-6 rounded-xl bg-card border border-border p-5 space-y-3">
           <h3 className="font-display font-semibold">{draft.id ? "Edit" : "Tambah"} Berita</h3>
           <div className="grid sm:grid-cols-2 gap-3">
-            <div><label className="block text-xs mb-1">Judul</label><input className={inp} value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} /></div>
-            <div><label className="block text-xs mb-1">Slug (URL)</label><input className={inp} value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} placeholder="contoh: pengerasan-jalan" /></div>
-            <div><label className="block text-xs mb-1">Kategori</label><input className={inp} value={draft.kategori} onChange={(e) => setDraft({ ...draft, kategori: e.target.value })} /></div>
-            <div><label className="block text-xs mb-1">Tanggal</label><input type="date" className={inp} value={draft.tanggal} onChange={(e) => setDraft({ ...draft, tanggal: e.target.value })} /></div>
-            <div><label className="block text-xs mb-1">Penulis</label><input className={inp} value={draft.penulis} onChange={(e) => setDraft({ ...draft, penulis: e.target.value })} /></div>
+            <div><label className="block text-xs mb-1">Judul</label><input className={inp} value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} autoComplete="off" /></div>
+            <div><label className="block text-xs mb-1">Slug (URL)</label><input className={inp} value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} placeholder="contoh: pengerasan-jalan" autoComplete="off" /></div>
+            <div><label className="block text-xs mb-1">Kategori</label><input className={inp} value={draft.kategori} onChange={(e) => setDraft({ ...draft, kategori: e.target.value })} autoComplete="off" /></div>
+            <div><label className="block text-xs mb-1">Tanggal</label><input type="date" className={inp} value={draft.tanggal} onChange={(e) => setDraft({ ...draft, tanggal: e.target.value })} autoComplete="off" /></div>
+            <div><label className="block text-xs mb-1">Penulis</label><input className={inp} value={draft.penulis} onChange={(e) => setDraft({ ...draft, penulis: e.target.value })} autoComplete="off" /></div>
             <div className="flex items-end"><label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.published} onChange={(e) => setDraft({ ...draft, published: e.target.checked })} /> Publikasikan</label></div>
           </div>
-          <div><label className="block text-xs mb-1">Ringkasan</label><textarea rows={2} className={inp} value={draft.ringkasan} onChange={(e) => setDraft({ ...draft, ringkasan: e.target.value })} /></div>
+          <div><label className="block text-xs mb-1">Ringkasan</label><textarea rows={2} className={inp} value={draft.ringkasan} onChange={(e) => setDraft({ ...draft, ringkasan: e.target.value })} autoComplete="off" /></div>
           <div>
             <label className="block text-xs mb-1">Foto Sampul (Cover)</label>
             <ImageField
@@ -1011,7 +1168,7 @@ function BeritaCrud() {
               onChange={(url) => setDraft({ ...draft, cover_url: url })}
             />
           </div>
-          <div><label className="block text-xs mb-1">Isi (pisahkan paragraf dengan baris kosong)</label><textarea rows={10} className={inp} value={isiText} onChange={(e) => setIsiText(e.target.value)} /></div>
+          <div><label className="block text-xs mb-1">Isi (pisahkan paragraf dengan baris kosong)</label><textarea rows={10} className={inp} value={isiText} onChange={(e) => setIsiText(e.target.value)} autoComplete="off" /></div>
           <div className="flex gap-2"><button onClick={save} className={btnPri}>Simpan</button><button onClick={() => setDraft(null)} className={btnSec}>Batal</button></div>
         </div>
       )}
@@ -1098,5 +1255,53 @@ export function GaleriAdmin() {
         { key: "emoji" as any, label: "Emoji (fallback)", hideInTable: true },
       ]}
     />
+  );
+}
+export function VideoField({ value, folder, onChange }: { value: string; folder: string; onChange: (url: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<string>(value || "");
+
+  const onFile = async (f: File | null) => {
+    if (!f) return;
+    setBusy(true);
+    try {
+      const result = await uploadFile(f, {
+        entityType: 'lainnya',
+        kategori: 'foto_galeri',
+      } as any);
+      if (result.success && result.url) {
+        setPreview(result.url);
+        onChange(result.url);
+        toast.success("Video berhasil diunggah ke penyimpanan internal.");
+      } else {
+        toast.error("Gagal unggah video.");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Gagal unggah video.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {preview ? (
+        <video src={preview} controls className="w-full h-auto max-h-48 object-cover rounded shadow" />
+      ) : (
+        <div className="w-full h-32 bg-secondary flex items-center justify-center rounded text-sm text-muted-foreground border border-dashed">
+          Tidak ada video
+        </div>
+      )}
+      <div className="flex items-center gap-3">
+        <input
+          type="file"
+          accept="video/mp4,video/webm"
+          className="text-xs"
+          onChange={(e) => onFile(e.target.files?.[0] || null)}
+          disabled={busy}
+        />
+        {busy && <span className="text-xs text-muted-foreground">Mengunggah...</span>}
+      </div>
+    </div>
   );
 }

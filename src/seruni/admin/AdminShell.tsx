@@ -1,6 +1,6 @@
 import { Link, NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { siteSettings as seedSettings } from "../data";
+
 import { useSiteSettings } from "../lib/zeroHardcode";
 
 const navGroups: { title: string; items: { to: string; label: string; end?: boolean }[] }[] = [
@@ -31,9 +31,16 @@ const navGroups: { title: string; items: { to: string; label: string; end?: bool
     items: [
       { to: "/admin/jenis-surat", label: "Jenis Surat" },
       { to: "/admin/surat-terbit", label: "Surat Terbit" },
+      { to: "/admin/surat-ajuan", label: "Pengajuan Surat" },
       { to: "/admin/aduan", label: "Aduan Warga" },
+    ],
+  },
+  {
+    title: "WhatsApp",
+    items: [
       { to: "/admin/langganan-wa", label: "Langganan WA" },
       { to: "/admin/broadcast", label: "Broadcast WA" },
+      { to: "/admin/wa-chatbot", label: "Chatbot Monitor" },
     ],
   },
   {
@@ -54,6 +61,7 @@ const navGroups: { title: string; items: { to: string; label: string; end?: bool
     title: "Kesehatan",
     items: [
       { to: "/admin/posyandu", label: "Posyandu" },
+      { to: "/admin/balita", label: "Data Balita" },
       { to: "/admin/stunting", label: "Stunting" },
     ],
   },
@@ -129,6 +137,7 @@ const navGroups: { title: string; items: { to: string; label: string; end?: bool
     title: "Situs Publik",
     items: [
       { to: "/admin/site/pages", label: "Halaman & Hero" },
+      { to: "/admin/site/hero", label: "Manajemen Hero" },
       { to: "/admin/site/nav", label: "Menu Navbar" },
       { to: "/admin/site/footer", label: "Kolom Footer" },
       { to: "/admin/site/drafts", label: "Draft & Publish" },
@@ -140,7 +149,7 @@ const navGroups: { title: string; items: { to: string; label: string; end?: bool
 export default function AdminShell() {
   const { user, isAdmin, loading, signOut } = useAuth();
   const { data: settings } = useSiteSettings();
-  const siteName = settings?.nama_resmi ?? seedSettings.nama_resmi;
+  const siteName = settings?.nama_resmi ?? "Desa Seruni";
   const loc = useLocation();
 
   if (loading) {

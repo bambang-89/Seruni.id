@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { siteSettings as seedSettings, navigation } from "./data";
+import { navigation } from "./data";
 import logoDesa from "@/assets/logo-desa.png";
 import { useOnlineStatus } from "./lib/useOnlineStatus";
 import { useNavItems, useFooterColumns } from "./lib/siteCms";
@@ -9,6 +9,7 @@ import { usePreviewMode, exitPreview } from "./lib/preview";
 import { useSiteSettings } from "./lib/zeroHardcode";
 import { useTenant, useTenantSettings, TenantSwitcher } from "./lib/tenant";
 import { supabase } from "@/integrations/supabase/client";
+import { PageHero } from "./components/PageHero";
 
 function OfflineBanner() {
   const online = useOnlineStatus();
@@ -55,6 +56,14 @@ function Header() {
   const [open, setOpen] = useState(false);
   const [mobileExpand, setMobileExpand] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    handleScroll(); // set initial value
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   const loc = useLocation();
   const { data: settings } = useSiteSettings();
   const drawerRef = useRef<HTMLDivElement | null>(null);
@@ -63,12 +72,12 @@ function Header() {
   const lastHoverTriggerRef = useRef<HTMLElement | null>(null);
 
   // Resolve site identity from DB (with seed fallback)
-  const siteName = settings?.nama_resmi ?? seedSettings.nama_resmi;
-  const waNumber = settings?.nomor_wa_resmi ?? seedSettings.nomor_wa_resmi;
+  const siteName = settings?.nama_resmi ?? "Desa Seruni";
+  const waNumber = settings?.nomor_wa_resmi ?? "08123456789";
   const waDigits = waNumber.replace(/\D/g, "");
-  const email = settings?.email ?? seedSettings.email;
-  const address = settings?.alamat_kantor ?? seedSettings.alamat_kantor;
-  const social = settings?.social_media ?? seedSettings.sosial;
+  const email = settings?.email ?? "info@desa.go.id";
+  const address = settings?.alamat_kantor ?? "Kantor Desa";
+  const social = settings?.social_media ?? {};
 
   useEffect(() => {
     setOpen(false);
@@ -182,7 +191,6 @@ function Header() {
     };
   }, [hover]);
 
-  const isHome = loc.pathname === "/";
   type NavChild = { label: string; href: string; desc?: string };
   type NavParent = { label: string; href: string; children: readonly NavChild[] };
   const cmsNav = useNavItems();
@@ -202,11 +210,16 @@ function Header() {
         }))
       : (navigation as unknown as { label: string; href: string; children?: readonly NavChild[] }[]);
 
+  // Transparan di semua halaman saat posisi atas (semua punya hero gelap di belakang)
+  const isTransparent = !scrolled && !hover;
+
   return (
     <header
-      className={`${isHome ? "absolute inset-x-0 top-0" : "sticky top-0 shadow-md"} ${
-        isHome && !hover ? "bg-transparent" : "bg-primary shadow-xl"
-      } z-50 text-primary-foreground transition-[background-color,box-shadow] duration-500 ease-out`}
+      className={[
+        "fixed inset-x-0 top-0",
+        isTransparent ? "bg-transparent shadow-none" : "bg-primary shadow-xl",
+        "z-50 text-primary-foreground transition-[background-color,box-shadow] duration-500 ease-out",
+      ].join(" ")}
       onMouseLeave={() => setHover(null)}
     >
       {/* Desktop top row */}
@@ -297,7 +310,7 @@ function Header() {
         </div>
 
         {/* Mobile top bar */}
-        <div className="md:hidden bg-primary flex items-center justify-between px-4 py-3">
+        <div className="md:hidden flex items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
             <img src={logoDesa} alt="" width={512} height={512} className="h-10 w-10 object-contain" />
             <span className="font-display text-sm font-semibold">{siteName}</span>
@@ -510,9 +523,9 @@ function Footer() {
   const { data: settings } = useSiteSettings();
   const { data: cols, loaded } = useFooterColumns();
 
-  const siteName = settings?.nama_resmi ?? seedSettings.nama_resmi;
-  const address = settings?.alamat_kantor ?? seedSettings.alamat_kantor;
-  const social = settings?.social_media ?? seedSettings.sosial;
+  const siteName = settings?.nama_resmi ?? "Desa Seruni";
+  const address = settings?.alamat_kantor ?? "Kantor Desa";
+  const social = settings?.social_media ?? {};
 
   return (
     <footer className="bg-[color:var(--color-primer-dark)] text-primary-foreground pt-14 pb-8">
@@ -525,7 +538,7 @@ function Footer() {
               </span>
               <div>
                 <div className="font-display text-lg font-semibold">{siteName}</div>
-                <div className="text-xs text-primary-foreground/70">{seedSettings.wilayah}</div>
+                <div className="text-xs text-primary-foreground/70">{settings?.wilayah ?? "Kecamatan, Kabupaten, Provinsi"}</div>
               </div>
             </div>
             <p className="text-sm text-primary-foreground/70 max-w-md">
@@ -555,10 +568,10 @@ function Footer() {
               <ul className="space-y-2 text-sm">
                 {col.links.map((l, i) => (
                   <li key={i}>
-                    {l.href.startsWith("http") || l.href.startsWith("mailto:") || l.href.startsWith("tel:") ? (
+                    {l.href && (l.href.startsWith("http") || l.href.startsWith("mailto:") || l.href.startsWith("tel:")) ? (
                       <a href={l.href} className="hover:text-accent break-words">{l.label}</a>
                     ) : (
-                      <Link to={l.href} className="hover:text-accent">{l.label}</Link>
+                      <Link to={l.href || "#"} className="hover:text-accent">{l.label}</Link>
                     )}
                   </li>
                 ))}
@@ -596,6 +609,7 @@ function ScrollToTop() {
   return null;
 }
 
+
 export default function Layout() {
   const { loading } = useTenant();
 
@@ -616,6 +630,7 @@ export default function Layout() {
       <OfflineBanner />
       <ScrollToTop />
       <Header />
+      <PageHero route={useLocation().pathname} />
       <main id="main" className="flex-1">
         <Outlet />
       </main>
@@ -624,3 +639,4 @@ export default function Layout() {
     </div>
   );
 }
+

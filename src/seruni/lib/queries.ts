@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenantId } from "./tenant";
 import { useTenantId } from "./tenant";
 
 export type ProfilDesa = {
@@ -41,9 +40,41 @@ export type Berita = {
   gambar_gallery?: string[] | null;
   gambar_alt?: string | null;
 };
-export type Agenda = { id?: string; slug: string; jenis: string; judul: string; tanggal: string; waktu: string; lokasi: string; penyelenggara: string; deskripsi: string };
-export type Pengumuman = { id?: string; nomor: string; tanggal: string; judul: string; ringkasan: string };
-export type Galeri = { id?: string; judul: string; emoji: string; album: string; tanggal: string; urutan: number; foto_url?: string | null };
+export type Agenda = {
+  id?: string;
+  slug: string;
+  jenis: string;
+  judul: string;
+  tanggal: string;
+  waktu?: string | null;
+  lokasi?: string | null;
+  penyelenggara?: string | null;
+  foto_url?: string | null;
+  deskripsi?: string | null;
+};
+export type Pengumuman = {
+  id?: string;
+  nomor: string;
+  tanggal: string;
+  judul: string;
+  ringkasan?: string | null;
+  foto_url?: string | null;
+  deskripsi?: string | null;
+  lampiran_url?: string | null;
+};
+export type Galeri = {
+  id?: string;
+  judul: string;
+  emoji: string;
+  album: string;
+  tanggal: string;
+  urutan: number;
+  foto_url?: string | null;
+  video_url?: string | null;
+  fotografer?: string | null;
+  sumber?: string | null;
+  deskripsi?: string | null;
+};
 
 export type HeroSlider = {
   id: string;
@@ -371,9 +402,50 @@ export function useDokumenUpload(
 
 // ===================== Phase 6B: Potensi, Marketplace, Wisata =====================
 
-export type PotensiUmkm = { id: string; tipe: string; nama: string; pemilik: string | null; sektor: string | null; dusun: string | null; kontak: string | null; alamat: string | null; deskripsi: string | null; status: string };
-export type PotensiProduk = { id: string; umkm_id: string | null; penjual_nama: string; nama: string; kategori: string | null; harga: number | null; satuan: string | null; stok: number | null; deskripsi: string | null; foto_url: string | null; featured: boolean; status: string };
-export type PotensiWisata = { id: string; nama: string; jenis: string; dusun: string | null; deskripsi: string | null; latitude: number | null; longitude: number | null; foto_url: string | null; fasilitas: string | null; status: string };
+export type PotensiUmkm = {
+  id: string;
+  tipe: string;
+  nama: string;
+  pemilik: string | null;
+  sektor: string | null;
+  dusun: string | null;
+  kontak_penjual: string | null;
+  kontak?: string | null;
+  alamat: string | null;
+  deskripsi: string | null;
+  foto_url: string | null;
+  verified: boolean;
+  status: string;
+};
+export type PotensiProduk = {
+  id: string;
+  umkm_id: string | null;
+  penjual_nama: string;
+  nama: string;
+  kategori: string | null;
+  harga: number | null;
+  satuan: string | null;
+  stok: number | null;
+  deskripsi: string | null;
+  foto_url: string | null;
+  kontak_penjual: string | null;
+  verified: boolean;
+  featured: boolean;
+  status: string;
+};
+export type PotensiWisata = {
+  id: string;
+  nama: string;
+  jenis: string;
+  dusun: string | null;
+  alamat: string | null;
+  deskripsi: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  foto_url: string | null;
+  fasilitas: string | null;
+  status: string;
+};
 
 export function usePotensiUmkm(tipe?: string) {
   const [data, setData] = useState<PotensiUmkm[]>([]);
@@ -764,6 +836,8 @@ export function useStatistikDesa() {
         const totalJiwa = dusun.reduce((sum, d) => sum + (d.jiwa || 0), 0);
         const totalLuas = dusun.reduce((sum, d) => sum + Number(d.luas_ha || 0), 0);
 
+        let lakiLaki = 0;
+        let perempuan = 0;
         let per_umur = [];
         let per_pekerjaan = [];
         let per_pendidikan = [];
@@ -933,8 +1007,9 @@ export function useUsulanStats() {
 // ===================== Bansos =====================
 
 export type BantuanSosial = {
-  id: string; kode: string; nama: string; sumber: string; deskripsi: string | null;
-  periode_mulai: string | null; periode_selesai: string | null; kuota: number | null; aktif: boolean;
+  id: string; kode: string; nama: string; sumber: string | null; deskripsi: string | null;
+  periode_mulai: string | null; periode_selesai: string | null; kuota: number | null;
+  aktif: boolean | number | null;
 };
 
 export type PenerimaBansos = {
@@ -1048,8 +1123,8 @@ export function useSuratJenis(aktifOnly = true) {
   useEffect(() => {
     let q = supabase.from("surat_jenis").select("*").order("urutan");
     if (aktifOnly) q = q.eq("aktif", true);
-    // surat_jenis is public data — RLS policy (aktif=true) handles security.
-    // Tenant ID filter removed: fallback tenant UUID != DB tenant UUID → 0 rows.
+    // surat_jenis is public data â€” RLS policy (aktif=true) handles security.
+    // Tenant ID filter removed: fallback tenant UUID != DB tenant UUID â†’ 0 rows.
     q.then(({ data, error }) => {
       if (error) console.error("useSuratJenis error:", error);
       setData((data || []) as SuratJenis[]);
@@ -1093,7 +1168,11 @@ export function useAduanKategori() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("ref_kategori_aduan").select("*").eq("aktif", true).order("urutan")
-      .then(({ data }) => { setData((data || []) as RefOption[]); setLoading(false); });
+      .then(({ data, error }) => {
+        if (error) console.error("useAduanKategori error:", error);
+        setData((data || []) as RefOption[]);
+        setLoading(false);
+      });
   }, []);
   return { data, loading };
 }
@@ -1103,7 +1182,11 @@ export function useKategoriUsulan() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("ref_kategori_usulan").select("*").eq("aktif", true).order("urutan")
-      .then(({ data }) => { setData((data || []) as RefOption[]); setLoading(false); });
+      .then(({ data, error }) => {
+        if (error) console.error("useKategoriUsulan error:", error);
+        setData((data || []) as RefOption[]);
+        setLoading(false);
+      });
   }, []);
   return { data, loading };
 }
@@ -1113,7 +1196,11 @@ export function useTipeUmkm() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("ref_tipe_umkm").select("*").eq("aktif", true).order("urutan")
-      .then(({ data }) => { setData((data || []) as RefOption[]); setLoading(false); });
+      .then(({ data, error }) => {
+        if (error) console.error("useTipeUmkm error:", error);
+        setData((data || []) as RefOption[]);
+        setLoading(false);
+      });
   }, []);
   return { data, loading };
 }
@@ -1123,7 +1210,11 @@ export function useJenisWisata() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("ref_jenis_wisata").select("*").eq("aktif", true).order("urutan")
-      .then(({ data }) => { setData((data || []) as RefOption[]); setLoading(false); });
+      .then(({ data, error }) => {
+        if (error) console.error("useJenisWisata error:", error);
+        setData((data || []) as RefOption[]);
+        setLoading(false);
+      });
   }, []);
   return { data, loading };
 }
@@ -1133,7 +1224,11 @@ export function useSumberDana() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("ref_sumber_dana").select("*").eq("aktif", true).order("urutan")
-      .then(({ data }) => { setData((data || []) as RefOption[]); setLoading(false); });
+      .then(({ data, error }) => {
+        if (error) console.error("useSumberDana error:", error);
+        setData((data || []) as RefOption[]);
+        setLoading(false);
+      });
   }, []);
   return { data, loading };
 }
@@ -1333,21 +1428,23 @@ export type PembangunanDetail = {
   tahun: number;
   bidang: string;
   nama_kegiatan: string;
+  judul?: string | null;
   lokasi: string | null;
   volume: string | null;
   anggaran: number;
-  realisasi: number;
+  realized: number;
   sumber_dana: string | null;
+  sumber?: string | null;
   status: string;
   tanggal_mulai: string | null;
   tanggal_selesai: string | null;
   keterangan: string | null;
+  foto_url: string | null;
   gambar_dokumentasi: string[] | null;
   progress_persen: number | null;
   created_at: string;
   updated_at?: string;
 };
-
 export function usePembangunanById(id?: string) {
   const [data, setData] = useState<PembangunanDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1397,6 +1494,7 @@ export type AduanWarga = {
   status: string;
   tanggapan: string | null;
   ditanggapi_pada: string | null;
+  tanggal: string | null;
   created_at: string;
   updated_at?: string;
 };
@@ -1443,7 +1541,7 @@ export function useIdmIndikatorById(id?: string) {
   }, [id]);
   return { data, loading };
 }
-export function useAutofillPenduduk(nik: string, onFound: (data: any) => void) {
+export function useAutofillPenduduk(nik: string, onFound: (data: NonNullable<Awaited<ReturnType<typeof fetchPendudukByNik>>>) => void) {
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     if (!nik || nik.length !== 16) return;
@@ -1456,4 +1554,40 @@ export function useAutofillPenduduk(nik: string, onFound: (data: any) => void) {
     return () => clearTimeout(t);
   }, [nik, onFound]);
   return { loading };
+}
+export interface PageHeroConfig {
+  id: string;
+  tenant_id: string;
+  page_route: string;
+  title: string | null;
+  subtitle: string | null;
+  image_path: string | null;
+  video_path: string | null;
+  is_active: boolean;
+}
+
+export function usePageHeroConfig(route: string) {
+  const tenantId = useTenantId();
+  const [data, setData] = useState<PageHeroConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!tenantId) return;
+    let mounted = true;
+    async function load() {
+      const { data: row } = await supabase
+        .from('page_hero_config')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('page_route', route)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (mounted) {
+        setData(row as PageHeroConfig | null);
+        setLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, [tenantId, route]);
+  return { data, loading };
 }

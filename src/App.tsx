@@ -2,6 +2,7 @@ import { lazy, Suspense, Component, ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./seruni/Layout";
 import HomePage from "./seruni/HomePage";
+import { StandaloneLayout } from "./seruni/ui";
 import { AuthProvider } from "./seruni/lib/auth";
 import { TenantProvider } from "./seruni/lib/tenant";
 import LoginPage from "./seruni/admin/LoginPage";
@@ -103,6 +104,7 @@ const AW = () => import("./seruni/admin/AdminWorkflow");
 const SiteDraftAdmin = lazy(() => AW().then((m) => ({ default: m.SiteDraftAdmin })));
 const SiteVersionAdmin = lazy(() => AW().then((m) => ({ default: m.SiteVersionAdmin })));
 const VotingClosureAdmin = lazy(() => AW().then((m) => ({ default: m.VotingClosureAdmin })));
+const HeroAdmin = lazy(() => import("./seruni/admin/HeroAdmin").then((m) => ({ default: m.HeroAdmin })));
 
 // Phase 2 + sisa Phase 5/6 — Penduduk & modul turunan
 const APD = () => import("./seruni/admin/AdminPenduduk");
@@ -228,6 +230,7 @@ export default function App() {
             <Route path="site/footer" element={<FooterAdmin />} />
             <Route path="site/draft-queue" element={<DraftQueueAdmin />} />
             <Route path="site/version-history" element={<VersionHistoryAdmin />} />
+            <Route path="site/hero" element={<HeroAdmin />} />
             <Route path="rpjmdes-periode" element={<RpjmdesPeriodeAdmin />} />
             <Route path="rpjmdes-bidang" element={<RpjmdesBidangAdmin />} />
             <Route path="rpjmdes-program" element={<RpjmdesProgramAdmin />} />
@@ -259,7 +262,6 @@ export default function App() {
 
           {/* Informasi */}
           <Route path="berita" element={<BeritaListPage />} />
-          <Route path="berita/:slug" element={<BeritaDetailPage />} />
           <Route path="kalender-desa" element={<KalenderPage />} />
           <Route path="galeri" element={<GaleriPage />} />
           <Route path="pengumuman" element={<PengumumanPage />} />
@@ -301,23 +303,26 @@ export default function App() {
           <Route path="langganan-wa" element={<LanggananWaPage />} />
           <Route path="layanan/suplesi" element={<SuplesiPage />} />
 
-          {/* Task F3 — Detail Pages */}
-          <Route path="agenda/:id" element={<AgendaDetailPage />} />
-          <Route path="galeri/:id" element={<GaleriDetailPage />} />
-          <Route path="pengumuman/:id" element={<PengumumanDetailPage />} />
-          <Route path="posyandu/:id" element={<PosyanduDetailPage />} />
-          <Route path="stunting/:id" element={<StuntingDetailPage />} />
-          <Route path="umkm/:id" element={<UmkmDetailPage />} />
-          <Route path="produk/:id" element={<ProdukDetailPage />} />
-          <Route path="wisata/:id" element={<WisataDetailPage />} />
-          <Route path="pembangunan/:id" element={<PembangunanDetailPage />} />
-          <Route path="bansos/:id" element={<BansosDetailPage />} />
-          <Route path="aduan/:id" element={<AduanDetailPage />} />
-          <Route path="idm-detail/:id" element={<IdmIndikatorDetailPage />} />
-
           {/* Redirects & 404 */}
           <Route path="kontak" element={<Navigate to="/service-center" replace />} />
           <Route path="*" element={<NotFoundPage />} />
+          </Route>
+
+          {/* Standalone Detail Pages */}
+          <Route element={<StandaloneLayout />}>
+            <Route path="berita/:slug" element={<BeritaDetailPage />} />
+            <Route path="agenda/:id" element={<AgendaDetailPage />} />
+            <Route path="galeri/:id" element={<GaleriDetailPage />} />
+            <Route path="pengumuman/:id" element={<PengumumanDetailPage />} />
+            <Route path="posyandu/:id" element={<PosyanduDetailPage />} />
+            <Route path="stunting/:id" element={<StuntingDetailPage />} />
+            <Route path="umkm/:id" element={<UmkmDetailPage />} />
+            <Route path="produk/:id" element={<ProdukDetailPage />} />
+            <Route path="wisata/:id" element={<WisataDetailPage />} />
+            <Route path="pembangunan/:id" element={<PembangunanDetailPage />} />
+            <Route path="bansos/:id" element={<BansosDetailPage />} />
+            <Route path="aduan/:id" element={<AduanDetailPage />} />
+            <Route path="idm-detail/:id" element={<IdmIndikatorDetailPage />} />
           </Route>
         </Routes>
         </Suspense>
