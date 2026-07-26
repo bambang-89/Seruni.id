@@ -1,15 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  profilDesa as profilDesaSeed,
-  strukturPamong as pamongSeed,
-  wilayahDusun as dusunSeed,
-  lembagaDesa as lembagaSeed,
-  beritaTerbaru as beritaSeed,
-  agendaMendatang as agendaSeed,
-  pengumumanResmi as pengumumanSeed,
-  galeriDetail as galeriSeed,
-} from "../data";
+import { useTenantId } from "./tenant";
 import { useTenantId } from "./tenant";
 
 export type ProfilDesa = {
@@ -102,7 +93,7 @@ export type DokumenUpload = {
 };
 
 export function useProfilDesa() {
-  const [data, setData] = useState<ProfilDesa>(profilDesaSeed);
+  const [data, setData] = useState<ProfilDesa>({ sejarah: [], visi: "", misi: [] });
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase
@@ -127,7 +118,7 @@ export function useProfilDesa() {
 
 export function usePamong() {
   const tenantId = useTenantId();
-  const [data, setData] = useState<Pamong[]>(pamongSeed as Pamong[]);
+  const [data, setData] = useState<Pamong[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let q = supabase.from("desa_pamong").select("*").order("urutan");
@@ -142,7 +133,7 @@ export function usePamong() {
 
 export function useDusun() {
   const tenantId = useTenantId();
-  const [data, setData] = useState<Dusun[]>(dusunSeed as Dusun[]);
+  const [data, setData] = useState<Dusun[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let q = supabase.from("wilayah_dusun").select("*").order("urutan");
@@ -156,7 +147,7 @@ export function useDusun() {
 }
 
 export function useLembaga() {
-  const [data, setData] = useState<Lembaga[]>(lembagaSeed as Lembaga[]);
+  const [data, setData] = useState<Lembaga[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("lembaga_desa").select("*").order("urutan").then(({ data: r }) => {
@@ -239,7 +230,7 @@ export async function fetchKewarganegaraan(warga_negara_id: unknown): Promise<st
 }
 
 export function useBerita(opts: { publishedOnly?: boolean } = { publishedOnly: true }) {
-  const [data, setData] = useState<Berita[]>(beritaSeed.map((b) => ({ ...b, published: true })) as Berita[]);
+  const [data, setData] = useState<Berita[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let q = supabase.from("berita").select("*").order("tanggal", { ascending: false });
@@ -260,8 +251,7 @@ export function useBeritaBySlug(slug?: string) {
     supabase.from("berita").select("*").eq("slug", slug).eq("published", true).maybeSingle().then(({ data: r }) => {
       if (r) setData({ ...r, isi: (r.isi as string[]) || [] } as Berita);
       else {
-        const fallback = beritaSeed.find((b) => b.slug === slug);
-        if (fallback) setData({ ...fallback, published: true } as Berita);
+        setData(null);
       }
       setLoading(false);
     });
@@ -270,7 +260,7 @@ export function useBeritaBySlug(slug?: string) {
 }
 
 export function useAgenda() {
-  const [data, setData] = useState<Agenda[]>(agendaSeed as Agenda[]);
+  const [data, setData] = useState<Agenda[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("agenda").select("*").order("tanggal").then(({ data: r }) => {
@@ -282,7 +272,7 @@ export function useAgenda() {
 }
 
 export function usePengumuman() {
-  const [data, setData] = useState<Pengumuman[]>(pengumumanSeed as Pengumuman[]);
+  const [data, setData] = useState<Pengumuman[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("pengumuman").select("*").order("tanggal", { ascending: false }).then(({ data: r }) => {
@@ -294,7 +284,7 @@ export function usePengumuman() {
 }
 
 export function useGaleri() {
-  const [data, setData] = useState<Galeri[]>(galeriSeed as Galeri[]);
+  const [data, setData] = useState<Galeri[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("galeri").select("*").order("urutan").then(({ data: r }) => {
@@ -742,17 +732,23 @@ export type StatistikDesa = {
   luas_wilayah_km2: number;
   laki_laki: number;
   perempuan: number;
+  per_umur: { label: string; nilai: number }[];
+  per_pekerjaan: { label: string; nilai: number }[];
+  per_pendidikan: { label: string; nilai: number }[];
 };
 
 export function useStatistikDesa() {
   const tenantId = useTenantId(); // Tenant context for future aggregation queries
   const [data, setData] = useState<StatistikDesa>({
-    jumlah_penduduk: 6842,
-    jumlah_kk: 1937,
-    jumlah_dusun: 6,
-    luas_wilayah_km2: 12.4,
-    laki_laki: 3421,
-    perempuan: 3421,
+    jumlah_penduduk: 0,
+    jumlah_kk: 0,
+    jumlah_dusun: 0,
+    luas_wilayah_km2: 0,
+    laki_laki: 0,
+    perempuan: 0,
+    per_umur: [],
+    per_pekerjaan: [],
+    per_pendidikan: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -768,22 +764,36 @@ export function useStatistikDesa() {
         const totalJiwa = dusun.reduce((sum, d) => sum + (d.jiwa || 0), 0);
         const totalLuas = dusun.reduce((sum, d) => sum + Number(d.luas_ha || 0), 0);
 
-        // Cari data jenis_kelamin dari dashboard_agregat
-        let lakiLaki = 0, perempuan = 0;
+        let per_umur = [];
+        let per_pekerjaan = [];
+        let per_pendidikan = [];
+
         if (aggRes.data) {
           aggRes.data.forEach((row) => {
             if (row.metrik_key === 'laki_laki') lakiLaki = Number(row.metrik_value);
             if (row.metrik_key === 'perempuan') perempuan = Number(row.metrik_value);
+            if (row.metrik_key === 'per_umur') {
+              try { per_umur = typeof row.metrik_value === 'string' ? JSON.parse(row.metrik_value) : row.metrik_value; } catch (e) { /* ignore */ }
+            }
+            if (row.metrik_key === 'per_pekerjaan') {
+              try { per_pekerjaan = typeof row.metrik_value === 'string' ? JSON.parse(row.metrik_value) : row.metrik_value; } catch (e) { /* ignore */ }
+            }
+            if (row.metrik_key === 'per_pendidikan') {
+              try { per_pendidikan = typeof row.metrik_value === 'string' ? JSON.parse(row.metrik_value) : row.metrik_value; } catch (e) { /* ignore */ }
+            }
           });
         }
 
         setData({
-          jumlah_penduduk: totalJiwa || 6842,
-          jumlah_kk: totalKk || 1937,
-          jumlah_dusun: dusun.length || 6,
-          luas_wilayah_km2: Number((totalLuas / 100).toFixed(2)) || 12.4, // konversi ha ke km2
-          laki_laki: lakiLaki || Math.floor(totalJiwa / 2),
-          perempuan: perempuan || Math.floor(totalJiwa / 2),
+          jumlah_penduduk: totalJiwa || 0,
+          jumlah_kk: totalKk || 0,
+          jumlah_dusun: dusun.length || 0,
+          luas_wilayah_km2: Number((totalLuas / 100).toFixed(2)) || 0,
+          laki_laki: lakiLaki || 0,
+          perempuan: perempuan || 0,
+          per_umur: Array.isArray(per_umur) ? per_umur : [],
+          per_pekerjaan: Array.isArray(per_pekerjaan) ? per_pekerjaan : [],
+          per_pendidikan: Array.isArray(per_pendidikan) ? per_pendidikan : [],
         });
       }
       setLoading(false);
@@ -801,16 +811,9 @@ export type IdmData = {
 
 export function useIdmData() {
   const [data, setData] = useState<IdmData>({
-    status: "Berkembang",
-    skor_total: 0.7412,
-    dimensi: [
-      { nama: "Kesehatan", skor: 4.2 },
-      { nama: "Pendidikan", skor: 4.5 },
-      { nama: "Modal Sosial", skor: 3.8 },
-      { nama: "Permukiman", skor: 4.1 },
-      { nama: "Ekonomi", skor: 3.6 },
-      { nama: "Ekologi", skor: 4.4 },
-    ],
+    status: "-",
+    skor_total: 0,
+    dimensi: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -823,15 +826,15 @@ export function useIdmData() {
             : (r.dimensi_scores || {});
 
           setData({
-            status: r.status || "Berkembang",
-            skor_total: Number(r.total_skor) || 0.74,
+            status: r.status || "-",
+            skor_total: Number(r.total_skor) || 0,
             dimensi: [
-              { nama: "Kesehatan", skor: Number(dimensiScores.Kesehatan || 0.84) * 5 },
-              { nama: "Pendidikan", skor: Number(dimensiScores.Pendidikan || 0.90) * 5 },
-              { nama: "Modal Sosial", skor: Number(dimensiScores["Modal Sosial"] || 0.76) * 5 },
-              { nama: "Permukiman", skor: Number(dimensiScores.Permukiman || 0.82) * 5 },
-              { nama: "Ekonomi", skor: Number(dimensiScores.Ekonomi || 0.72) * 5 },
-              { nama: "Ekologi", skor: Number(dimensiScores.Ekologi || 0.88) * 5 },
+              { nama: "Kesehatan", skor: Number(dimensiScores.Kesehatan || 0) * 5 },
+              { nama: "Pendidikan", skor: Number(dimensiScores.Pendidikan || 0) * 5 },
+              { nama: "Modal Sosial", skor: Number(dimensiScores["Modal Sosial"] || 0) * 5 },
+              { nama: "Permukiman", skor: Number(dimensiScores.Permukiman || 0) * 5 },
+              { nama: "Ekonomi", skor: Number(dimensiScores.Ekonomi || 0) * 5 },
+              { nama: "Ekologi", skor: Number(dimensiScores.Ekologi || 0) * 5 },
             ],
           });
         }
@@ -851,9 +854,9 @@ export type PembangunanData = {
 
 export function usePembangunanData() {
   const [data, setData] = useState<PembangunanData>({
-    progres_fisik_avg: 64,
-    anggaran_terserap_pct: 58,
-    aset_baru: 14,
+    progres_fisik_avg: 0,
+    anggaran_terserap_pct: 0,
+    aset_baru: 0,
     kegiatan_aktif: [],
   });
   const [loading, setLoading] = useState(true);
@@ -894,8 +897,8 @@ export type UsulanStats = {
 
 export function useUsulanStats() {
   const [data, setData] = useState<UsulanStats>({
-    total_usulan: 47,
-    partisipasi_voting: 1284,
+    total_usulan: 0,
+    partisipasi_voting: 0,
     top10: [],
   });
   const [loading, setLoading] = useState(true);
@@ -1058,17 +1061,15 @@ export function useSuratJenis(aktifOnly = true) {
 
 export type LayananStat = {
   jenis_layanan: string;
-  periode: string;
-  jumlah_ajuan: number;
-  jumlah_proses: number;
-  jumlah_selesai: number;
+  count_bulan_ini: number;
+  count_bulan_lalu: number;
 };
 
 export function useLayananStatistik(jenis?: string) {
   const [data, setData] = useState<LayananStat[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    let q = supabase.from("layanan_statistik").select("*").order("periode", { ascending: false });
+    let q = supabase.from("layanan_statistik").select("*");
     if (jenis) q = q.eq("jenis_layanan", jenis);
     q.then(({ data }) => {
       setData((data || []) as LayananStat[]);
@@ -1082,17 +1083,57 @@ export function useLayananStatBulanIni(jenis?: string) {
   const { data } = useLayananStatistik(jenis);
   if (!data || data.length === 0) return 0;
   const latest = data[0];
-  return latest.jumlah_selesai ?? 0;
+  return latest.count_bulan_ini ?? 0;
 }
 
-export type AduanKategori = { id: string; kode: string; nama: string };
+export type RefOption = { id: string; kode: string; nama: string };
 
 export function useAduanKategori() {
-  const [data, setData] = useState<AduanKategori[]>([]);
+  const [data, setData] = useState<RefOption[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    supabase.from("ref_aduan_kategori").select("*").eq("aktif", true).order("urutan")
-      .then(({ data }) => { setData((data || []) as AduanKategori[]); setLoading(false); });
+    supabase.from("ref_kategori_aduan").select("*").eq("aktif", true).order("urutan")
+      .then(({ data }) => { setData((data || []) as RefOption[]); setLoading(false); });
+  }, []);
+  return { data, loading };
+}
+
+export function useKategoriUsulan() {
+  const [data, setData] = useState<RefOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("ref_kategori_usulan").select("*").eq("aktif", true).order("urutan")
+      .then(({ data }) => { setData((data || []) as RefOption[]); setLoading(false); });
+  }, []);
+  return { data, loading };
+}
+
+export function useTipeUmkm() {
+  const [data, setData] = useState<RefOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("ref_tipe_umkm").select("*").eq("aktif", true).order("urutan")
+      .then(({ data }) => { setData((data || []) as RefOption[]); setLoading(false); });
+  }, []);
+  return { data, loading };
+}
+
+export function useJenisWisata() {
+  const [data, setData] = useState<RefOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("ref_jenis_wisata").select("*").eq("aktif", true).order("urutan")
+      .then(({ data }) => { setData((data || []) as RefOption[]); setLoading(false); });
+  }, []);
+  return { data, loading };
+}
+
+export function useSumberDana() {
+  const [data, setData] = useState<RefOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("ref_sumber_dana").select("*").eq("aktif", true).order("urutan")
+      .then(({ data }) => { setData((data || []) as RefOption[]); setLoading(false); });
   }, []);
   return { data, loading };
 }
@@ -1401,4 +1442,18 @@ export function useIdmIndikatorById(id?: string) {
       });
   }, [id]);
   return { data, loading };
+}
+export function useAutofillPenduduk(nik: string, onFound: (data: any) => void) {
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!nik || nik.length !== 16) return;
+    const t = setTimeout(async () => {
+      setLoading(true);
+      const data = await fetchPendudukByNik(nik);
+      if (data) onFound(data);
+      setLoading(false);
+    }, 500);
+    return () => clearTimeout(t);
+  }, [nik, onFound]);
+  return { loading };
 }

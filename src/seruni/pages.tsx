@@ -1,14 +1,11 @@
+ 
+
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "./lib/tenant";
-import {
-  siteSettings as seedSettings,
-  layananTerlaris,
-  statistikPenduduk,
-  potensi,
-} from "./data";
+
 import {
   EditorialLayout,
   SectionWrap,
@@ -56,6 +53,7 @@ import {
   useBansosById,
   useAduanById,
   useIdmIndikatorById,
+  useAutofillPenduduk,
 } from "./lib/queries";
 import { PetaLeaflet } from "./PetaLeaflet";
 import { Seo } from "./lib/seo";
@@ -91,7 +89,7 @@ function BarList({ items, unit = "" }: { items: { label: string; nilai: number }
 export function ProfilDesaPage() {
   const { data: profilDesa } = useProfilDesa();
   const { data: settings } = useSiteSettings();
-  const siteName = settings?.nama_resmi ?? seedSettings.nama_resmi;
+  const siteName = settings?.nama_resmi ?? "Desa Seruni";
   return (
     <EditorialLayout
       eyebrow="Profil Desa"
@@ -99,11 +97,11 @@ export function ProfilDesaPage() {
       deskripsi={`Kenali ${siteName} — dari sejarah pemekaran hingga arah pembangunan ke depan.`}
       crumbs={[{ label: "Beranda", to: "/" }, { label: "Profil Desa" }]}
     >
-      <Seo title="Profil Desa" description={`Sejarah, visi, dan misi ${siteName}, ${settings?.wilayah ?? seedSettings.wilayah}.`} path="/profil-desa" />
+      <Seo title="Profil Desa" description={`Sejarah, visi, dan misi ${siteName}, ${settings?.wilayah ?? ""}.`} path="/profil-desa" />
       <SectionWrap>
         <div className="grid lg:grid-cols-3 gap-10 lg:gap-14">
           <article className="lg:col-span-2">
-            <EditorialTitle kicker="Sejarah" judul="Perjalanan Desa" />
+            <EditorialTitle sectionKey="sejarah-perjalanan-desa" kicker="Sejarah" judul="Perjalanan Desa" />
             <div className="space-y-5 text-base leading-relaxed opacity-90">
               {profilDesa.sejarah.map((p, i) => (<p key={i}>{p}</p>))}
             </div>
@@ -173,7 +171,7 @@ export function StrukturPage() {
 export function WilayahPage() {
   const { data: wilayahDusun } = useDusun();
   const { data: settings } = useSiteSettings();
-  const siteName = settings?.nama_resmi ?? seedSettings.nama_resmi;
+  const siteName = settings?.nama_resmi ?? "Desa Seruni";
   const totalKK = wilayahDusun.reduce((a, d) => a + d.kk, 0);
   const totalJiwa = wilayahDusun.reduce((a, d) => a + d.jiwa, 0);
   const totalLuas = wilayahDusun.reduce((a, d) => a + d.luas_ha, 0);
@@ -373,7 +371,7 @@ export function KalenderPage() {
         <ul className="divide-y divide-current/15 border-y border-current/15">
           {agendaMendatang.map((a) => (
             <li key={a.slug}>
-              <Link to={`/agenda/${a.id}`} className="block py-8 grid sm:grid-cols-[120px_1fr] gap-6 sm:gap-10 items-start hover:bg-muted/20 transition-colors">
+              <Link to={`/agenda/${a.id}`} className="py-8 grid sm:grid-cols-[120px_1fr] gap-6 sm:gap-10 items-start hover:bg-muted/20 transition-colors">
                 <div className="border-l-2 border-accent pl-4">
                   <div className="font-display text-5xl font-bold tabular-nums leading-none">
                     {new Date(a.tanggal).getDate()}
@@ -447,7 +445,7 @@ export function PengumumanPage() {
         <ul className="divide-y divide-current/15 border-y border-current/15">
           {pengumumanResmi.map((p) => (
             <li key={p.nomor}>
-              <Link to={`/pengumuman/${p.id}`} className="block py-6 grid sm:grid-cols-[220px_1fr] gap-4 sm:gap-10 hover:bg-muted/20 transition-colors">
+              <Link to={`/pengumuman/${p.id}`} className="py-6 grid sm:grid-cols-[220px_1fr] gap-4 sm:gap-10 hover:bg-muted/20 transition-colors">
                 <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
                   <div>No. {p.nomor}</div>
                   <time className="block mt-1 opacity-70 tabular-nums">{formatTanggal(p.tanggal)}</time>
@@ -484,11 +482,11 @@ export function LayananPage() {
   const { data: statList } = useLayananStatistik();
   const suratCount = suratList.length;
 
-  // Build a lookup: jenis_layanan -> jumlah_selesai (bulan ini)
+  // Build a lookup: jenis_layanan -> count_bulan_ini
   const statMap = new Map<string, number>();
   for (const s of statList ?? []) {
     if (!statMap.has(s.jenis_layanan)) {
-      statMap.set(s.jenis_layanan, s.jumlah_selesai ?? 0);
+      statMap.set(s.jenis_layanan, s.count_bulan_ini ?? 0);
     }
   }
 
@@ -523,7 +521,7 @@ export function LayananPage() {
         </div>
       </SectionWrap>
       <SectionWrap alt>
-        <EditorialTitle kicker="Bulan Ini" judul="Layanan Terlaris" />
+        <EditorialTitle sectionKey="bulan-ini-layanan-terlaris" kicker="Bulan Ini" judul="Layanan Terlaris" />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-current/15">
           {suratList.slice(0, 4).map((l) => {
             const statKey = getLayananJenis(l.kode_surat);
@@ -640,7 +638,7 @@ export function LayananPBBPage() {
           </div>
           <label className="block text-sm">
             <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">NIK Wajib Pajak</span>
-            <input value={nik} onChange={(e) => setNik(e.target.value)} maxLength={16} autoComplete="off" inputMode="numeric" placeholder="16 digit NIK sesuai SPPT" className={`${inputCls} font-mono tabular-nums`} />
+            <input value={nik} onChange={(e) => setNik(e.target.value.replace(/\D/g,""))} maxLength={16} minLength={16} pattern="\d{16}" autoComplete="off" inputMode="numeric" placeholder="16 digit NIK sesuai SPPT" className={`${inputCls} font-mono tabular-nums`} />
             <span className="mt-1 block text-[11px] opacity-60">NIK diperlukan sebagai verifikasi agar data tagihan tidak dapat ditelusuri dari NOP saja.</span>
           </label>
           <button type="submit" disabled={loading} className={`${btnPrimary} justify-center disabled:opacity-60`}>
@@ -687,6 +685,8 @@ export function ServiceCenterPage() {
   const [mode, setMode] = useState<"kirim" | "lacak">("kirim");
   const [kategori, setKategori] = useState<string>("");
   const { data: kategoriList } = useAduanKategori();
+  const { data: dusunList } = useDusun();
+  const [nik, setNik] = useState("");
   const [nama, setNama] = useState("");
   const [kontak, setKontak] = useState("");
   const [judul, setJudul] = useState("");
@@ -709,9 +709,15 @@ export function ServiceCenterPage() {
   const [lacakHasil, setLacakHasil] = useState<LacakHasil | null>(null);
   const [lacakLoading, setLacakLoading] = useState(false);
 
+  useAutofillPenduduk(nik, (d) => {
+    setNama(d.nama);
+    if (d.nomor_hp) setKontak(d.nomor_hp);
+  });
+
   async function submitAduan(e: React.FormEvent) {
     e.preventDefault();
     if (nama.trim().length < 2) return toast.error("Nama minimal 2 karakter");
+    if (nik && nik.trim().length !== 16) return toast.error("NIK harus 16 digit angka");
     if (kontak.trim().length < 4) return toast.error("Kontak tidak valid");
     if (judul.trim().length < 4) return toast.error("Judul minimal 4 karakter");
     if (isi.trim().length < 10) return toast.error("Uraian minimal 10 karakter");
@@ -785,21 +791,30 @@ export function ServiceCenterPage() {
                 <label className="block text-sm">
                   <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Kategori</span>
                   <select value={kategori} onChange={(e) => setKategori(e.target.value)} autoComplete="off" className={inputCls}>
-                    {kategoriList?.map((k) => (<option key={k.id} value={k.kode}>{k.nama}</option>))}
+                    {kategoriList?.map((k) => (<option key={k.nama} value={k.nama}>{k.nama}</option>))}
                   </select>
                 </label>
                 <label className="block text-sm">
-                  <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Lokasi</span>
-                  <input value={lokasi} onChange={(e) => setLokasi(e.target.value)} type="text" autoComplete="off" placeholder="Contoh: Dusun Karang Baru RT 04" className={inputCls} />
+                  <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Lokasi (Dusun)</span>
+                  <select value={lokasi} onChange={(e) => setLokasi(e.target.value)} autoComplete="off" className={inputCls}>
+                    <option value="">— pilih —</option>
+                    {dusunList.map((d) => (<option key={d.nama} value={d.nama}>{d.nama}</option>))}
+                  </select>
                 </label>
               </div>
               <div className="grid sm:grid-cols-2 gap-5">
                 <label className="block text-sm">
-                  <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nama Pelapor</span>
-                  <input required value={nama} onChange={(e) => setNama(e.target.value)} maxLength={120} autoComplete="off" className={inputCls} />
+                  <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">NIK (opsional)</span>
+                  <input value={nik} onChange={(e) => setNik(e.target.value.replace(/\D/g,""))} maxLength={16} minLength={16} pattern="\d{16}" autoComplete="off" inputMode="numeric" placeholder="16 digit NIK" className={inputCls} />
                 </label>
                 <label className="block text-sm">
-                  <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nomor WhatsApp / Telepon</span>
+                  <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nama Pelapor <span className="text-accent">*</span></span>
+                  <input required value={nama} onChange={(e) => setNama(e.target.value)} maxLength={120} autoComplete="name" className={inputCls} />
+                </label>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-5">
+                <label className="block text-sm">
+                  <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nomor WhatsApp / Telepon <span className="text-accent">*</span></span>
                   <input required value={kontak} onChange={(e) => setKontak(e.target.value)} type="tel" maxLength={60} autoComplete="tel" placeholder="08xxxxxxxxxx" className={inputCls} />
                 </label>
               </div>
@@ -850,13 +865,13 @@ export function ServiceCenterPage() {
             <h3 className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Kontak Resmi</h3>
             <div className="text-sm">
               <div className="opacity-60 text-xs uppercase tracking-wider">WhatsApp Resmi</div>
-              <a href={`https://wa.me/${(settings?.nomor_wa_resmi ?? seedSettings.nomor_wa_resmi).replace(/\D/g, "")}`} className="font-medium hover:text-accent">{settings?.nomor_wa_resmi ?? seedSettings.nomor_wa_resmi}</a>
-              {(settings?.wa_business_verified ?? seedSettings.wa_business_verified) && (<div className="text-[10px] font-bold uppercase tracking-[0.22em] text-accent mt-1">Terverifikasi</div>)}
+              <a href={`https://wa.me/${(settings?.nomor_wa_resmi ?? "08123456789").replace(/\D/g, "")}`} className="font-medium hover:text-accent">{settings?.nomor_wa_resmi ?? "08123456789"}</a>
+              {(settings?.wa_business_verified ?? false) && (<div className="text-[10px] font-bold uppercase tracking-[0.22em] text-accent mt-1">Terverifikasi</div>)}
             </div>
-            <div className="text-sm"><div className="opacity-60 text-xs uppercase tracking-wider">Telepon Darurat</div><div className="font-medium tabular-nums">{settings?.telepon_darurat ?? seedSettings.telepon_darurat}</div></div>
-            <div className="text-sm"><div className="opacity-60 text-xs uppercase tracking-wider">Email</div><a href={`mailto:${settings?.email ?? seedSettings.email}`} className="font-medium hover:text-accent break-all">{settings?.email ?? seedSettings.email}</a></div>
-            <div className="text-sm"><div className="opacity-60 text-xs uppercase tracking-wider">Jam Layanan</div><div>{settings?.jam_layanan ?? seedSettings.jam_layanan}</div></div>
-            <div className="text-sm"><div className="opacity-60 text-xs uppercase tracking-wider">Alamat</div><div>{settings?.alamat_kantor ?? seedSettings.alamat_kantor}</div></div>
+            <div className="text-sm"><div className="opacity-60 text-xs uppercase tracking-wider">Telepon Darurat</div><div className="font-medium tabular-nums">{settings?.telepon_darurat ?? "112"}</div></div>
+            <div className="text-sm"><div className="opacity-60 text-xs uppercase tracking-wider">Email</div><a href={`mailto:${settings?.email ?? "info@desa.go.id"}`} className="font-medium hover:text-accent break-all">{settings?.email ?? "info@desa.go.id"}</a></div>
+            <div className="text-sm"><div className="opacity-60 text-xs uppercase tracking-wider">Jam Layanan</div><div>{settings?.jam_layanan ?? "08:00 - 15:00"}</div></div>
+            <div className="text-sm"><div className="opacity-60 text-xs uppercase tracking-wider">Alamat</div><div>{settings?.alamat_kantor ?? "Kantor Desa"}</div></div>
           </aside>
         </div>
       </SectionWrap>
@@ -1270,7 +1285,7 @@ export function StatusIDMPage() {
         ]}
       />
       <SectionWrap>
-        <EditorialTitle kicker="Enam Dimensi" judul="Rincian per Dimensi" />
+        <EditorialTitle sectionKey="enam-dimensi-rincian-per-dimensi" kicker="Enam Dimensi" judul="Rincian per Dimensi" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-current/15">
           {(idmData?.dimensi || []).map((d, i) => (
             <div key={d.nama} className="bg-background p-6">
@@ -1297,30 +1312,37 @@ export function StatistikPendudukPage() {
     <EditorialLayout
       eyebrow="Data & Statistik"
       judul="Statistik Penduduk"
-      deskripsi={`Total ${(statistik?.jumlah_penduduk || 6842).toLocaleString("id-ID")} jiwa dalam ${(statistik?.jumlah_kk || 1937).toLocaleString("id-ID")} KK, tersebar di ${statistik?.jumlah_dusun || 6} dusun.`}
+      deskripsi={`Total ${(statistik?.jumlah_penduduk || 0).toLocaleString("id-ID")} jiwa dalam ${(statistik?.jumlah_kk || 0).toLocaleString("id-ID")} KK, tersebar di ${statistik?.jumlah_dusun || 0} dusun.`}
       crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Penduduk" }]}
     >
       <Seo title="Statistik Penduduk" description="Distribusi penduduk berdasarkan usia, mata pencaharian, dan pendidikan." path="/statistik/penduduk" />
       <StatsBand
         tone="dark"
         items={[
-          { nilai: (statistik?.jumlah_penduduk || 6842).toLocaleString("id-ID"), label: "Total Jiwa", highlight: true },
-          { nilai: (statistik?.jumlah_kk || 1937).toLocaleString("id-ID"), label: "Kepala Keluarga" },
-          { nilai: String(statistik?.jumlah_dusun || 6), label: "Dusun" },
+          { nilai: (statistik?.jumlah_penduduk || 0).toLocaleString("id-ID"), label: "Total Jiwa", highlight: true },
+          { nilai: (statistik?.jumlah_kk || 0).toLocaleString("id-ID"), label: "Kepala Keluarga" },
+          { nilai: String(statistik?.jumlah_dusun || 0), label: "Dusun" },
           { nilai: "6", label: "Kategori Data" },
         ]}
       />
       <SectionWrap>
         <div className="grid md:grid-cols-2 gap-10 lg:gap-14">
           {[
-            { j: "Jenis Kelamin", d: statistikPenduduk.per_jenis_kelamin },
-            { j: "Kelompok Umur", d: statistikPenduduk.per_umur },
-            { j: "Pekerjaan", d: statistikPenduduk.per_pekerjaan },
-            { j: "Pendidikan", d: statistikPenduduk.per_pendidikan },
+            { j: "Jenis Kelamin", d: [
+                { label: "Laki-laki", nilai: statistik?.laki_laki || 0 },
+                { label: "Perempuan", nilai: statistik?.perempuan || 0 },
+            ] },
+            { j: "Kelompok Umur", d: statistik?.per_umur || [] },
+            { j: "Pekerjaan", d: statistik?.per_pekerjaan || [] },
+            { j: "Pendidikan", d: statistik?.per_pendidikan || [] },
           ].map((g) => (
             <div key={g.j}>
-              <EditorialTitle kicker="Distribusi" judul={g.j} />
-              <BarList items={g.d} />
+              <EditorialTitle sectionKey="distribusi" kicker="Distribusi" judul={g.j} />
+              {g.d.length > 0 ? (
+                <BarList items={g.d} />
+              ) : (
+                <div className="text-sm opacity-50 italic">Data belum tersedia</div>
+              )}
             </div>
           ))}
         </div>
@@ -1349,11 +1371,11 @@ export function PembangunanPage() {
         ]}
       />
       <SectionWrap>
-        <EditorialTitle kicker="Realisasi 2026" judul="Kegiatan Aktif" />
+        <EditorialTitle sectionKey="realisasi-2026-kegiatan-aktif" kicker="Realisasi 2026" judul="Kegiatan Aktif" />
         <ul className="space-y-6">
           {(pembangunanData?.kegiatan_aktif ?? []).map((k) => (
             <li key={k.nama}>
-              <Link to={`/pembangunan/${k.id}`} className="block hover:bg-muted/20 transition-colors">
+              <Link to={`/pembangunan/${(k as any).id}`} className="block hover:bg-muted/20 transition-colors">
                 <EditorialProgress label={k.nama} value={k.progres} />
               </Link>
             </li>
@@ -1384,7 +1406,7 @@ export function PerencanaanPage() {
         ]}
       />
       <SectionWrap>
-        <EditorialTitle kicker="Top 10" judul="Usulan Warga Terpilih" />
+        <EditorialTitle sectionKey="top-10-usulan-warga-terpilih" kicker="Top 10" judul="Usulan Warga Terpilih" />
         <ul className="space-y-6">
           {(usulanData.top10 || []).map((u, i) => (
             <li key={u.judul} className="grid grid-cols-[48px_1fr] gap-5 border-b border-current/15 pb-6">
@@ -1433,7 +1455,7 @@ export function PotensiPage() {
     >
       <Seo title="Potensi Desa" description="UMKM, BUMDes, koperasi, dan destinasi wisata Desa Seruni Mumbul." path="/potensi-desa" />
       <SectionWrap id="ekonomi">
-        <EditorialTitle kicker="UMKM" judul="Usaha Warga" />
+        <EditorialTitle sectionKey="umkm-usaha-warga" kicker="UMKM" judul="Usaha Warga" />
         <OfflineBadge show={!online} />
         <FilterBar onReset={resetFilter} hasilCount={usaha.length} totalCount={usahaAll.length}>
           <FilterField label="Cari"><TextInput value={q} onChange={setQ} placeholder="Nama usaha, pemilik…" /></FilterField>
@@ -1461,7 +1483,7 @@ export function PotensiPage() {
         )}
       </SectionWrap>
       <SectionWrap id="pariwisata" alt>
-        <EditorialTitle kicker="Destinasi" judul="Pariwisata Desa" />
+        <EditorialTitle sectionKey="destinasi-pariwisata-desa" kicker="Destinasi" judul="Pariwisata Desa" />
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-current/15">
           {wisata.map((p, i) => (
             <article key={p.id} className="bg-[#EAECF0] p-6 hover:bg-muted/20 transition-colors">
@@ -1487,9 +1509,9 @@ export function PotensiPage() {
           <div className="grid lg:grid-cols-[1fr_auto] gap-10 items-end border-l-2 border-accent pl-6 sm:pl-10">
             <div>
               <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{bumdesUtama?.tipe === "koperasi" ? "Koperasi" : "BUMDes"}</div>
-              <h2 className="mt-3 font-display text-4xl sm:text-5xl lg:text-6xl font-bold italic tracking-tight leading-[1.05]">{bumdesUtama?.nama || potensi.bumdes}</h2>
+              <h2 className="mt-3 font-display text-4xl sm:text-5xl lg:text-6xl font-bold italic tracking-tight leading-[1.05]">{bumdesUtama?.nama || "Badan Usaha Milik Desa"}</h2>
               <p className="mt-6 max-w-2xl text-base leading-relaxed opacity-80">
-                {bumdesUtama?.deskripsi || "Badan Usaha Milik Desa yang menaungi marketplace desa, unit simpan pinjam UMKM, dan pengelolaan aset wisata."}
+                {bumdesUtama?.deskripsi || "Belum ada informasi deskripsi BUMDes."}
               </p>
               {bumdes.length > 1 && (
                 <ul className="mt-8 grid sm:grid-cols-2 gap-px bg-white/15 border-t border-b border-white/20">
@@ -1571,7 +1593,7 @@ export function MarketplacePage() {
         { key: "terbaru", label: "Terbaru", items: terbaru },
       ].filter((g) => g.items.length > 0).map((grup, gi) => (
         <SectionWrap key={grup.key} alt={gi % 2 === 1}>
-          <EditorialTitle kicker="Produk" judul={grup.label} />
+          <EditorialTitle sectionKey="produk" kicker="Produk" judul={grup.label} />
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-current/15">
               {grup.items.map((p) => (
                 <article key={p.id} className={`${gi % 2 === 1 ? "bg-[#EAECF0]" : "bg-background"} p-5`}>
@@ -1665,6 +1687,7 @@ export function PetaPage() {
 
 export function LanggananWaPage() {
   const TOPIK = ["Agenda & Musdes", "Pengumuman Resmi", "Berita Desa", "Info Bencana", "Layanan & PBB"];
+  const { data: dusunList } = useDusun();
   const [nama, setNama] = useState("");
   const [nomor, setNomor] = useState("");
   const tenantId = useTenantId();
@@ -1717,7 +1740,7 @@ export function LanggananWaPage() {
           <form className="max-w-lg border border-current/20 p-6 sm:p-8 grid gap-5" onSubmit={submit}>
             <label className="block text-sm">
               <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nama Lengkap</span>
-              <input required value={nama} onChange={(e) => setNama(e.target.value)} maxLength={120} type="text" autoComplete="off" className={inputCls} />
+              <input required value={nama} onChange={(e) => setNama(e.target.value)} maxLength={120} type="text" autoComplete="name" className={inputCls} />
             </label>
             <label className="block text-sm">
               <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nomor WhatsApp</span>
@@ -1725,7 +1748,10 @@ export function LanggananWaPage() {
             </label>
             <label className="block text-sm">
               <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Dusun (opsional)</span>
-              <input value={dusun} onChange={(e) => setDusun(e.target.value)} type="text" autoComplete="off" className={inputCls} />
+              <select value={dusun} onChange={(e) => setDusun(e.target.value)} autoComplete="off" className={inputCls}>
+                <option value="">— pilih —</option>
+                {dusunList.map((d) => (<option key={d.nama} value={d.nama}>{d.nama}</option>))}
+              </select>
             </label>
             <fieldset className="text-sm">
               <legend className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent mb-3">Kategori Notifikasi</legend>
@@ -1825,7 +1851,7 @@ export function KeuanganPage() {
             </div>
 
             <div className="mt-16">
-              <EditorialTitle kicker="Belanja per Bidang" judul="Serapan Anggaran per Bidang" />
+              <EditorialTitle sectionKey="belanja-per-bidang-serapan-anggaran-per-bidang" kicker="Belanja per Bidang" judul="Serapan Anggaran per Bidang" />
               <ul className="space-y-6 mt-6">
                 {bidangList.map((b) => (
                   <li key={b.kategori}>
@@ -1990,7 +2016,7 @@ export function StuntingPage() {
         ]}
       />
       <SectionWrap>
-        <EditorialTitle kicker="Per Burnett" judul="Rincian per Wilayah" />
+        <EditorialTitle sectionKey="per-burnett-rincian-per-wilayah" kicker="Per Burnett" judul="Rincian per Wilayah" />
         {(!stunting || stunting.length === 0) ? (
           <p className="text-muted-foreground py-8 text-center">Belum ada data pengukuran.</p>
         ) : (
@@ -2024,7 +2050,7 @@ export function StuntingPage() {
       </SectionWrap>
       {posyandu && posyandu.length > 0 && (
         <SectionWrap alt>
-          <EditorialTitle kicker="Posyandu" judul="Cakupan Layanan" />
+          <EditorialTitle sectionKey="posyandu-cakupan-layanan" kicker="Posyandu" judul="Cakupan Layanan" />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {[
               { label: "Balita", val: posyandu.reduce((s, r) => s + r.jumlah_balita, 0) },
@@ -2082,7 +2108,7 @@ export function BencanaPage() {
         items={stats.map(s => ({ nilai: String(s.val), label: s.label }))}
       />
       <SectionWrap>
-        <EditorialTitle kicker="Riwayat" judul="Kejadian Bencana" />
+        <EditorialTitle sectionKey="riwayat-kejadian-bencana" kicker="Riwayat" judul="Kejadian Bencana" />
         {(!bencana || bencana.length === 0) ? (
           <p className="text-muted-foreground py-8 text-center">Belum ada data kejadian bencana.</p>
         ) : (
@@ -2154,7 +2180,7 @@ export function PosyanduPage() {
         ]}
       />
       <SectionWrap>
-        <EditorialTitle kicker="Cakupan" judul="Kehadiran per Burnett" />
+        <EditorialTitle sectionKey="cakupan-kehadiran-per-burnett" kicker="Cakupan" judul="Kehadiran per Burnett" />
         {(!posyandu || posyandu.length === 0) ? (
           <p className="text-muted-foreground py-8 text-center">Belum ada data posyandu.</p>
         ) : (
@@ -2204,10 +2230,10 @@ function NotFoundState() {
 
 export function AgendaDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useAgendaById(id);
+  const { data, loading: isLoading } = useAgendaById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
-  const imageUrl = data.foto_url || null;
+  const imageUrl = (data as any).foto_url || null;
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -2220,8 +2246,8 @@ export function AgendaDetailPage() {
         {/* Hero image */}
         {imageUrl && (
           <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-8">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageUrl} alt={data.judul} className="w-full aspect-video object-cover" />
+            {}
+            <img src={imageUrl} alt={(data as any).judul} className="w-full aspect-video object-cover" />
           </div>
         )}
 
@@ -2235,16 +2261,16 @@ export function AgendaDetailPage() {
             )}
           </div>
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
-            {data.judul}
+            {(data as any).judul}
           </h1>
         </div>
 
         {/* Meta info row */}
         <div className="mt-5 flex flex-wrap gap-y-2 gap-x-6 text-sm text-foreground/60">
-          {data.tanggal && (
+          {(data as any).tanggal && (
             <div className="flex items-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
-              <span>{formatTanggal(data.tanggal)}</span>
+              <span>{formatTanggal((data as any).tanggal)}</span>
             </div>
           )}
           {data.waktu && (
@@ -2271,11 +2297,11 @@ export function AgendaDetailPage() {
         <div className="mt-8 border-t border-current/15" />
 
         {/* Description */}
-        {data.deskripsi && (
+        {(data as any).deskripsi && (
           <div className="mt-8">
             <h2 className="font-display text-sm font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi</h2>
             <div className="prose prose-sm max-w-none text-foreground/80 leading-relaxed">
-              <p>{data.deskripsi}</p>
+              <p>{(data as any).deskripsi}</p>
             </div>
           </div>
         )}
@@ -2301,11 +2327,11 @@ export function AgendaDetailPage() {
 
 export function GaleriDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useGaleriById(id);
+  const { data, loading: isLoading } = useGaleriById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
-  const imageUrl = data.foto_url || null;
-  const videoUrl = data.video_url || null;
+  const imageUrl = (data as any).foto_url || null;
+  const videoUrl = (data as any).video_url || null;
 
   // Extract YouTube video ID for embed
   const getYouTubeId = (url: string) => {
@@ -2326,8 +2352,8 @@ export function GaleriDetailPage() {
         {/* Hero image */}
         {imageUrl && (
           <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imageUrl} alt={data.judul} className="w-full aspect-video object-cover" />
+            {}
+            <img src={imageUrl} alt={(data as any).judul} className="w-full aspect-video object-cover" />
           </div>
         )}
 
@@ -2337,7 +2363,7 @@ export function GaleriDetailPage() {
             <div className="relative aspect-video">
               <iframe
                 src={`https://www.youtube.com/embed/${youtubeId}`}
-                title={data.judul}
+                title={(data as any).judul}
                 className="absolute inset-0 w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -2354,33 +2380,33 @@ export function GaleriDetailPage() {
             </span>
           )}
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
-            {data.judul}
+            {(data as any).judul}
           </h1>
           <p className="text-sm text-foreground/50">
-            {data.tanggal ? formatTanggal(data.tanggal) : ""}
+            {(data as any).tanggal ? formatTanggal((data as any).tanggal) : ""}
           </p>
         </div>
 
         {/* Photo metadata */}
-        {(data.fotografer || data.sumber || data.deskripsi) && (
+        {((data as any).fotografer || (data as any).sumber || (data as any).deskripsi) && (
           <>
             <div className="mt-8 border-t border-current/15" />
             <div className="mt-6 grid sm:grid-cols-2 gap-4 text-sm">
-              {data.fotografer && (
+              {(data as any).fotografer && (
                 <div className="flex items-center gap-2 text-foreground/60">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /></svg>
-                  <span>Fotografer: <b className="text-foreground">{data.fotografer}</b></span>
+                  <span>Fotografer: <b className="text-foreground">{(data as any).fotografer}</b></span>
                 </div>
               )}
-              {data.sumber && (
+              {(data as any).sumber && (
                 <div className="flex items-center gap-2 text-foreground/60">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
-                  <span>Sumber: <b className="text-foreground">{data.sumber}</b></span>
+                  <span>Sumber: <b className="text-foreground">{(data as any).sumber}</b></span>
                 </div>
               )}
             </div>
-            {data.deskripsi && (
-              <p className="mt-4 text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
+            {(data as any).deskripsi && (
+              <p className="mt-4 text-sm text-foreground/70 leading-relaxed">{(data as any).deskripsi}</p>
             )}
           </>
         )}
@@ -2391,7 +2417,7 @@ export function GaleriDetailPage() {
 
 export function PengumumanDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = usePengumumanById(id);
+  const { data, loading: isLoading } = usePengumumanById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
   return (
@@ -2413,13 +2439,13 @@ export function PengumumanDetailPage() {
             </div>
             <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-1">Pengumuman Resmi Desa</p>
             <p className="text-xs text-foreground/50 font-mono">{data.nomor || "Tanpa Nomor"}</p>
-            <p className="text-xs text-foreground/40 mt-1">{data.tanggal ? formatTanggal(data.tanggal) : ""}</p>
+            <p className="text-xs text-foreground/40 mt-1">{(data as any).tanggal ? formatTanggal((data as any).tanggal) : ""}</p>
           </div>
 
           {/* Document body */}
           <div className="px-6 sm:px-10 py-8">
             <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-semibold leading-snug text-center text-foreground mb-8">
-              {data.judul}
+              {(data as any).judul}
             </h1>
             {data.ringkasan && (
               <div className="text-sm leading-[1.9] text-foreground/80 space-y-4">
@@ -2428,11 +2454,11 @@ export function PengumumanDetailPage() {
                 ) : <div key={i} className="h-2" />)}
               </div>
             )}
-            {data.lampiran_url && (
+            {(data as any).lampiran_url && (
               <div className="mt-8 pt-6 border-t border-current/15">
                 <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-3">Lampiran</p>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={data.lampiran_url} alt="Lampiran pengumuman" className="max-w-full rounded border border-current/15 max-h-96" />
+                {}
+                <img src={(data as any).lampiran_url} alt="Lampiran pengumuman" className="max-w-full rounded border border-current/15 max-h-96" />
               </div>
             )}
           </div>
@@ -2449,7 +2475,7 @@ export function PengumumanDetailPage() {
 
 export function PosyanduDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = usePosyanduById(id);
+  const { data, loading: isLoading } = usePosyanduById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
 
@@ -2574,7 +2600,7 @@ export function PosyanduDetailPage() {
 
 export function StuntingDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useStuntingById(id);
+  const { data, loading: isLoading } = useStuntingById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
 
@@ -2693,7 +2719,7 @@ export function StuntingDetailPage() {
 
 export function UmkmDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useUmkmById(id);
+  const { data, loading: isLoading } = useUmkmById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
 
@@ -2703,8 +2729,8 @@ export function UmkmDetailPage() {
     : null;
 
   // Map link for address
-  const mapLink = data.alamat
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((data.alamat || "") + " Seruni Mumbul Lombok Timur")}`
+  const mapLink = (data as any).alamat
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(((data as any).alamat || "") + " Seruni Mumbul Lombok Timur")}`
     : null;
 
   return (
@@ -2791,14 +2817,14 @@ export function UmkmDetailPage() {
           </div>
 
           {/* Address */}
-          {data.alamat && (
+          {(data as any).alamat && (
             <div className="px-6 pb-5">
               <div className="bg-foreground/5 rounded-lg p-4">
                 <div className="flex items-start gap-3">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40 flex-shrink-0 mt-0.5"><path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.976.734l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" /></svg>
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Alamat</p>
-                    <p className="text-sm text-foreground/80">{data.alamat}</p>
+                    <p className="text-sm text-foreground/80">{(data as any).alamat}</p>
                     {mapLink && (
                       <a href={mapLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:underline mt-2">
                         Lihat di Peta
@@ -2812,10 +2838,10 @@ export function UmkmDetailPage() {
           )}
 
           {/* Description */}
-          {data.deskripsi && (
+          {(data as any).deskripsi && (
             <div className="px-6 pb-6">
               <div className="border-t border-current/15 pt-5">
-                <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
+                <p className="text-sm text-foreground/70 leading-relaxed">{(data as any).deskripsi}</p>
               </div>
             </div>
           )}
@@ -2842,13 +2868,13 @@ export function UmkmDetailPage() {
 
 export function ProdukDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useProdukById(id);
+  const { data, loading: isLoading } = useProdukById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
-  const imageUrl = data.foto_url || null;
+  const imageUrl = (data as any).foto_url || null;
   const harga = data.harga != null ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.harga) : null;
-  const waLink = data.kontak_penjual
-    ? `https://wa.me/${data.kontak_penjual.replace(/\D/g, "")}?text=${encodeURIComponent(`Halo, saya tertarik dengan produk: ${data.nama}`)}`
+  const waLink = (data as any).kontak_penjual
+    ? `https://wa.me/${(data as any).kontak_penjual.replace(/\D/g, "")}?text=${encodeURIComponent(`Halo, saya tertarik dengan produk: ${data.nama}`)}`
     : null;
 
   return (
@@ -2866,7 +2892,7 @@ export function ProdukDetailPage() {
           <div className="space-y-3">
             {imageUrl ? (
               <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm bg-foreground/5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {}
                 <img src={imageUrl} alt={data.nama} className="w-full aspect-square object-cover" />
               </div>
             ) : (
@@ -2931,10 +2957,10 @@ export function ProdukDetailPage() {
             </div>
 
             {/* Description */}
-            {data.deskripsi && (
+            {(data as any).deskripsi && (
               <div className="border-t border-current/15 pt-5">
                 <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-2">Deskripsi</h3>
-                <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
+                <p className="text-sm text-foreground/70 leading-relaxed">{(data as any).deskripsi}</p>
               </div>
             )}
 
@@ -2961,7 +2987,7 @@ export function ProdukDetailPage() {
 
 export function WisataDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useWisataById(id);
+  const { data, loading: isLoading } = useWisataById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
   const hasCoords = data.latitude != null && data.longitude != null;
@@ -2974,8 +3000,8 @@ export function WisataDetailPage() {
   // Map link
   const mapLink = hasCoords
     ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
-    : data.alamat
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((data.alamat || "") + " Seruni Mumbul Lombok Timur")}`
+    : (data as any).alamat
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(((data as any).alamat || "") + " Seruni Mumbul Lombok Timur")}`
     : null;
 
   return (
@@ -2988,10 +3014,10 @@ export function WisataDetailPage() {
         </Link>
 
         {/* Hero image */}
-        {data.foto_url && (
+        {(data as any).foto_url && (
           <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-8">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={data.foto_url} alt={data.nama} className="w-full aspect-video object-cover" />
+            {}
+            <img src={(data as any).foto_url} alt={data.nama} className="w-full aspect-video object-cover" />
           </div>
         )}
 
@@ -3003,7 +3029,7 @@ export function WisataDetailPage() {
                 {data.jenis}
               </span>
             )}
-            {data.verified && (
+            {(data as any).verified && (
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-green-100 text-green-700">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M9.965 3.035a.75.75 0 010 1.06L7.052 6.81l2.913 2.914a.75.75 0 11-1.06 1.06L6 7.87 4.035 9.836a.75.75 0 01-1.06-1.06l2.913-2.914L3.075 4.095a.75.75 0 111.06-1.06l2.913 2.914 2.914-2.913a.75.75 0 01.003 0z" clipRule="evenodd" /></svg>
                 Terverifikasi
@@ -3047,12 +3073,12 @@ export function WisataDetailPage() {
         )}
 
         {/* Description */}
-        {data.deskripsi && (
+        {(data as any).deskripsi && (
           <>
             <div className="mt-8 border-t border-current/15" />
             <div className="mt-6">
               <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi</h3>
-              <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
+              <p className="text-sm text-foreground/70 leading-relaxed">{(data as any).deskripsi}</p>
             </div>
           </>
         )}
@@ -3088,11 +3114,11 @@ export function WisataDetailPage() {
 
 export function PembangunanDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = usePembangunanById(id);
+  const { data, loading: isLoading } = usePembangunanById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
   const progress = data.progress_persen ?? 0;
-  const title = data.nama_kegiatan || data.judul || "Kegiatan Pembangunan";
+  const title = data.nama_kegiatan || (data as any).judul || "Kegiatan Pembangunan";
 
   const anggaranFmt = data.anggaran != null
     ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.anggaran)
@@ -3146,10 +3172,10 @@ export function PembangunanDetailPage() {
                   {anggaranFmt}
                 </p>
               </div>
-              {data.sumber_dana && (
+              {(data as any).sumber_dana && (
                 <div className="text-right">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Sumber Dana</p>
-                  <p className="text-sm font-medium text-foreground">{data.sumber_dana}</p>
+                  <p className="text-sm font-medium text-foreground">{(data as any).sumber_dana}</p>
                 </div>
               )}
             </div>
@@ -3207,7 +3233,7 @@ export function PembangunanDetailPage() {
               </div>
             </div>
           )}
-          {(data.tanggal_mulai || data.tanggal_selesai) && (
+          {((data as any).tanggal_mulai || (data as any).tanggal_selesai) && (
             <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
               <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd" /></svg>
@@ -3215,8 +3241,8 @@ export function PembangunanDetailPage() {
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Durasi</p>
                 <p className="text-sm font-medium text-foreground">
-                  {data.tanggal_mulai ? formatTanggal(data.tanggal_mulai) : "—"}
-                  {data.tanggal_selesai ? ` — ${formatTanggal(data.tanggal_selesai)}` : ""}
+                  {(data as any).tanggal_mulai ? formatTanggal((data as any).tanggal_mulai) : "—"}
+                  {(data as any).tanggal_selesai ? ` — ${formatTanggal((data as any).tanggal_selesai)}` : ""}
                 </p>
               </div>
             </div>
@@ -3224,13 +3250,13 @@ export function PembangunanDetailPage() {
         </div>
 
         {/* Documentation images */}
-        {data.foto_url && (
+        {(data as any).foto_url && (
           <div className="mt-6">
             <div className="border-t border-current/15 pt-6">
               <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Dokumentasi</h3>
               <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={data.foto_url} alt={`Dokumentasi ${title}`} className="w-full aspect-video object-cover" />
+                {}
+                <img src={(data as any).foto_url} alt={`Dokumentasi ${title}`} className="w-full aspect-video object-cover" />
               </div>
             </div>
           </div>
@@ -3250,10 +3276,10 @@ export function PembangunanDetailPage() {
 
 export function BansosDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useBansosById(id);
+  const { data, loading: isLoading } = useBansosById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
-  const isActive = data.aktif === true || data.aktif === 1;
+  const isActive = data.aktif === true || (data.aktif as any) === 1;
 
   return (
     <div className="min-h-screen bg-background">
@@ -3286,14 +3312,14 @@ export function BansosDetailPage() {
 
           {/* Info grid */}
           <div className="px-6 py-5 grid sm:grid-cols-2 gap-4">
-            {data.sumber && (
+            {(data as any).sumber && (
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" /></svg>
                 </div>
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Sumber</p>
-                  <p className="text-sm font-medium text-foreground">{data.sumber}</p>
+                  <p className="text-sm font-medium text-foreground">{(data as any).sumber}</p>
                 </div>
               </div>
             )}
@@ -3329,11 +3355,11 @@ export function BansosDetailPage() {
           )}
 
           {/* Description */}
-          {data.deskripsi && (
+          {(data as any).deskripsi && (
             <div className="px-6 pb-6">
               <div className="border-t border-current/15 pt-5">
                 <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi Program</h3>
-                <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
+                <p className="text-sm text-foreground/70 leading-relaxed">{(data as any).deskripsi}</p>
               </div>
             </div>
           )}
@@ -3368,7 +3394,7 @@ const ADUAN_STATUS_LABELS: Record<string, string> = {
 
 export function AduanDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useAduanById(id);
+  const { data, loading: isLoading } = useAduanById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
   const maskedNama = data.nama_pelapor ? `${data.nama_pelapor[0]}${"*".repeat(Math.max(0, data.nama_pelapor.length - 1))}` : null;
@@ -3387,7 +3413,7 @@ export function AduanDetailPage() {
   const statusCfg = statusConfig[data.status] || { bg: "bg-gray-100", text: "text-gray-700", dot: "bg-gray-400" };
 
   // Tanggal submission
-  const submittedDate = data.tanggal ? formatTanggal(data.tanggal) : null;
+  const submittedDate = (data as any).tanggal ? formatTanggal((data as any).tanggal) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -3408,7 +3434,7 @@ export function AduanDetailPage() {
                   <p className="text-[10px] font-mono font-semibold text-foreground/40 uppercase tracking-wider mb-1">Tiket #{data.nomor_tiket}</p>
                 )}
                 <h1 className="font-display text-xl sm:text-2xl font-semibold leading-snug text-foreground">
-                  {data.judul}
+                  {(data as any).judul}
                 </h1>
               </div>
               <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${statusConfig.bg} ${statusConfig.text}`}>
@@ -3487,12 +3513,12 @@ export function AduanDetailPage() {
         </div>
 
         {/* Attachments */}
-        {data.lampiran_url && (
+        {(data as any).lampiran_url && (
           <div className="mt-4">
             <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
               <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Lampiran</h3>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={data.lampiran_url} alt="Lampiran pengaduan" className="max-w-full rounded border border-current/15 max-h-72 object-contain" />
+              {}
+              <img src={(data as any).lampiran_url} alt="Lampiran pengaduan" className="max-w-full rounded border border-current/15 max-h-72 object-contain" />
             </div>
           </div>
         )}
@@ -3523,7 +3549,7 @@ export function AduanDetailPage() {
 
 export function IdmIndikatorDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useIdmIndikatorById(id);
+  const { data, loading: isLoading } = useIdmIndikatorById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
 
@@ -3635,14 +3661,14 @@ export function IdmIndikatorDetailPage() {
               </div>
             </div>
           )}
-          {data.sumber && (
+          {(data as any).sumber && (
             <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
               <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
               </div>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Sumber</p>
-                <p className="text-sm font-medium text-foreground">{data.sumber}</p>
+                <p className="text-sm font-medium text-foreground">{(data as any).sumber}</p>
               </div>
             </div>
           )}

@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  siteSettings as seedSettings,
-} from "./data";
+
 import { SectionWrap, formatTanggal } from "./ui";
 import { Seo } from "./lib/seo";
 import { useSiteSettings } from "./lib/zeroHardcode";
@@ -19,6 +17,8 @@ import {
   usePotensiUmkm,
   useSuratJenis,
   useLayananStatistik,
+  useDusun,
+  useAduanKategori,
 } from "./lib/queries";
 import {
   Band,
@@ -39,7 +39,7 @@ import umkmTenun from "@/assets/umkm-tenun.jpg";
 
 function Hero() {
   const { data: settings } = useSiteSettings();
-  const siteName = settings?.nama_resmi ?? seedSettings.nama_resmi;
+  const siteName = settings?.nama_resmi ?? "Desa Seruni";
   const namaTanpaDesa = siteName.replace(/^Desa\s+/i, "");
   return (
     <section
@@ -66,7 +66,7 @@ function Hero() {
         {/* Subtitle: hanya wilayah administratif */}
         <div className="mx-4 sm:mx-6 lg:mx-8 pb-4">
           <p className="font-display text-sm sm:text-base md:text-lg uppercase tracking-[0.28em] text-accent drop-shadow">
-            {settings?.wilayah ?? seedSettings.wilayah}
+            {settings?.wilayah ?? "Kecamatan, Kabupaten, Provinsi"}
           </p>
         </div>
 
@@ -108,10 +108,10 @@ function TaglineBar() {
     <div className="bg-accent text-[#0F0E0E] border-y border-[#0F0E0E]/10">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 py-4 flex flex-wrap items-center justify-between gap-4">
         <span className="font-display text-[11px] sm:text-xs font-bold uppercase tracking-[0.28em]">
-          {settings?.tagline ?? seedSettings.tagline}
+          {settings?.tagline ?? "Membangun Desa, Memberdayakan Masyarakat"}
         </span>
         <span className="font-display text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.28em] opacity-70 tabular-nums">
-          {settings?.jam_layanan ?? seedSettings.jam_layanan}
+          {settings?.jam_layanan ?? "Senin - Jumat, 08:00 - 15:00"}
         </span>
       </div>
     </div>
@@ -324,11 +324,11 @@ function S5() {
   const { data: suratList } = useSuratJenis();
   const { data: statList } = useLayananStatistik();
 
-  // Build lookup: prefix -> jumlah_selesai
+  // Build lookup: prefix -> count_bulan_ini
   const statMap = new Map<string, number>();
   for (const s of statList ?? []) {
     if (!statMap.has(s.jenis_layanan)) {
-      statMap.set(s.jenis_layanan, s.jumlah_selesai ?? 0);
+      statMap.set(s.jenis_layanan, s.count_bulan_ini ?? 0);
     }
   }
 
@@ -687,16 +687,11 @@ function S10() {
  * ============================================================ */
 
 function S11() {
-  // TODO: Wire to ref_aduan_kategori table
-  const aduanKategori = [
-    { kode: "infrastruktur", label: "Infrastruktur (jalan, jembatan, PJU)" },
-    { kode: "pelayanan", label: "Pelayanan Publik" },
-    { kode: "lingkungan", label: "Lingkungan & Kebersihan" },
-    { kode: "sosial", label: "Kesejahteraan Sosial" },
-    { kode: "keamanan", label: "Keamanan & Ketertiban" },
-  ];
-  const [kategori, setKategori] = useState<string>('infrastruktur');
+  const { data: dusunList } = useDusun();
+  const { data: kategoriList } = useAduanKategori();
+  const [kategori, setKategori] = useState<string>('');
   const [terkirim, setTerkirim] = useState(false);
+  const [lokasi, setLokasi] = useState<string>('');
   const inputCls =
     "mt-2 w-full border border-[#0F0E0E]/30 bg-transparent px-4 py-3 font-display text-sm text-[#0F0E0E] placeholder:text-[#0F0E0E]/40 focus:outline-none focus:border-accent transition-colors";
   const labelCls = "block font-display text-[11px] font-bold uppercase tracking-[0.28em] opacity-70";
@@ -715,11 +710,11 @@ function S11() {
             desa yang terverifikasi.
           </p>
           <div className="mt-8 pt-6 border-t border-[#0F0E0E]/25 space-y-3 font-display text-[11px] uppercase tracking-[0.28em] font-semibold">
-            <p className="opacity-70">
-              Layanan · <span className="opacity-100 tabular-nums">{seedSettings.jam_layanan}</span>
+            <p className="opacity-70 mt-2">
+              Layanan &middot; <span className="opacity-100 tabular-nums">{settings?.jam_layanan ?? "Senin - Jumat, 08:00 - 15:00"}</span>
             </p>
             <p className="opacity-70">
-              Darurat · <span className="opacity-100 tabular-nums">{seedSettings.telepon_darurat}</span>
+              Darurat &middot; <span className="opacity-100 tabular-nums">{settings?.telepon_darurat ?? "112"}</span>
             </p>
           </div>
         </div>
@@ -759,22 +754,27 @@ function S11() {
                   autoComplete="off"
                   className={inputCls}
                 >
-                  {aduanKategori.map((k) => (
-                    <option key={k.kode} value={k.kode}>
-                      {k.label}
+                  {kategoriList.map((k) => (
+                    <option key={k.nama} value={k.nama}>
+                      {k.nama}
                     </option>
                   ))}
                 </select>
               </label>
               <label>
                 <span className={labelCls}>Lokasi</span>
-                <input
+                <select
                   required
-                  type="text"
+                  value={lokasi}
+                  onChange={(e) => setLokasi(e.target.value)}
                   autoComplete="off"
-                  placeholder="Dusun Karang Baru, RT 04"
                   className={inputCls}
-                />
+                >
+                  <option value="">— pilih dusun —</option>
+                  {dusunList.map((d) => (
+                    <option key={d.nama} value={d.nama}>{d.nama}</option>
+                  ))}
+                </select>
               </label>
             </div>
             <label className="block">
