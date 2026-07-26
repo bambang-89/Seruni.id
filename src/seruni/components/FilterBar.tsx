@@ -62,6 +62,7 @@ export function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
+      autoComplete="off"
       className={inputCls}
     />
   );
@@ -79,7 +80,7 @@ export function SelectInput({
   placeholder?: string;
 }) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
+    <select value={value} onChange={(e) => onChange(e.target.value)} autoComplete="off" className={inputCls}>
       <option value="">{placeholder}</option>
       {options.map((o) => (
         <option key={o.value} value={o.value}>

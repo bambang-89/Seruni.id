@@ -101,7 +101,7 @@ export function PageConfigAdmin() {
       <div className="grid lg:grid-cols-[280px_1fr] gap-6">
         <aside className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="p-3 border-b border-border">
-            <input placeholder="Cari rute…" value={filter} onChange={(e) => setFilter(e.target.value)} className={inp} />
+            <input placeholder="Cari rute…" value={filter} onChange={(e) => setFilter(e.target.value)} className={inp} autoComplete="off" />
           </div>
           <ul className="max-h-[70vh] overflow-y-auto text-sm">
             {loading && <li className="p-4 text-muted-foreground">Memuat…</li>}
@@ -133,18 +133,18 @@ export function PageConfigAdmin() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Eyebrow</label>
-                    <input value={draft.eyebrow} onChange={(e) => setDraft({ ...draft, eyebrow: e.target.value })} className={inp} />
+                    <input value={draft.eyebrow} onChange={(e) => setDraft({ ...draft, eyebrow: e.target.value })} className={inp} autoComplete="off" />
                   </div>
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Judul Hero (2 kata)
                     </label>
-                    <input value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} className={inp} />
+                    <input value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} className={inp} autoComplete="off" />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Deskripsi</label>
-                  <textarea rows={2} value={draft.deskripsi ?? ""} onChange={(e) => setDraft({ ...draft, deskripsi: e.target.value })} className={inp} />
+                  <textarea rows={2} value={draft.deskripsi ?? ""} onChange={(e) => setDraft({ ...draft, deskripsi: e.target.value })} className={inp} autoComplete="off" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Foto Hero</label>
@@ -188,6 +188,7 @@ export function PageConfigAdmin() {
                         setDraft({ ...draft, section_titles: arr });
                       }}
                       className={inp}
+                      autoComplete="off"
                     />
                     <input
                       placeholder="kicker"
@@ -198,6 +199,7 @@ export function PageConfigAdmin() {
                         setDraft({ ...draft, section_titles: arr });
                       }}
                       className={inp}
+                      autoComplete="off"
                     />
                     <div className="space-y-2">
                       <input
@@ -209,6 +211,7 @@ export function PageConfigAdmin() {
                           setDraft({ ...draft, section_titles: arr });
                         }}
                         className={inp}
+                        autoComplete="off"
                       />
                       <textarea
                         rows={1}
@@ -220,6 +223,7 @@ export function PageConfigAdmin() {
                           setDraft({ ...draft, section_titles: arr });
                         }}
                         className={inp}
+                        autoComplete="off"
                       />
                     </div>
                     <button
@@ -366,6 +370,7 @@ export function NavAdmin() {
                 value={draft.parent_id ?? ""}
                 onChange={(e) => setDraft({ ...draft, parent_id: e.target.value || null })}
                 className={inp}
+                autoComplete="off"
               >
                 <option value="">— (menu utama) —</option>
                 {parents.map((p) => (
@@ -380,19 +385,20 @@ export function NavAdmin() {
                 value={draft.urutan ?? 0}
                 onChange={(e) => setDraft({ ...draft, urutan: Number(e.target.value) })}
                 className={inp}
+                autoComplete="off"
               />
             </div>
             <div>
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Label (1 kata)</label>
-              <input value={draft.label ?? ""} onChange={(e) => setDraft({ ...draft, label: e.target.value })} className={inp} />
+              <input value={draft.label ?? ""} onChange={(e) => setDraft({ ...draft, label: e.target.value })} className={inp} autoComplete="off" />
             </div>
             <div>
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Href</label>
-              <input value={draft.href ?? ""} onChange={(e) => setDraft({ ...draft, href: e.target.value })} className={inp} />
+              <input value={draft.href ?? ""} onChange={(e) => setDraft({ ...draft, href: e.target.value })} className={inp} autoComplete="off" />
             </div>
             <div className="sm:col-span-2">
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Deskripsi submenu (opsional)</label>
-              <input value={draft.deskripsi ?? ""} onChange={(e) => setDraft({ ...draft, deskripsi: e.target.value })} className={inp} />
+              <input value={draft.deskripsi ?? ""} onChange={(e) => setDraft({ ...draft, deskripsi: e.target.value })} className={inp} autoComplete="off" />
             </div>
             <label className="inline-flex items-center gap-2 text-sm">
               <input type="checkbox" checked={draft.aktif ?? true} onChange={(e) => setDraft({ ...draft, aktif: e.target.checked })} />
@@ -525,11 +531,11 @@ export function FooterAdmin() {
           <div className="grid sm:grid-cols-[1fr_100px_auto] gap-3 items-end">
             <div>
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Judul Kolom</label>
-              <input value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} className={inp} />
+              <input value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} className={inp} autoComplete="off" />
             </div>
             <div>
               <label className="text-xs uppercase tracking-wider text-muted-foreground">Urutan</label>
-              <input type="number" value={draft.urutan} onChange={(e) => setDraft({ ...draft, urutan: Number(e.target.value) })} className={inp} />
+              <input type="number" value={draft.urutan} onChange={(e) => setDraft({ ...draft, urutan: Number(e.target.value) })} className={inp} autoComplete="off" />
             </div>
             <label className="inline-flex items-center gap-2 text-sm pb-2">
               <input type="checkbox" checked={draft.aktif} onChange={(e) => setDraft({ ...draft, aktif: e.target.checked })} />
@@ -558,6 +564,7 @@ export function FooterAdmin() {
                     setDraft({ ...draft, links: arr });
                   }}
                   className={inp}
+                  autoComplete="off"
                 />
                 <input
                   placeholder="/href atau https://…"
@@ -568,6 +575,7 @@ export function FooterAdmin() {
                     setDraft({ ...draft, links: arr });
                   }}
                   className={inp}
+                  autoComplete="off"
                 />
                 <button
                   className={btnDanger}

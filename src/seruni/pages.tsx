@@ -1,11 +1,9 @@
- 
-
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "./lib/tenant";
-
+import { Share2, Facebook, Twitter, MessageCircle } from "lucide-react";
 import {
   EditorialLayout,
   SectionWrap,
@@ -54,6 +52,14 @@ import {
   useAduanById,
   useIdmIndikatorById,
   useAutofillPenduduk,
+  Galeri,
+  PotensiUmkm,
+  PotensiWisata,
+  PembangunanDetail,
+  PotensiProduk,
+  BantuanSosial,
+  AduanWarga,
+  IdmIndikator,
 } from "./lib/queries";
 import { PetaLeaflet } from "./PetaLeaflet";
 import { Seo } from "./lib/seo";
@@ -257,71 +263,126 @@ export function LembagaPage() {
 
 export function BeritaListPage() {
   const { data: beritaTerbaru } = useBerita();
+  const headline = beritaTerbaru[0];
+  const others = beritaTerbaru.slice(1);
+  const terpopuler = [...beritaTerbaru].reverse().slice(0, 5);
+
   return (
-    <EditorialLayout
-      eyebrow="Informasi"
-      judul="Berita Desa"
-      deskripsi="Kabar terbaru pembangunan, kesehatan, ekonomi, dan sosial dari Desa Seruni Mumbul."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Berita" }]}
-    >
+    <div className="bg-background text-foreground min-h-screen">
       <Seo title="Berita Desa" description="Kabar terbaru pembangunan, kesehatan, ekonomi, dan sosial Desa Seruni Mumbul." path="/berita" />
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-32 pb-16">
+        <header className="mb-10 border-b-2 border-accent pb-4">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-widest">Berita Terkini</h1>
+        </header>
       <SectionWrap>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
-          {beritaTerbaru.map((b) => (
-            <Link key={b.slug} to={`/berita/${b.slug}`} className="group block">
-              <div className="overflow-hidden mb-5 border-b border-current/15">
-                <div className="relative aspect-[16/10] bg-primary text-primary-foreground">
-                  {b.cover_url ? (
-                    <img src={b.cover_url} alt={b.judul} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="grid lg:grid-cols-[1fr_320px] gap-10 items-start">
+          {/* Main Content */}
+          <div className="space-y-10 min-w-0">
+            {headline && (
+              <Link to={`/berita/${headline.slug}`} className="group block">
+                <div className="relative aspect-[16/9] sm:aspect-[21/9] bg-primary text-primary-foreground mb-4 overflow-hidden">
+                  {headline.cover_url ? (
+                    <img src={headline.cover_url} alt={headline.judul} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
                     <div className="stempel-watermark absolute inset-0" style={{ color: "#fff" }} aria-hidden />
                   )}
-                  <span className="absolute top-4 left-4 border border-accent text-accent px-3 py-1 font-display text-[10px] font-bold uppercase tracking-[0.22em] bg-primary/60">
-                    {b.kategori}
-                  </span>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 sm:p-8 pt-20">
+                    <span className="inline-block bg-accent text-accent-foreground px-2 py-1 text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3">
+                      {headline.kategori}
+                    </span>
+                    <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold text-white leading-[1.2] group-hover:text-accent transition-colors">
+                      {headline.judul}
+                    </h2>
+                    <time className="block mt-2 sm:mt-3 text-xs sm:text-sm text-white/80 tabular-nums">
+                      {formatTanggal(headline.tanggal)}
+                    </time>
+                  </div>
                 </div>
-              </div>
-              <time className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent tabular-nums">
-                {formatTanggal(b.tanggal)}
-              </time>
-              <h3 className="mt-3 font-display text-xl sm:text-2xl font-semibold leading-snug group-hover:text-accent transition-colors">
-                {b.judul}
+              </Link>
+            )}
+
+            <div className="flex flex-col gap-6">
+              {others.map((b) => (
+                <Link key={b.slug} to={`/berita/${b.slug}`} className="group flex gap-4 sm:gap-6 border-b border-current/15 pb-6">
+                  <div className="w-1/3 sm:w-56 shrink-0 relative aspect-[4/3] sm:aspect-[16/10] bg-muted overflow-hidden">
+                    {b.cover_url ? (
+                      <img src={b.cover_url} alt={b.judul} loading="lazy" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ) : (
+                      <div className="stempel-watermark absolute inset-0" aria-hidden />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 py-1">
+                    <span className="text-accent text-[10px] sm:text-xs font-bold uppercase tracking-widest">{b.kategori}</span>
+                    <h3 className="mt-1 sm:mt-2 font-display text-base sm:text-xl font-semibold leading-snug group-hover:text-accent transition-colors line-clamp-3 sm:line-clamp-2">
+                      {b.judul}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed opacity-75 line-clamp-2 hidden md:block">{b.ringkasan}</p>
+                    <time className="block mt-3 font-display text-[9px] sm:text-[10px] font-bold uppercase tracking-widest opacity-60 tabular-nums">
+                      {formatTanggal(b.tanggal)}
+                    </time>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <aside className="sticky top-24 space-y-8">
+            <div className="border border-current/15 p-5">
+              <h3 className="font-display text-lg font-bold border-b-2 border-accent pb-2 mb-4 uppercase tracking-widest">
+                Terpopuler
               </h3>
-              <p className="mt-3 text-sm leading-relaxed opacity-75 line-clamp-3">{b.ringkasan}</p>
-            </Link>
-          ))}
+              <ul className="space-y-4 divide-y divide-current/10">
+                {terpopuler.map((b, i) => (
+                  <li key={b.slug} className="pt-4 first:pt-0">
+                    <Link to={`/berita/${b.slug}`} className="group flex gap-3">
+                      <span className="text-4xl font-display font-bold text-accent/30 leading-none tabular-nums -mt-1">
+                        {i + 1}
+                      </span>
+                      <div>
+                        <h4 className="font-semibold leading-snug group-hover:text-accent line-clamp-2 text-sm">{b.judul}</h4>
+                        <time className="block mt-1 font-display text-[9px] font-bold uppercase tracking-widest opacity-60">{formatTanggal(b.tanggal)}</time>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </aside>
         </div>
       </SectionWrap>
-    </EditorialLayout>
+      </main>
+    </div>
   );
 }
 
 export function BeritaDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: b, loading } = useBeritaBySlug(slug);
+  const { data: semuaBerita } = useBerita();
+  
   if (loading) {
     return (
-      <EditorialLayout eyebrow="Informasi" judul="Memuat berita…" crumbs={[{ label: "Beranda", to: "/" }, { label: "Berita", to: "/berita" }]}>
-        <SectionWrap><p className="opacity-60">Sedang memuat…</p></SectionWrap>
-      </EditorialLayout>
+      <div className="bg-background text-foreground min-h-screen py-24 px-6 max-w-4xl mx-auto">
+        <p className="opacity-60">Sedang memuat…</p>
+      </div>
     );
   }
   if (!b) {
     return (
-      <EditorialLayout eyebrow="Informasi" judul="Berita tidak ditemukan" crumbs={[{ label: "Beranda", to: "/" }, { label: "Berita", to: "/berita" }, { label: "Tidak ditemukan" }]}>
-        <SectionWrap>
-          <Link to="/berita" className={btnPrimary}>Kembali ke daftar berita</Link>
-        </SectionWrap>
-      </EditorialLayout>
+      <div className="bg-background text-foreground min-h-screen py-24 px-6 max-w-4xl mx-auto text-center">
+        <h1 className="text-2xl font-bold mb-6">Berita tidak ditemukan</h1>
+        <Link to="/berita" className="inline-flex items-center justify-center h-12 px-6 font-display font-bold text-sm tracking-[0.2em] uppercase bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+          Kembali ke daftar berita
+        </Link>
+      </div>
     );
   }
+
+  const beritaTerkait = semuaBerita.filter(x => x.slug !== slug).slice(0, 4);
+
   return (
-    <EditorialLayout
-      eyebrow={b.kategori}
-      judul={b.judul}
-      deskripsi={`${formatTanggal(b.tanggal)} · ${b.penulis}`}
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Berita", to: "/berita" }, { label: b.judul.slice(0, 40) + "…" }]}
-    >
+    <div className="bg-background text-foreground selection:bg-accent selection:text-accent-foreground pb-20">
       <Seo
         title={b.judul}
         description={b.ringkasan}
@@ -339,21 +400,131 @@ export function BeritaDetailPage() {
           publisher: { "@type": "Organization", name: "Kantor Desa Seruni Mumbul" },
         }}
       />
-      <SectionWrap>
-        <article className="max-w-3xl mx-auto">
-          {b.cover_url && (
-            <img src={b.cover_url} alt={b.judul} className="w-full aspect-[16/9] object-cover mb-10 border border-current/15" />
-          )}
-          <p className="text-xl leading-relaxed font-display italic border-l-2 border-accent pl-6 mb-10">{b.ringkasan}</p>
-          <div className="space-y-5 text-base leading-relaxed opacity-90">
-            {b.isi.map((p, i) => (<p key={i}>{p}</p>))}
-          </div>
-          <div className="mt-12 pt-6 border-t border-current/15">
-            <Link to="/berita" className={btnPrimary}>Kembali ke daftar berita</Link>
-          </div>
-        </article>
-      </SectionWrap>
-    </EditorialLayout>
+      
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-8 pb-12 lg:pt-12">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-xs sm:text-sm font-medium opacity-60 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
+          <Link to="/" className="hover:text-accent hover:opacity-100 transition-colors">Beranda</Link>
+          <span className="opacity-40">/</span>
+          <Link to="/berita" className="hover:text-accent hover:opacity-100 transition-colors">Berita</Link>
+          <span className="opacity-40">/</span>
+          <span className="text-accent opacity-100">{b.kategori}</span>
+        </nav>
+
+        <div className="grid lg:grid-cols-[1fr_320px] gap-10 lg:gap-16 items-start">
+          {/* Main Article */}
+          <article className="min-w-0">
+            <header className="mb-8">
+              <span className="inline-block bg-accent/10 text-accent px-3 py-1 text-xs font-bold uppercase tracking-wider mb-4 border border-accent/20">
+                {b.kategori}
+              </span>
+              <h1 className="font-display text-2xl sm:text-4xl lg:text-5xl font-bold leading-[1.2] sm:leading-[1.1] mb-6">
+                {b.judul}
+              </h1>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 py-4 border-y border-current/15">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-lg">
+                    {(b.penulis || "Admin").charAt(0)}
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm">Oleh <span className="text-accent">{b.penulis || "Admin"}</span></div>
+                    <time className="text-xs opacity-60 tabular-nums">Diperbarui {formatTanggal(b.tanggal)}</time>
+                  </div>
+                </div>
+                
+                {/* Share Buttons */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-widest mr-2 opacity-60 hidden sm:inline">Bagikan</span>
+                  <button className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors" title="Bagikan ke Facebook">
+                    <Facebook size={16} />
+                  </button>
+                  <button className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors" title="Bagikan ke Twitter">
+                    <Twitter size={16} />
+                  </button>
+                  <button className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-[#25D366] hover:text-white transition-colors" title="Bagikan ke WhatsApp">
+                    <MessageCircle size={16} />
+                  </button>
+                  <button className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors" title="Salin Tautan">
+                    <Share2 size={16} />
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            {b.cover_url && (
+              <figure className="mb-10">
+                <img src={b.cover_url} alt={b.judul} className="w-full aspect-[16/9] object-cover bg-muted" />
+                <figcaption className="mt-3 text-xs opacity-60 text-center italic">Ilustrasi: {b.judul}</figcaption>
+              </figure>
+            )}
+
+            <div className="prose prose-lg sm:prose-xl max-w-none text-foreground/90 prose-headings:font-display prose-headings:font-bold prose-a:text-accent hover:prose-a:text-accent/80 prose-img:rounded-none leading-relaxed">
+              <p className="text-lg sm:text-xl font-medium !leading-relaxed font-display italic border-l-4 border-accent pl-5 sm:pl-6 mb-8">{b.ringkasan}</p>
+              
+              {(Array.isArray(b.isi) ? b.isi : typeof b.isi === "string" ? [b.isi] : []).map((p, i) => {
+                // Inject "Baca Juga" block after 2nd paragraph
+                if (i === 2 && beritaTerkait.length > 0) {
+                  return (
+                    <div key={`baca-juga-${i}`}>
+                      <div className="my-8 p-5 sm:p-6 bg-accent/5 border-l-4 border-accent">
+                        <h4 className="font-bold text-accent uppercase text-xs tracking-widest mb-3">Baca Juga</h4>
+                        <Link to={`/berita/${beritaTerkait[0].slug}`} className="font-display font-semibold text-lg sm:text-xl hover:text-accent transition-colors block leading-snug">
+                          {beritaTerkait[0].judul}
+                        </Link>
+                      </div>
+                      <p>{String(p)}</p>
+                    </div>
+                  )
+                }
+                return <p key={i}>{String(p)}</p>
+              })}
+            </div>
+
+            {/* Tags / Topik Terkait */}
+            <div className="mt-12 pt-8 border-t border-current/15">
+              <h3 className="text-sm font-bold uppercase tracking-widest mb-4">Topik Terkait</h3>
+              <div className="flex flex-wrap gap-2">
+                {['Desa', b.kategori, 'Informasi Publik', 'Terbaru'].map(tag => (
+                  <span key={tag} className="px-3 py-1 border border-current/20 text-xs sm:text-sm hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors cursor-pointer">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </article>
+
+          {/* Sidebar */}
+          <aside className="sticky top-24 space-y-8 mt-12 lg:mt-0">
+            <div className="border border-current/15 p-5">
+              <h3 className="font-display text-lg font-bold border-b-2 border-accent pb-2 mb-4 uppercase tracking-widest">
+                Berita Terpopuler
+              </h3>
+              <ul className="space-y-4 divide-y divide-current/10">
+                {semuaBerita.slice(0, 5).map((tb, i) => (
+                  <li key={tb.slug} className="pt-4 first:pt-0">
+                    <Link to={`/berita/${tb.slug}`} className="group flex gap-3">
+                      <span className="text-4xl font-display font-bold text-accent/30 leading-none tabular-nums -mt-1">
+                        {i + 1}
+                      </span>
+                      <div>
+                        <h4 className="font-semibold leading-snug group-hover:text-accent line-clamp-2 text-sm">{tb.judul}</h4>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            {/* Iklan / Banner Placeholder */}
+            <div className="aspect-[300/250] bg-muted border border-current/15 flex flex-col items-center justify-center p-6 text-center">
+              <span className="text-xs uppercase tracking-widest opacity-40 font-bold mb-2">Space Iklan</span>
+              <span className="text-sm font-medium opacity-60">Dukung Pembangunan Desa Seruni Mumbul</span>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1322,7 +1493,7 @@ export function StatistikPendudukPage() {
           { nilai: (statistik?.jumlah_penduduk || 0).toLocaleString("id-ID"), label: "Total Jiwa", highlight: true },
           { nilai: (statistik?.jumlah_kk || 0).toLocaleString("id-ID"), label: "Kepala Keluarga" },
           { nilai: String(statistik?.jumlah_dusun || 0), label: "Dusun" },
-          { nilai: "6", label: "Kategori Data" },
+          { nilai: String((statistik?.per_umur?.length || 0) + (statistik?.per_pekerjaan?.length || 0) + (statistik?.per_pendidikan?.length || 0)), label: "Data Distribusi" },
         ]}
       />
       <SectionWrap>
@@ -2233,7 +2404,7 @@ export function AgendaDetailPage() {
   const { data, loading: isLoading } = useAgendaById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
-  const imageUrl = (data as any).foto_url || null;
+  const imageUrl = data.foto_url || null;
   return (
     <div className="min-h-screen bg-background">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -2247,7 +2418,7 @@ export function AgendaDetailPage() {
         {imageUrl && (
           <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-8">
             {}
-            <img src={imageUrl} alt={(data as any).judul} className="w-full aspect-video object-cover" />
+            <img src={imageUrl} alt={data.judul} className="w-full aspect-video object-cover" />
           </div>
         )}
 
@@ -2261,16 +2432,16 @@ export function AgendaDetailPage() {
             )}
           </div>
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
-            {(data as any).judul}
+            {data.judul}
           </h1>
         </div>
 
         {/* Meta info row */}
         <div className="mt-5 flex flex-wrap gap-y-2 gap-x-6 text-sm text-foreground/60">
-          {(data as any).tanggal && (
+          {data.tanggal && (
             <div className="flex items-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
-              <span>{formatTanggal((data as any).tanggal)}</span>
+              <span>{formatTanggal(data.tanggal)}</span>
             </div>
           )}
           {data.waktu && (
@@ -2297,11 +2468,11 @@ export function AgendaDetailPage() {
         <div className="mt-8 border-t border-current/15" />
 
         {/* Description */}
-        {(data as any).deskripsi && (
+        {data.deskripsi && (
           <div className="mt-8">
             <h2 className="font-display text-sm font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi</h2>
             <div className="prose prose-sm max-w-none text-foreground/80 leading-relaxed">
-              <p>{(data as any).deskripsi}</p>
+              <p>{data.deskripsi}</p>
             </div>
           </div>
         )}
@@ -2330,8 +2501,8 @@ export function GaleriDetailPage() {
   const { data, loading: isLoading } = useGaleriById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
-  const imageUrl = (data as any).foto_url || null;
-  const videoUrl = (data as any).video_url || null;
+  const imageUrl = data.foto_url || null;
+  const videoUrl = data.video_url || null;
 
   // Extract YouTube video ID for embed
   const getYouTubeId = (url: string) => {
@@ -2353,7 +2524,7 @@ export function GaleriDetailPage() {
         {imageUrl && (
           <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-6">
             {}
-            <img src={imageUrl} alt={(data as any).judul} className="w-full aspect-video object-cover" />
+            <img src={imageUrl} alt={data.judul} className="w-full aspect-video object-cover" />
           </div>
         )}
 
@@ -2363,7 +2534,7 @@ export function GaleriDetailPage() {
             <div className="relative aspect-video">
               <iframe
                 src={`https://www.youtube.com/embed/${youtubeId}`}
-                title={(data as any).judul}
+                title={data.judul}
                 className="absolute inset-0 w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -2380,33 +2551,33 @@ export function GaleriDetailPage() {
             </span>
           )}
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight text-foreground">
-            {(data as any).judul}
+            {data.judul}
           </h1>
           <p className="text-sm text-foreground/50">
-            {(data as any).tanggal ? formatTanggal((data as any).tanggal) : ""}
+            {(data as Galeri).tanggal ? formatTanggal((data as Galeri).tanggal) : ""}
           </p>
         </div>
 
         {/* Photo metadata */}
-        {((data as any).fotografer || (data as any).sumber || (data as any).deskripsi) && (
+        {((data as Galeri).fotografer || (data as Galeri).sumber || (data as Galeri).deskripsi) && (
           <>
             <div className="mt-8 border-t border-current/15" />
             <div className="mt-6 grid sm:grid-cols-2 gap-4 text-sm">
-              {(data as any).fotografer && (
+              {(data as Galeri).fotografer && (
                 <div className="flex items-center gap-2 text-foreground/60">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /></svg>
-                  <span>Fotografer: <b className="text-foreground">{(data as any).fotografer}</b></span>
+                  <span>Fotografer: <b className="text-foreground">{(data as Galeri).fotografer}</b></span>
                 </div>
               )}
-              {(data as any).sumber && (
+              {(data as Galeri).sumber && (
                 <div className="flex items-center gap-2 text-foreground/60">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
-                  <span>Sumber: <b className="text-foreground">{(data as any).sumber}</b></span>
+                  <span>Sumber: <b className="text-foreground">{(data as Galeri).sumber}</b></span>
                 </div>
               )}
             </div>
-            {(data as any).deskripsi && (
-              <p className="mt-4 text-sm text-foreground/70 leading-relaxed">{(data as any).deskripsi}</p>
+            {data.deskripsi && (
+              <p className="mt-4 text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
             )}
           </>
         )}
@@ -2439,13 +2610,13 @@ export function PengumumanDetailPage() {
             </div>
             <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-1">Pengumuman Resmi Desa</p>
             <p className="text-xs text-foreground/50 font-mono">{data.nomor || "Tanpa Nomor"}</p>
-            <p className="text-xs text-foreground/40 mt-1">{(data as any).tanggal ? formatTanggal((data as any).tanggal) : ""}</p>
+            <p className="text-xs text-foreground/40 mt-1">{data.tanggal ? formatTanggal(data.tanggal) : ""}</p>
           </div>
 
           {/* Document body */}
           <div className="px-6 sm:px-10 py-8">
             <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-semibold leading-snug text-center text-foreground mb-8">
-              {(data as any).judul}
+              {data.judul}
             </h1>
             {data.ringkasan && (
               <div className="text-sm leading-[1.9] text-foreground/80 space-y-4">
@@ -2729,8 +2900,8 @@ export function UmkmDetailPage() {
     : null;
 
   // Map link for address
-  const mapLink = (data as any).alamat
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(((data as any).alamat || "") + " Seruni Mumbul Lombok Timur")}`
+  const mapLink = data.alamat
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((data.alamat || "") + " Seruni Mumbul Lombok Timur")}`
     : null;
 
   return (
@@ -2817,14 +2988,14 @@ export function UmkmDetailPage() {
           </div>
 
           {/* Address */}
-          {(data as any).alamat && (
+          {(data as PotensiUmkm).alamat && (
             <div className="px-6 pb-5">
               <div className="bg-foreground/5 rounded-lg p-4">
                 <div className="flex items-start gap-3">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40 flex-shrink-0 mt-0.5"><path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.976.734l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clipRule="evenodd" /></svg>
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Alamat</p>
-                    <p className="text-sm text-foreground/80">{(data as any).alamat}</p>
+                    <p className="text-sm text-foreground/80">{data.alamat}</p>
                     {mapLink && (
                       <a href={mapLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:underline mt-2">
                         Lihat di Peta
@@ -2838,10 +3009,10 @@ export function UmkmDetailPage() {
           )}
 
           {/* Description */}
-          {(data as any).deskripsi && (
+          {data.deskripsi && (
             <div className="px-6 pb-6">
               <div className="border-t border-current/15 pt-5">
-                <p className="text-sm text-foreground/70 leading-relaxed">{(data as any).deskripsi}</p>
+                <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
               </div>
             </div>
           )}
@@ -2871,7 +3042,7 @@ export function ProdukDetailPage() {
   const { data, loading: isLoading } = useProdukById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
-  const imageUrl = (data as any).foto_url || null;
+  const imageUrl = data.foto_url || null;
   const harga = data.harga != null ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.harga) : null;
   const waLink = (data as any).kontak_penjual
     ? `https://wa.me/${(data as any).kontak_penjual.replace(/\D/g, "")}?text=${encodeURIComponent(`Halo, saya tertarik dengan produk: ${data.nama}`)}`
@@ -2957,10 +3128,10 @@ export function ProdukDetailPage() {
             </div>
 
             {/* Description */}
-            {(data as any).deskripsi && (
+            {data.deskripsi && (
               <div className="border-t border-current/15 pt-5">
                 <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-2">Deskripsi</h3>
-                <p className="text-sm text-foreground/70 leading-relaxed">{(data as any).deskripsi}</p>
+                <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
               </div>
             )}
 
@@ -3000,8 +3171,8 @@ export function WisataDetailPage() {
   // Map link
   const mapLink = hasCoords
     ? `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
-    : (data as any).alamat
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(((data as any).alamat || "") + " Seruni Mumbul Lombok Timur")}`
+    : (data as PotensiWisata).alamat
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(((data as PotensiWisata).alamat || "") + " Seruni Mumbul Lombok Timur")}`
     : null;
 
   return (
@@ -3017,7 +3188,7 @@ export function WisataDetailPage() {
         {(data as any).foto_url && (
           <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-8">
             {}
-            <img src={(data as any).foto_url} alt={data.nama} className="w-full aspect-video object-cover" />
+            <img src={data.foto_url} alt={data.nama} className="w-full aspect-video object-cover" />
           </div>
         )}
 
@@ -3073,12 +3244,12 @@ export function WisataDetailPage() {
         )}
 
         {/* Description */}
-        {(data as any).deskripsi && (
+        {data.deskripsi && (
           <>
             <div className="mt-8 border-t border-current/15" />
             <div className="mt-6">
               <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi</h3>
-              <p className="text-sm text-foreground/70 leading-relaxed">{(data as any).deskripsi}</p>
+              <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
             </div>
           </>
         )}
@@ -3118,7 +3289,7 @@ export function PembangunanDetailPage() {
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
   const progress = data.progress_persen ?? 0;
-  const title = data.nama_kegiatan || (data as any).judul || "Kegiatan Pembangunan";
+  const title = data.nama_kegiatan || data.judul || "Kegiatan Pembangunan";
 
   const anggaranFmt = data.anggaran != null
     ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.anggaran)
@@ -3172,10 +3343,10 @@ export function PembangunanDetailPage() {
                   {anggaranFmt}
                 </p>
               </div>
-              {(data as any).sumber_dana && (
+              {(data as PembangunanDetail).sumber_dana && (
                 <div className="text-right">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Sumber Dana</p>
-                  <p className="text-sm font-medium text-foreground">{(data as any).sumber_dana}</p>
+                  <p className="text-sm font-medium text-foreground">{(data as PembangunanDetail).sumber_dana}</p>
                 </div>
               )}
             </div>
@@ -3233,7 +3404,7 @@ export function PembangunanDetailPage() {
               </div>
             </div>
           )}
-          {((data as any).tanggal_mulai || (data as any).tanggal_selesai) && (
+          {((data as PembangunanDetail).tanggal_mulai || (data as PembangunanDetail).tanggal_selesai) && (
             <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
               <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd" /></svg>
@@ -3241,8 +3412,8 @@ export function PembangunanDetailPage() {
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Durasi</p>
                 <p className="text-sm font-medium text-foreground">
-                  {(data as any).tanggal_mulai ? formatTanggal((data as any).tanggal_mulai) : "—"}
-                  {(data as any).tanggal_selesai ? ` — ${formatTanggal((data as any).tanggal_selesai)}` : ""}
+                  {(data as PembangunanDetail).tanggal_mulai ? formatTanggal((data as PembangunanDetail).tanggal_mulai) : "—"}
+                  {(data as PembangunanDetail).tanggal_selesai ? ` — ${formatTanggal((data as PembangunanDetail).tanggal_selesai)}` : ""}
                 </p>
               </div>
             </div>
@@ -3250,13 +3421,13 @@ export function PembangunanDetailPage() {
         </div>
 
         {/* Documentation images */}
-        {(data as any).foto_url && (
+        {(data as PembangunanDetail).foto_url && (
           <div className="mt-6">
             <div className="border-t border-current/15 pt-6">
               <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Dokumentasi</h3>
               <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm">
                 {}
-                <img src={(data as any).foto_url} alt={`Dokumentasi ${title}`} className="w-full aspect-video object-cover" />
+                <img src={(data as PembangunanDetail).foto_url} alt={`Dokumentasi ${title}`} className="w-full aspect-video object-cover" />
               </div>
             </div>
           </div>
@@ -3279,7 +3450,7 @@ export function BansosDetailPage() {
   const { data, loading: isLoading } = useBansosById(id);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
-  const isActive = data.aktif === true || (data.aktif as any) === 1;
+  const isActive = data.aktif === true || data.aktif === 1;
 
   return (
     <div className="min-h-screen bg-background">
@@ -3312,14 +3483,14 @@ export function BansosDetailPage() {
 
           {/* Info grid */}
           <div className="px-6 py-5 grid sm:grid-cols-2 gap-4">
-            {(data as any).sumber && (
+            {(data as BantuanSosial).sumber && (
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" /></svg>
                 </div>
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Sumber</p>
-                  <p className="text-sm font-medium text-foreground">{(data as any).sumber}</p>
+                  <p className="text-sm font-medium text-foreground">{(data as BantuanSosial).sumber}</p>
                 </div>
               </div>
             )}
@@ -3355,11 +3526,11 @@ export function BansosDetailPage() {
           )}
 
           {/* Description */}
-          {(data as any).deskripsi && (
+          {data.deskripsi && (
             <div className="px-6 pb-6">
               <div className="border-t border-current/15 pt-5">
                 <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi Program</h3>
-                <p className="text-sm text-foreground/70 leading-relaxed">{(data as any).deskripsi}</p>
+                <p className="text-sm text-foreground/70 leading-relaxed">{data.deskripsi}</p>
               </div>
             </div>
           )}
@@ -3413,7 +3584,7 @@ export function AduanDetailPage() {
   const statusCfg = statusConfig[data.status] || { bg: "bg-gray-100", text: "text-gray-700", dot: "bg-gray-400" };
 
   // Tanggal submission
-  const submittedDate = (data as any).tanggal ? formatTanggal((data as any).tanggal) : null;
+  const submittedDate = data.tanggal ? formatTanggal(data.tanggal) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -3434,11 +3605,11 @@ export function AduanDetailPage() {
                   <p className="text-[10px] font-mono font-semibold text-foreground/40 uppercase tracking-wider mb-1">Tiket #{data.nomor_tiket}</p>
                 )}
                 <h1 className="font-display text-xl sm:text-2xl font-semibold leading-snug text-foreground">
-                  {(data as any).judul}
+                  {data.judul}
                 </h1>
               </div>
-              <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${statusConfig.bg} ${statusConfig.text}`}>
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${statusConfig.dot}`} />
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${statusCfg.bg} ${statusCfg.text}`}>
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${statusCfg.dot}`} />
                 {ADUAN_STATUS_LABELS[data.status] || data.status}
               </div>
             </div>
@@ -3513,12 +3684,12 @@ export function AduanDetailPage() {
         </div>
 
         {/* Attachments */}
-        {(data as any).lampiran_url && (
+        {(data as AduanWarga).lampiran_url && (
           <div className="mt-4">
             <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
               <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Lampiran</h3>
               {}
-              <img src={(data as any).lampiran_url} alt="Lampiran pengaduan" className="max-w-full rounded border border-current/15 max-h-72 object-contain" />
+              <img src={(data as AduanWarga).lampiran_url} alt="Lampiran pengaduan" className="max-w-full rounded border border-current/15 max-h-72 object-contain" />
             </div>
           </div>
         )}
@@ -3661,14 +3832,14 @@ export function IdmIndikatorDetailPage() {
               </div>
             </div>
           )}
-          {(data as any).sumber && (
+          {(data as IdmIndikator).sumber && (
             <div className="flex items-center gap-3 p-3 bg-background border border-current/15 rounded-lg">
               <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
               </div>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Sumber</p>
-                <p className="text-sm font-medium text-foreground">{(data as any).sumber}</p>
+                <p className="text-sm font-medium text-foreground">{(data as IdmIndikator).sumber}</p>
               </div>
             </div>
           )}

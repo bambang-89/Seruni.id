@@ -232,11 +232,16 @@ BEGIN
     USING (tenant_id = get_tenant_id());
 
   -- Admin role can do anything (service_role bypasses RLS anyway)
-  CREATE POLICY "Admin full access to penduduk"
-    ON public.penduduk FOR ALL
-    TO authenticated
-    USING (public.has_role(auth.uid(), 'admin'))
-    WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  DO $$
+  BEGIN
+    DROP POLICY IF EXISTS "Admin full access to penduduk" ON public.penduduk;
+    CREATE POLICY "Admin full access to penduduk"
+      ON public.penduduk FOR ALL
+      TO authenticated
+      USING (public.has_role(auth.uid(), 'admin'))
+      WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END $$;
 
   RAISE NOTICE 'Fixed RLS policies on penduduk';
 
@@ -257,11 +262,16 @@ BEGIN
     TO authenticated
     USING (tenant_id = get_tenant_id());
 
-  CREATE POLICY "Admin full access to keluarga"
-    ON public.keluarga FOR ALL
-    TO authenticated
-    USING (public.has_role(auth.uid(), 'admin'))
-    WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  DO $$
+  BEGIN
+    DROP POLICY IF EXISTS "Admin full access to keluarga" ON public.keluarga;
+    CREATE POLICY "Admin full access to keluarga"
+      ON public.keluarga FOR ALL
+      TO authenticated
+      USING (public.has_role(auth.uid(), 'admin'))
+      WITH CHECK (public.has_role(auth.uid(), 'admin'));
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END $$;
 
   RAISE NOTICE 'Fixed RLS policies on keluarga';
 

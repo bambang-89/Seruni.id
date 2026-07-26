@@ -27,7 +27,7 @@ export function ToneProvider({
   useEffect(() => {
     if (import.meta.env.PROD) return;
     if (parent === tone) {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         `[seruni/contrast] Konflik tone "${tone}" bersarang di dalam "${parent}"` +
           (label ? ` (${label})` : "") +

@@ -256,7 +256,7 @@ async function recomputeDashboardAgregat(
     const tahunIni = new Date().getFullYear().toString();
     const { data: apbdes } = await sb
       .from("apbdes")
-      .select("total_anggaran, sumber_dana")
+      .select("total_anggaran:anggaran, sumber_dana")
       .eq("tahun", tahunIni)
       .limit(1);
 

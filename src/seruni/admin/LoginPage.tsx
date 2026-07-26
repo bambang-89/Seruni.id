@@ -1,19 +1,23 @@
 import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { siteSettings as seedSettings } from "../data";
+
 import { useSiteSettings } from "../lib/zeroHardcode";
 
 export default function LoginPage() {
   const { user, isAdmin, loading, signInWithNik } = useAuth();
   const { data: settings } = useSiteSettings();
-  const siteName = settings?.nama_resmi ?? seedSettings.nama_resmi;
+  const siteName = settings?.nama_resmi ?? "Desa Seruni";
   const nav = useNavigate();
   const loc = useLocation() as { state?: { from?: string } };
   const [nik, setNik] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  
+  console.log("URL:", import.meta.env.VITE_SUPABASE_URL);
+  console.log("KEY length:", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.length);
+
 
   if (!loading && user && isAdmin) {
     return <Navigate to={loc.state?.from || "/admin"} replace />;

@@ -486,6 +486,7 @@ export function TenantSwitcher({ supabaseClient }: { supabaseClient: any }) {
       <select
         value={tenant?.slug ?? ""}
         onChange={(e) => handleSwitch(e.target.value)}
+        autoComplete="off"
         className="bg-card border border-border rounded-lg px-3 py-2 text-sm shadow-lg"
       >
         {tenants.map((t) => (

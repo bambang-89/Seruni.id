@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
           sent_at: r.ok ? new Date().toISOString() : null,
           error_message: r.ok ? null : JSON.stringify(r.response).slice(0, 500),
         }).eq("id", t.id);
-        r.ok ? sukses++ : gagal++;
+        if (r.ok) { sukses++; } else { gagal++; }
       }
 
       // Recount totals from source of truth
@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
         sent_at: r.ok ? new Date().toISOString() : null,
         error_message: r.ok ? null : JSON.stringify(r.response).slice(0, 500),
       }).eq("id", t.id);
-      r.ok ? sukses++ : gagal++;
+      if (r.ok) { sukses++; } else { gagal++; }
     }
 
     const finalStatus = dryRun ? "selesai" : gagal === 0 ? "selesai" : sukses === 0 ? "gagal" : "selesai";

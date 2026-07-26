@@ -323,7 +323,7 @@ Deno.serve(async (req: Request) => {
   const sb = createClient(supabaseUrl, serviceKey);
 
   const body = await req.json().catch(() => ({}));
-  let tenantId: string | null = body.tenant_id || null;
+  const tenantId: string | null = body.tenant_id || null;
 
   if (!tenantId) {
     const { data: tenants } = await sb.from("tenants").select("id");

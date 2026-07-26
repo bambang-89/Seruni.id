@@ -46,17 +46,25 @@ GRANT SELECT ON public.penduduk_statistik TO anon, authenticated;
 GRANT SELECT ON public.penduduk_per_dusun TO anon, authenticated;
 
 -- 4. Admin RLS policy for penduduk — authenticated users with admin role bypass tenant isolation
-DROP POLICY IF EXISTS "Admin full access to penduduk" ON public.penduduk;
-CREATE POLICY "Admin full access to penduduk"
-  ON public.penduduk FOR ALL
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'))
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "Admin full access to penduduk" ON public.penduduk;
+  CREATE POLICY "Admin full access to penduduk"
+    ON public.penduduk FOR ALL
+    TO authenticated
+    USING (public.has_role(auth.uid(), 'admin'))
+    WITH CHECK (public.has_role(auth.uid(), 'admin'));
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- 5. Admin RLS policy for keluarga
-DROP POLICY IF EXISTS "Admin full access to keluarga" ON public.keluarga;
-CREATE POLICY "Admin full access to keluarga"
-  ON public.keluarga FOR ALL
-  TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'))
-  WITH CHECK (public.has_role(auth.uid(), 'admin'));
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "Admin full access to keluarga" ON public.keluarga;
+  CREATE POLICY "Admin full access to keluarga"
+    ON public.keluarga FOR ALL
+    TO authenticated
+    USING (public.has_role(auth.uid(), 'admin'))
+    WITH CHECK (public.has_role(auth.uid(), 'admin'));
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;

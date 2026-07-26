@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TableCrud, type Column } from "./AdminPages";
 import { useBroadcasts, useBroadcastTargets, useEventLog } from "../lib/queries";
+import { SuratPreview, SuratPreviewModal } from "../components/SuratPreview";
 
 const WORKFLOW = [
   { value: "draft", label: "Draft" },
@@ -18,32 +19,151 @@ const SEVERITY = [
   { value: "berat", label: "Berat" },
   { value: "kritis", label: "Kritis" },
 ];
-const ADUAN_KATEGORI = [
-  { value: "infrastruktur", label: "Infrastruktur" },
-  { value: "layanan", label: "Layanan" },
-  { value: "keamanan", label: "Keamanan" },
-  { value: "lingkungan", label: "Lingkungan" },
-  { value: "sosial", label: "Sosial" },
-  { value: "lainnya", label: "Lainnya" },
-];
 const POTENSI_STATUS = [
   { value: "publish", label: "Publish" },
   { value: "draft", label: "Draft" },
 ];
-const UMKM_TIPE = [
-  { value: "umkm", label: "UMKM" },
-  { value: "bumdes", label: "BUMDes" },
-  { value: "koperasi", label: "Koperasi" },
-];
-const WISATA_JENIS = [
-  { value: "bahari", label: "Bahari" },
-  { value: "pegunungan", label: "Pegunungan" },
-  { value: "budaya", label: "Budaya" },
-  { value: "buatan", label: "Buatan" },
-  { value: "kuliner", label: "Kuliner" },
-];
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+// ============ DNA Field Editors ============
+type DnaFieldDef = { field_name: string; label: string; tipe: string; grup: string; placeholder?: string; max_length?: number; wajib?: boolean; options?: unknown; help_text?: string };
+
+// Edits DNA field VALUES (used in SuratTerbitAdmin)
+function DnaFieldEditor({
+  fields,
+  values,
+  onChange,
+}: {
+  fields: DnaFieldDef[];
+  values: Record<string, unknown>;
+  onChange: (updated: Record<string, unknown>) => void;
+}) {
+  const grouped: Record<string, DnaFieldDef[]> = {};
+  fields.forEach((f) => {
+    const g = f.grup || "Umum";
+    if (!grouped[g]) grouped[g] = [];
+    grouped[g].push(f);
+  });
+
+  return (
+    <>
+      {Object.entries(grouped).map(([grup, grpFields]) => (
+        <fieldset key={grup} className="mb-4">
+          <legend className="text-xs font-bold uppercase tracking-widest text-accent mb-2 block">{grup}</legend>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {grpFields.map((field) => {
+              const val = values[field.field_name] ?? "";
+              const handleChange = (v: unknown) => onChange({ ...values, [field.field_name]: v });
+
+              if (field.tipe === "textarea") {
+                return (
+                  <div key={field.field_name} className="sm:col-span-2">
+                    <label className="text-xs">
+                      <span className="block mb-1 font-medium">
+                        {field.label}{field.wajib && <span className="text-red-500 ml-1">*</span>}
+                      </span>
+                      <textarea
+                        value={String(val)}
+                        onChange={(e) => handleChange(e.target.value)}
+                        placeholder={field.placeholder}
+                        rows={3}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        autoComplete="off"
+                      />
+                    </label>
+                  </div>
+                );
+              }
+
+              if (field.tipe === "select") {
+                const opts = typeof field.options === "string"
+                  ? field.options.split(",").map((s) => ({ value: s.trim(), label: s.trim() }))
+                  : Array.isArray(field.options) ? field.options.map((o) => ({ value: String(o), label: String(o) })) : [];
+                return (
+                  <div key={field.field_name}>
+                    <label className="text-xs">
+                      <span className="block mb-1 font-medium">
+                        {field.label}{field.wajib && <span className="text-red-500 ml-1">*</span>}
+                      </span>
+                      <select
+                        value={String(val)}
+                        onChange={(e) => handleChange(e.target.value)}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        autoComplete="off"
+                      >
+                        <option value="">— Pilih —</option>
+                        {opts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                );
+              }
+
+              if (field.tipe === "number") {
+                return (
+                  <div key={field.field_name}>
+                    <label className="text-xs">
+                      <span className="block mb-1 font-medium">
+                        {field.label}{field.wajib && <span className="text-red-500 ml-1">*</span>}
+                      </span>
+                      <input
+                        type="number"
+                        value={String(val)}
+                        onChange={(e) => handleChange(e.target.value)}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        autoComplete="off"
+                      />
+                    </label>
+                  </div>
+                );
+              }
+
+              if (field.tipe === "date") {
+                return (
+                  <div key={field.field_name}>
+                    <label className="text-xs">
+                      <span className="block mb-1 font-medium">
+                        {field.label}{field.wajib && <span className="text-red-500 ml-1">*</span>}
+                      </span>
+                      <input
+                        type="date"
+                        value={String(val)}
+                        onChange={(e) => handleChange(e.target.value)}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        autoComplete="off"
+                      />
+                    </label>
+                  </div>
+                );
+              }
+
+              // Default: text input
+              return (
+                <div key={field.field_name}>
+                  <label className="text-xs">
+                    <span className="block mb-1 font-medium">
+                      {field.label}{field.wajib && <span className="text-red-500 ml-1">*</span>}
+                    </span>
+                    <input
+                      type="text"
+                      value={String(val)}
+                      onChange={(e) => handleChange(e.target.value)}
+                      placeholder={field.placeholder}
+                      maxLength={field.max_length}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      autoComplete="off"
+                    />
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        </fieldset>
+      ))}
+    </>
+  );
+}
 
 // ============ 1. Pertanahan ============
 export function BidangTanahAdmin() {
@@ -59,10 +179,10 @@ export function BidangTanahAdmin() {
         { key: "nomor_persil", label: "No. Persil" },
         { key: "pemilik_nama", label: "Pemilik" },
         { key: "pemilik_nik", label: "NIK", hideInTable: true },
-        { key: "dusun", label: "Dusun" },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "luas_m2", label: "Luas (m²)", type: "number", step: "0.01" },
-        { key: "penggunaan", label: "Penggunaan" },
-        { key: "status_hak", label: "Status Hak" },
+        { key: "penggunaan", label: "Penggunaan", type: "relation", relation: { table: "ref_penggunaan_tanah", labelCol: "nama", valueCol: "nama" } },
+        { key: "status_hak", label: "Status Hak", type: "relation", relation: { table: "ref_status_hak_tanah", labelCol: "nama", valueCol: "nama" } },
         { key: "nomor_sertifikat", label: "No. Sertifikat", hideInTable: true },
         { key: "tanggal_daftar", label: "Tgl Daftar", type: "date" },
         { key: "catatan", label: "Catatan", type: "textarea", hideInTable: true },
@@ -83,8 +203,8 @@ export function InfrastrukturAdmin() {
       blank={{ nama: "", jenis: "", dusun: "", kondisi: "baik", tahun_bangun: null, tahun_perbaikan: null, volume: "", sumber_dana: "", keterangan: "" }}
       columns={[
         { key: "nama", label: "Nama Aset" },
-        { key: "jenis", label: "Jenis" },
-        { key: "dusun", label: "Dusun" },
+        { key: "jenis", label: "Jenis", type: "relation", relation: { table: "ref_jenis_infrastruktur", labelCol: "nama", valueCol: "nama" } },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "kondisi", label: "Kondisi", type: "select", options: [
           { value: "baik", label: "Baik" },
           { value: "rusak-ringan", label: "Rusak Ringan" },
@@ -93,7 +213,7 @@ export function InfrastrukturAdmin() {
         { key: "tahun_bangun", label: "Th. Bangun", type: "number" },
         { key: "tahun_perbaikan", label: "Th. Perbaikan", type: "number", hideInTable: true },
         { key: "volume", label: "Volume", hideInTable: true },
-        { key: "sumber_dana", label: "Sumber Dana", hideInTable: true },
+        { key: "sumber_dana", label: "Sumber Dana", type: "relation", relation: { table: "ref_sumber_dana", labelCol: "nama", valueCol: "nama" } },
         { key: "keterangan", label: "Keterangan", type: "textarea", hideInTable: true },
       ]}
     />
@@ -112,13 +232,13 @@ export function KegiatanPembangunanAdmin() {
       blank={{ tahun: new Date().getFullYear(), bidang: "", nama_kegiatan: "", lokasi: "", volume: "", anggaran: 0, realisasi: 0, sumber_dana: "", status: "draft", tanggal_mulai: null, tanggal_selesai: null, keterangan: "" }}
       columns={[
         { key: "tahun", label: "Tahun", type: "number" },
-        { key: "bidang", label: "Bidang" },
+        { key: "bidang", label: "Bidang", type: "relation", relation: { table: "ref_bidang_pembangunan", labelCol: "nama", valueCol: "nama" } },
         { key: "nama_kegiatan", label: "Kegiatan" },
         { key: "lokasi", label: "Lokasi" },
         { key: "volume", label: "Volume", hideInTable: true },
         { key: "anggaran", label: "Anggaran", type: "number" },
         { key: "realisasi", label: "Realisasi", type: "number" },
-        { key: "sumber_dana", label: "Sumber Dana", hideInTable: true },
+        { key: "sumber_dana", label: "Sumber Dana", type: "relation", relation: { table: "ref_sumber_dana", labelCol: "nama", valueCol: "nama" } },
         { key: "status", label: "Status", type: "select", options: WORKFLOW },
         { key: "tanggal_mulai", label: "Mulai", type: "date", hideInTable: true },
         { key: "tanggal_selesai", label: "Selesai", type: "date", hideInTable: true },
@@ -140,7 +260,7 @@ export function PosyanduAdmin() {
       blank={{ periode: today(), dusun: "", jumlah_balita: 0, hadir: 0, gizi_baik: 0, gizi_kurang: 0, imunisasi_lengkap: 0, ibu_hamil_dilayani: 0, catatan: "" }}
       columns={[
         { key: "periode", label: "Periode", type: "date" },
-        { key: "dusun", label: "Dusun" },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "jumlah_balita", label: "Balita", type: "number" },
         { key: "hadir", label: "Hadir", type: "number" },
         { key: "gizi_baik", label: "Gizi Baik", type: "number" },
@@ -165,7 +285,7 @@ export function StuntingAdmin() {
       blank={{ periode: today(), dusun: "", balita_diukur: 0, stunting: 0, wasting: 0, underweight: 0, intervensi: "" }}
       columns={[
         { key: "periode", label: "Periode", type: "date" },
-        { key: "dusun", label: "Dusun" },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "balita_diukur", label: "Diukur", type: "number" },
         { key: "stunting", label: "Stunting", type: "number" },
         { key: "wasting", label: "Wasting", type: "number" },
@@ -189,7 +309,7 @@ export function BansosAdmin() {
       columns={[
         { key: "kode", label: "Kode" },
         { key: "nama", label: "Nama Program" },
-        { key: "sumber", label: "Sumber" },
+        { key: "sumber", label: "Sumber", type: "relation", relation: { table: "ref_sumber_dana", labelCol: "nama", valueCol: "nama" } },
         { key: "kuota", label: "Kuota", type: "number" },
         { key: "periode_mulai", label: "Mulai", type: "date" },
         { key: "periode_selesai", label: "Selesai", type: "date" },
@@ -252,8 +372,8 @@ function PenerimaBansosTable({ bansosId }: { bansosId: string }) {
       blank={{ bansos_id: bansosId, nik: "", nama: "", dusun: "", status: "terdaftar", tanggal_salur: null, nominal: null, catatan: "" }}
       columns={[
         { key: "nik", label: "NIK" },
-        { key: "nama", label: "Nama" },
-        { key: "dusun", label: "Dusun" },
+        { key: "nama", label: "Nama", type: "relation", relation: { table: "penduduk", labelCol: "nama", valueCol: "nama" } },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "status", label: "Status", type: "select", options: [
           { value: "terdaftar", label: "Terdaftar" },
           { value: "diverifikasi", label: "Diverifikasi" },
@@ -279,9 +399,9 @@ export function BencanaAdmin() {
       orderAsc={false}
       blank={{ jenis: "", lokasi: "", dusun: "", tanggal: new Date().toISOString(), severity: "sedang", status: "diajukan", korban_jiwa: 0, korban_luka: 0, pengungsi: 0, kerugian_rp: 0, deskripsi: "", penanganan: "" }}
       columns={[
-        { key: "jenis", label: "Jenis" },
+        { key: "jenis", label: "Jenis", type: "relation", relation: { table: "ref_jenis_bencana", labelCol: "nama", valueCol: "nama" } },
         { key: "lokasi", label: "Lokasi" },
-        { key: "dusun", label: "Dusun" },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "severity", label: "Severity", type: "select", options: SEVERITY },
         { key: "status", label: "Status", type: "select", options: WORKFLOW },
         { key: "korban_jiwa", label: "Korban Jiwa", type: "number" },
@@ -304,14 +424,15 @@ export function AduanAdmin() {
       desc="Tiket aduan masuk. Tanggapi dan perbarui statusnya."
       orderBy="created_at"
       orderAsc={false}
-      blank={{ nama_pelapor: "", kontak: "", kategori: "lainnya", judul: "", isi: "", lokasi: "", status: "diajukan", tanggapan: "" }}
+      blank={{ nama_pelapor: "", kontak: "", kategori: "lainnya", judul: "", isi: "", lokasi: "", dusun: "", status: "diajukan", tanggapan: "" }}
       columns={[
         { key: "nomor_tiket", label: "No. Tiket", hideInTable: false, render: (r) => <span className="font-mono text-xs">{r.nomor_tiket}</span> },
         { key: "judul", label: "Judul" },
         { key: "nama_pelapor", label: "Pelapor" },
         { key: "kontak", label: "Kontak" },
-        { key: "kategori", label: "Kategori", type: "select", options: ADUAN_KATEGORI },
+        { key: "kategori", label: "Kategori", type: "relation", relation: { table: "ref_kategori_aduan", labelCol: "nama", valueCol: "nama" } },
         { key: "lokasi", label: "Lokasi", hideInTable: true },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "isi", label: "Isi Aduan", type: "textarea", hideInTable: true },
         { key: "status", label: "Status", type: "select", options: WORKFLOW },
         { key: "tanggapan", label: "Tanggapan Admin", type: "textarea", hideInTable: true },
@@ -333,14 +454,14 @@ export function DptAdmin() {
       columns={[
         { key: "pemilu_kode", label: "Kode Pemilu" },
         { key: "nik", label: "NIK" },
-        { key: "nama", label: "Nama" },
+        { key: "nama", label: "Nama", type: "relation", relation: { table: "penduduk", labelCol: "nama", valueCol: "nama" } },
         { key: "jenis_kelamin", label: "L/P", type: "select", options: [
           { value: "L", label: "Laki-laki" },
           { value: "P", label: "Perempuan" },
         ]},
         { key: "tempat_lahir", label: "Tempat Lahir", hideInTable: true },
         { key: "tanggal_lahir", label: "Tgl Lahir", type: "date", hideInTable: true },
-        { key: "dusun", label: "Dusun" },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "rt", label: "RT" },
         { key: "rw", label: "RW" },
         { key: "tps", label: "TPS" },
@@ -357,55 +478,661 @@ export function DptAdmin() {
 
 // ============ 10. Jenis Surat ============
 export function JenisSuratAdmin() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState<any | null>(null);
+  const [dnaFields, setDnaFields] = useState<any[]>([]);
+  const [loadingDna, setLoadingDna] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    supabase.from("surat_jenis").select("*").order("kode_surat").then(({ data }) => {
+      setRows(data || []);
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const loadDnaFields = async (jenisId: string) => {
+    setLoadingDna(true);
+    const { data } = await supabase
+      .from("surat_jenis_dna")
+      .select("*")
+      .eq("jenis_surat_id", jenisId)
+      .order("urutan");
+    setDnaFields(data || []);
+    setLoadingDna(false);
+  };
+
+  const openEdit = async (r: any) => {
+    setDraft({ ...r });
+    await loadDnaFields(r.id);
+  };
+
+  const openNew = () => {
+    setDraft({ kode_surat: "", kode_klasifikasi: "", nama: "", aktif: true, urutan: 0 });
+    setDnaFields([]);
+  };
+
+  const save = async () => {
+    if (!draft) return;
+    const { id, created_at, updated_at, ...payload } = draft;
+    let result: any;
+
+    if (id) {
+      result = await supabase.from("surat_jenis").update(payload).eq("id", id);
+    } else {
+      result = await supabase.from("surat_jenis").insert(payload);
+      if (result.data) {
+        // Insert DNA fields with new jenis_surat_id
+        const newId = result.data[0]?.id || result.data?.id;
+        if (newId && dnaFields.length > 0) {
+          const tenant_id = rows[0]?.tenant_id || "00000000-0000-0000-0000-000000000000";
+          await supabase.from("surat_jenis_dna").insert(
+            dnaFields.map((f: any) => ({
+              ...f,
+              id: undefined,
+              jenis_surat_id: newId,
+              tenant_id,
+            }))
+          );
+        }
+      }
+    }
+
+    if (result.error) {
+      toast.error(result.error.message);
+    } else {
+      toast.success("Tersimpan.");
+      setDraft(null);
+      setDnaFields([]);
+      load();
+    }
+  };
+
+  const del = async (id: string) => {
+    if (!confirm("Hapus jenis surat ini beserta DNA fields-nya?")) return;
+    // Delete DNA fields first
+    await supabase.from("surat_jenis_dna").delete().eq("jenis_surat_id", id);
+    const { error } = await supabase.from("surat_jenis").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Terhapus.");
+      load();
+    }
+  };
+
+  const saveDnaField = async (field: any) => {
+    const { id, created_at, ...payload } = field;
+    let result: any;
+
+    if (id) {
+      result = await supabase.from("surat_jenis_dna").update(payload).eq("id", id);
+    } else {
+      result = await supabase.from("surat_jenis_dna").insert({ ...payload, tenant_id: draft?.tenant_id || "00000000-0000-0000-0000-000000000000" });
+    }
+
+    if (result.error) {
+      toast.error(result.error.message);
+    } else {
+      toast.success("Field DNA tersimpan.");
+      if (draft?.id) await loadDnaFields(draft.id);
+    }
+  };
+
+  const deleteDnaField = async (id: string) => {
+    if (!confirm("Hapus field DNA ini?")) return;
+    const { error } = await supabase.from("surat_jenis_dna").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Field DNA dihapus.");
+      if (draft?.id) await loadDnaFields(draft.id);
+    }
+  };
+
+  const addDnaField = () => {
+    setDnaFields([...dnaFields, {
+      field_name: "",
+      label: "",
+      tipe: "text",
+      placeholder: "",
+      wajib: false,
+      grup: "Umum",
+      urutan: dnaFields.length + 1,
+    }]);
+  };
+
+  const updateDnaField = (index: number, updates: any) => {
+    const updated = [...dnaFields];
+    updated[index] = { ...updated[index], ...updates };
+    setDnaFields(updated);
+  };
+
   return (
-    <TableCrud
-      table="surat_jenis"
-      title="Layanan — Jenis Surat"
-      desc="Katalog jenis surat (kode klasifikasi & DNA)."
-      orderBy="kode_surat"
-      orderAsc
-      blank={{ kode_surat: "", kode_klasifikasi: "", nama: "", dna_field: "", aktif: true, urutan: 0 }}
-      columns={[
-        { key: "kode_surat", label: "Kode Surat" },
-        { key: "kode_klasifikasi", label: "Kode Klasifikasi" },
-        { key: "nama", label: "Nama Surat" },
-        { key: "dna_field", label: "DNA Field", hideInTable: true },
-        { key: "aktif", label: "Aktif", type: "checkbox" },
-        { key: "urutan", label: "Urutan", type: "number" },
-      ]}
-    />
+    <>
+      <div className="mb-6">
+        <h1 className="font-display text-2xl font-bold">Layanan — Jenis Surat</h1>
+        <p className="text-sm text-muted-foreground mt-1">Katalog jenis surat (kode klasifikasi &amp; DNA).</p>
+      </div>
+
+      {/* Action Bar */}
+      <div className="flex gap-2 mb-4">
+        <button onClick={openNew} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90">
+          + Tambah
+        </button>
+      </div>
+
+      {/* Edit Form */}
+      {draft && (
+        <div className="mb-6 rounded-xl bg-card border border-border p-5">
+          <h3 className="font-display font-semibold mb-4">{draft.id ? "Edit" : "Tambah"} Jenis Surat</h3>
+
+          <div className="grid sm:grid-cols-3 gap-4 mb-6">
+            <div>
+              <label className="block text-xs font-medium mb-1">Kode Surat *</label>
+              <input value={draft.kode_surat || ""} onChange={(e) => setDraft({ ...draft, kode_surat: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="470.0" autoComplete="off" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Kode Klasifikasi *</label>
+              <input value={draft.kode_klasifikasi || ""} onChange={(e) => setDraft({ ...draft, kode_klasifikasi: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="470" autoComplete="off" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Nama Surat *</label>
+              <input value={draft.nama || ""} onChange={(e) => setDraft({ ...draft, nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Surat Keterangan" autoComplete="off" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Urutan</label>
+              <input type="number" value={draft.urutan || 0} onChange={(e) => setDraft({ ...draft, urutan: parseInt(e.target.value) || 0 })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Status</label>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={draft.aktif ?? true} onChange={(e) => setDraft({ ...draft, aktif: e.target.checked })} />
+                Aktif
+              </label>
+            </div>
+          </div>
+
+          {/* DNA Fields Section */}
+          <div className="border-t pt-4 mt-4">
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="font-semibold text-sm">📋 DNA Fields ({dnaFields.length})</h4>
+              <button onClick={addDnaField} className="text-xs bg-secondary px-3 py-1 rounded hover:bg-secondary/80">
+                + Tambah Field
+              </button>
+            </div>
+
+            {loadingDna ? (
+              <p className="text-sm text-muted-foreground">Memuat DNA fields...</p>
+            ) : dnaFields.length === 0 && draft.id ? (
+              <p className="text-sm text-muted-foreground italic">Belum ada DNA fields untuk jenis surat ini.</p>
+            ) : (
+              <div className="space-y-3">
+                {dnaFields.map((field, idx) => (
+                  <DnaFieldDefEditor
+                    key={field.id || idx}
+                    field={field}
+                    onChange={(updates) => updateDnaField(idx, updates)}
+                    onSave={() => saveDnaField(field)}
+                    onDelete={field.id ? () => deleteDnaField(field.id) : undefined}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2 mt-6">
+            <button onClick={save} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90">
+              Simpan
+            </button>
+            <button onClick={() => { setDraft(null); setDnaFields([]); }} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-xl bg-card border border-border">
+        <table className="w-full text-sm">
+          <thead className="bg-muted">
+            <tr>
+              <th className="text-left px-4 py-3">Kode</th>
+              <th className="text-left px-4 py-3">Nama Surat</th>
+              <th className="text-left px-4 py-3">Klasifikasi</th>
+              <th className="text-center px-4 py-3">Urutan</th>
+              <th className="text-center px-4 py-3">Aktif</th>
+              <th className="px-4 py-3 w-40"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && <tr><td colSpan={6} className="px-4 py-6 text-center">Memuat...</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={6} className="px-4 py-6 text-center">Belum ada data.</td></tr>}
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-border">
+                <td className="px-4 py-3 font-mono">{r.kode_surat}</td>
+                <td className="px-4 py-3 font-medium">{r.nama}</td>
+                <td className="px-4 py-3 text-muted-foreground">{r.kode_klasifikasi}</td>
+                <td className="px-4 py-3 text-center">{r.urutan}</td>
+                <td className="px-4 py-3 text-center">{r.aktif ? "✓" : "—"}</td>
+                <td className="px-4 py-3 text-right space-x-2">
+                  <button onClick={() => openEdit(r)} className="rounded-md border border-border px-3 py-1 text-xs hover:bg-muted">Edit</button>
+                  <button onClick={() => r.id && del(r.id)} className="rounded-md border border-destructive/40 text-destructive px-3 py-1 text-xs hover:bg-destructive/10">Hapus</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// DNA Field Definition Editor Component (for JenisSuratAdmin — defines field schemas)
+function DnaFieldDefEditor({ field, onChange, onSave, onDelete }: {
+  field: any;
+  onChange: (updates: any) => void;
+  onSave: () => void;
+  onDelete?: () => void;
+}) {
+  const TIPE_OPTIONS = [
+    { value: "text", label: "Teks" },
+    { value: "textarea", label: "Teks Panjang" },
+    { value: "number", label: "Angka" },
+    { value: "date", label: "Tanggal" },
+    { value: "select", label: "Pilihan" },
+    { value: "checkbox", label: "Checkbox" },
+    { value: "phone", label: "Telepon" },
+    { value: "email", label: "Email" },
+    { value: "file", label: "File Upload" },
+  ];
+
+  return (
+    <div className="border rounded-lg p-3 bg-muted/30">
+      <div className="grid sm:grid-cols-6 gap-2 mb-2">
+        <input
+          value={field.field_name || ""}
+          onChange={(e) => onChange({ field_name: e.target.value })}
+          placeholder="field_name"
+          autoComplete="off"
+          className="sm:col-span-2 rounded-md border border-input bg-background px-2 py-1 text-xs font-mono"
+        />
+        <input
+          value={field.label || ""}
+          onChange={(e) => onChange({ label: e.target.value })}
+          placeholder="Label Field"
+          autoComplete="off"
+          className="sm:col-span-2 rounded-md border border-input bg-background px-2 py-1 text-xs"
+        />
+        <select
+          value={field.tipe || "text"}
+          onChange={(e) => onChange({ tipe: e.target.value })}
+          autoComplete="off"
+          className="sm:col-span-1 rounded-md border border-input bg-background px-2 py-1 text-xs"
+        >
+          {TIPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <div className="flex gap-1 sm:col-span-1">
+          <label className="flex items-center gap-1 text-xs">
+            <input type="checkbox" checked={field.wajib || false} onChange={(e) => onChange({ wajib: e.target.checked })} />
+            Wajib
+          </label>
+        </div>
+      </div>
+      {field.tipe === "select" && (
+        <input
+          value={typeof field.options === "object" ? JSON.stringify(field.options) : field.options || ""}
+          onChange={(e) => {
+            const val = e.target.value;
+            let parsed = val;
+            try {
+              if (val.startsWith("{") || val.startsWith("[")) {
+                parsed = JSON.parse(val);
+              }
+            } catch (e) { /* ignore */ }
+            onChange({ options: parsed });
+          }}
+          placeholder='Opsi CSV (Pria,Wanita) atau JSON ({"relation":{"table":"..."}})'
+          autoComplete="off"
+          className="w-full rounded-md border border-input bg-background px-2 py-1 text-xs mb-2"
+        />
+      )}
+      <div className="flex gap-2 items-center">
+        <input
+          value={field.grup || ""}
+          onChange={(e) => onChange({ grup: e.target.value })}
+          placeholder="Grup"
+          autoComplete="off"
+          className="flex-1 rounded-md border border-input bg-background px-2 py-1 text-xs"
+        />
+        <button onClick={onSave} className="rounded-md bg-primary text-primary-foreground px-3 py-1 text-xs hover:bg-primary/90">Simpan</button>
+        {onDelete && (
+          <button onClick={onDelete} className="rounded-md border border-destructive/40 text-destructive px-3 py-1 text-xs hover:bg-destructive/10">Hapus</button>
+        )}
+      </div>
+    </div>
   );
 }
 
 // ============ 10b. Surat Terbit (verifikasi publik) ============
+function _today() { return new Date().toISOString().slice(0, 10); }
+function randKode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let r = "";
+  for (let i = 0; i < 8; i++) r += chars[Math.floor(Math.random() * chars.length)];
+  return r;
+}
+
 export function SuratTerbitAdmin() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState<any | null>(null);
+  const [draftAjuan, setDraftAjuan] = useState<any | null>(null);
+  const [draftDna, setDraftDna] = useState<any | null>(null);
+  const [draftDnaFields, setDraftDnaFields] = useState<any[]>([]);
+  const [ajuanList, setAjuanList] = useState<any[]>([]);
+  const [jenisSurat, setJenisSurat] = useState<any[]>([]);
+  const [pamongList, setPamongList] = useState<any[]>([]);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    supabase.from("surat_terbit").select("*").order("tanggal_terbit", { ascending: false }).then(({ data }) => {
+      setRows(data || []);
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    load();
+    supabase.from("surat_ajuan").select("id, nomor_tiket, nik, nama, jenis_surat_id, keperluan, status").eq("status", "diproses").then(({ data }) => {
+      setAjuanList(data || []);
+    });
+    supabase.from("surat_jenis").select("id, kode_surat, nama").eq("aktif", true).order("urutan").then(({ data }) => {
+      setJenisSurat(data || []);
+    });
+    supabase.from("desa_pamong").select("id, nama, jabatan").order("urutan").then(({ data }) => {
+      setPamongList(data || []);
+    });
+  }, []);
+
+  const loadAjuanData = async (ajuan: any) => {
+    const { data: dnaRows } = await supabase
+      .from("surat_ajuan_data").select("*").eq("surat_ajuan_id", ajuan.id).maybeSingle();
+    setDraftDna(dnaRows?.data_dna || {});
+    if (ajuan.jenis_surat_id) {
+      const { data: fields } = await supabase
+        .from("surat_jenis_dna").select("*").eq("jenis_surat_id", ajuan.jenis_surat_id).order("urutan");
+      setDraftDnaFields(fields || []);
+    } else {
+      setDraftDnaFields([]);
+    }
+  };
+
+  const getJenis = (id: string) => jenisSurat.find((j) => j.id === id);
+
+  const mulaiTerbit = async (ajuan: any) => {
+    await loadAjuanData(ajuan);
+    const jenis = getJenis(ajuan.jenis_surat_id);
+    setDraftAjuan(ajuan);
+    setDraft({
+      id: null,
+      nomor_surat: "",
+      kode_verifikasi: randKode(),
+      jenis_kode: jenis?.kode_surat || "",
+      jenis_nama: jenis?.nama || "",
+      pertaining: "",
+      pemohon_nama: ajuan.nama,
+      pemohon_nik: ajuan.nik,
+      tanggal_terbit: _today(),
+      berlaku_sampai: "",
+      status: "berlaku",
+      penandatangan: "",
+      keterangan: ajuan.keperluan || "",
+    });
+  };
+
+  const save = async (row: any) => {
+    const payload = {
+      ...row,
+      tenant_id: row.tenant_id || (await supabase.from("tenants").select("id").limit(1).single()).data?.id,
+    };
+    let res: any;
+    if (row.id) {
+      res = await supabase.from("surat_terbit").update(payload).eq("id", row.id).select().single();
+    } else {
+      res = await supabase.from("surat_terbit").insert(payload).select().single();
+    }
+    if (res.error) return toast.error(res.error.message);
+    const terbit = res.data;
+
+    // Copy DNA data to surat_terbit_data
+    if (draftDna && Object.keys(draftDna).length > 0) {
+      await supabase.from("surat_terbit_data").insert({
+        surat_terbit_id: terbit.id,
+        data_dna: draftDna,
+        tenant_id: payload.tenant_id,
+      }).catch(() => { /* ignore */ });
+    }
+
+    // Update ajuan status to diterima + send WA notification
+    if (draftAjuan?.id) {
+      await supabase.from("surat_ajuan").update({ status: "diterima" }).eq("id", draftAjuan.id);
+      setAjuanList((prev) => prev.filter((a) => a.id !== draftAjuan.id));
+      // Trigger WA notification via edge function (fire-and-forget)
+      (supabase.functions as any).invoke("notifikasi-status-surat", {
+        body: { surat_ajuan_id: draftAjuan.id, status_baru: "diterima" },
+      }).catch(() => { /* ignore */ });
+    }
+
+    toast.success("Surat diterbitkan!");
+    setDraft(null);
+    setDraftAjuan(null);
+    setDraftDna(null);
+    setDraftDnaFields([]);
+    load();
+  };
+
+  const del = async (id: string) => {
+    if (!confirm("Hapus surat ini?")) return;
+    const { error } = await supabase.from("surat_terbit").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Terhapus.");
+    load();
+  };
+
+  const statusBadge = (s: string) => {
+    const colors: Record<string, string> = {
+      berlaku: "bg-green-100 text-green-800",
+      kadaluarsa: "bg-gray-100 text-gray-600",
+      dicabut: "bg-red-100 text-red-700",
+    };
+    return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[s] || "bg-gray-100"}`}>{s}</span>;
+  };
+
+  const PAMONG_OPTS = pamongList.map((p) => ({ value: p.nama, label: `${p.nama} — ${p.jabatan}` }));
+
   return (
-    <TableCrud
-      table="surat_terbit"
-      title="Layanan — Surat Terbit"
-      desc="Daftar surat yang sudah diterbitkan. Nomor + kode verifikasi bisa dicek publik di halaman Verifikasi."
-      orderBy="tanggal_terbit"
-      orderAsc={false}
-      blank={{ nomor_surat: "", kode_verifikasi: "", jenis_kode: "", jenis_nama: "", perihal: "", pemohon_nama: "", pemohon_nik: "", tanggal_terbit: today(), berlaku_sampai: null, status: "berlaku", penandatangan: "", keterangan: "" }}
-      columns={[
-        { key: "nomor_surat", label: "Nomor" },
-        { key: "kode_verifikasi", label: "Kode Verifikasi" },
-        { key: "jenis_kode", label: "Kode Jenis" },
-        { key: "jenis_nama", label: "Jenis" },
-        { key: "perihal", label: "Perihal" },
-        { key: "pemohon_nama", label: "Pemohon" },
-        { key: "pemohon_nik", label: "NIK Pemohon", hideInTable: true },
-        { key: "tanggal_terbit", label: "Tgl Terbit", type: "date" },
-        { key: "berlaku_sampai", label: "Berlaku Sampai", type: "date" },
-        { key: "status", label: "Status", type: "select", options: [
-          { value: "berlaku", label: "Berlaku" },
-          { value: "kadaluarsa", label: "Kadaluarsa" },
-          { value: "dicabut", label: "Dicabut" },
-        ]},
-        { key: "penandatangan", label: "Ditandatangani", hideInTable: true },
-        { key: "keterangan", label: "Keterangan", type: "textarea", hideInTable: true },
-      ]}
-    />
+    <>
+      <div className="mb-6">
+        <h1 className="font-display text-2xl font-bold">Layanan — Surat Terbit</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Terbitkan surat keterangan. Nomor &amp; kode verifikasi bisa dicek publik di halaman Verifikasi.
+        </p>
+      </div>
+
+      {/* Antrian Ajuan Diproses */}
+      {ajuanList.length > 0 && !draft && (
+        <div className="mb-6 rounded-xl bg-green-50 border border-green-200 p-4">
+          <h3 className="font-display text-xs font-bold uppercase tracking-widest text-green-700 mb-3">
+            Antrian Terbit ({ajuanList.length})
+          </h3>
+          <p className="text-xs text-green-700 mb-3">Pengajuan berstatus &quot;Diproses&quot; siap diterbitkan.</p>
+          <div className="flex flex-wrap gap-2">
+            {ajuanList.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => mulaiTerbit(a)}
+                className="rounded-md bg-white border border-green-300 px-3 py-2 text-xs hover:bg-green-100 text-left"
+              >
+                <span className="font-mono block">{a.nomor_tiket}</span>
+                <span className="text-green-700 font-medium">{a.nama}</span>
+                <span className="text-green-500 block">{a.nik}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Form Terbit */}
+      {draft && (
+        <div className="mb-6 rounded-xl bg-card border border-border p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display font-semibold">
+              {draft.id ? "Edit" : "Terbitkan"} Surat{draftAjuan ? ` — ${draftAjuan.nomor_tiket}` : ""}
+            </h3>
+            <button onClick={() => { setDraft(null); setDraftAjuan(null); setDraftDna(null); setDraftDnaFields([]); }} className="text-sm text-muted-foreground hover:text-foreground">Tutup</button>
+          </div>
+
+          {draftAjuan && (
+            <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border text-sm">
+              <div className="font-medium">{draftAjuan.nama} ({draftAjuan.nik})</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Keperluan: {draftAjuan.keperluan || "—"}
+              </div>
+            </div>
+          )}
+
+          {draftDnaFields.length > 0 && (
+            <div className="mb-4 rounded-lg bg-muted/30 border border-border p-4">
+              <h4 className="font-display text-xs font-bold uppercase tracking-widest text-accent mb-3">Data dari Form Pengajuan (DNA)</h4>
+              <DnaFieldEditor
+                fields={draftDnaFields}
+                values={draftDna || {}}
+                onChange={(updated) => setDraftDna(updated)}
+              />
+            </div>
+          )}
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Nomor Surat</span>
+              <input value={draft.nomor_surat || ""} onChange={(e) => setDraft({ ...draft, nomor_surat: e.target.value })} placeholder="470/001/SM/2026" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Kode Verifikasi</span>
+              <input value={draft.kode_verifikasi || ""} onChange={(e) => setDraft({ ...draft, kode_verifikasi: e.target.value })} placeholder="SRN-XXXXXXXX" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Kode Jenis</span>
+              <input value={draft.jenis_kode || ""} onChange={(e) => setDraft({ ...draft, jenis_kode: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Nama Jenis Surat</span>
+              <input value={draft.jenis_nama || ""} onChange={(e) => setDraft({ ...draft, jenis_nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+            <label className="text-xs sm:col-span-2">
+              <span className="block mb-1 font-medium">Perihal</span>
+              <input value={draft.perihal || ""} onChange={(e) => setDraft({ ...draft, perihal: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Nama Pemohon</span>
+              <input value={draft.pemohon_nama || ""} onChange={(e) => setDraft({ ...draft, pemohon_nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">NIK Pemohon</span>
+              <input value={draft.pemohon_nik || ""} onChange={(e) => setDraft({ ...draft, pemohon_nik: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Tanggal Terbit</span>
+              <input type="date" value={draft.tanggal_terbit || ""} onChange={(e) => setDraft({ ...draft, tanggal_terbit: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Berlaku Sampai</span>
+              <input type="date" value={draft.berlaku_sampai || ""} onChange={(e) => setDraft({ ...draft, berlaku_sampai: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Status</span>
+              <select value={draft.status || "berlaku"} onChange={(e) => setDraft({ ...draft, status: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off">
+                <option value="berlaku">Berlaku</option>
+                <option value="kadaluarsa">Kadaluarsa</option>
+                <option value="dicabut">Dicabut</option>
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Ditandatangani Oleh</span>
+              <select value={draft.penandatangan || ""} onChange={(e) => setDraft({ ...draft, penandatangan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">— Pilih —</option>
+                {PAMONG_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+            <label className="text-xs sm:col-span-2">
+              <span className="block mb-1 font-medium">Keterangan</span>
+              <textarea rows={2} value={draft.keterangan || ""} onChange={(e) => setDraft({ ...draft, keterangan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button onClick={() => save(draft)} className="rounded-md bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700 font-medium">
+              {draft.id ? "Simpan Perubahan" : "Terbitkan Surat"}
+            </button>
+            <button onClick={() => { setDraft(null); setDraftAjuan(null); setDraftDna(null); setDraftDnaFields([]); }} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">Batal</button>
+          </div>
+        </div>
+      )}
+
+      {/* Daftar Surat Terbit */}
+      <div className="overflow-x-auto rounded-xl bg-card border border-border">
+        <table className="w-full text-sm">
+          <thead className="bg-muted">
+            <tr>
+              <th className="text-left px-4 py-3">Nomor Surat</th>
+              <th className="text-left px-4 py-3">Kode</th>
+              <th className="text-left px-4 py-3">Jenis</th>
+              <th className="text-left px-4 py-3">Pemohon</th>
+              <th className="text-left px-4 py-3">Tgl Terbit</th>
+              <th className="text-left px-4 py-3">Status</th>
+              <th className="text-left px-4 py-3">Penandatangan</th>
+              <th className="px-4 py-3 w-40"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Memuat…</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Belum ada surat terbit.</td></tr>}
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-border">
+                <td className="px-4 py-3 font-mono text-xs">{r.nomor_surat || "—"}</td>
+                <td className="px-4 py-3 font-mono text-xs text-accent">{r.kode_verifikasi || "—"}</td>
+                <td className="px-4 py-3 text-xs">{r.jenis_nama || "—"}</td>
+                <td className="px-4 py-3">{r.pemohon_nama || "—"}</td>
+                <td className="px-4 py-3 tabular-nums">{r.tanggal_terbit ? new Date(r.tanggal_terbit).toLocaleDateString("id-ID") : "—"}</td>
+                <td className="px-4 py-3">{statusBadge(r.status)}</td>
+                <td className="px-4 py-3 text-xs">{r.penandatangan || "—"}</td>
+                <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
+                  <button onClick={() => { setPreviewId(r.id); setPreviewModalOpen(true); }} className="rounded-md border border-blue-200 text-blue-600 px-2 py-1 text-xs hover:bg-blue-50">Preview</button>
+                  <button onClick={() => setDraft(r)} className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted">Edit</button>
+                  <button onClick={() => del(r.id)} className="rounded-md border border-red-200 text-red-600 px-2 py-1 text-xs hover:bg-red-50">Hapus</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* PDF Preview Modal */}
+      {previewModalOpen && previewId && (
+        <SuratPreviewModal isOpen={previewModalOpen} onClose={() => { setPreviewModalOpen(false); setPreviewId(null); load(); }}>
+          <SuratPreview
+            suratId={previewId}
+            onClose={() => { setPreviewModalOpen(false); setPreviewId(null); load(); }}
+            onApprove={() => { setPreviewModalOpen(false); setPreviewId(null); load(); }}
+          />
+        </SuratPreviewModal>
+      )}
+    </>
   );
 }
 
@@ -426,7 +1153,7 @@ export function LanggananWaAdmin() {
       columns={[
         { key: "nama", label: "Nama" },
         { key: "nomor_wa", label: "Nomor WA" },
-        { key: "dusun", label: "Dusun" },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "status", label: "Status", type: "select", options: [
           { value: "aktif", label: "Aktif" },
           { value: "nonaktif", label: "Nonaktif" },
@@ -452,10 +1179,10 @@ export function PbbAdmin() {
       columns={[
         { key: "tahun", label: "Tahun", type: "number" },
         { key: "nop", label: "NOP" },
-        { key: "wajib_pajak_nama", label: "Wajib Pajak" },
+        { key: "wajib_pajak_nama", label: "Wajib Pajak", type: "relation", relation: { table: "penduduk", labelCol: "nama", valueCol: "nama" } },
         { key: "wajib_pajak_nik", label: "NIK", hideInTable: true },
         { key: "alamat_objek", label: "Alamat Objek", hideInTable: true },
-        { key: "dusun", label: "Dusun" },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "luas_bumi_m2", label: "Luas Bumi (m²)", type: "number", step: "0.01", hideInTable: true },
         { key: "luas_bangunan_m2", label: "Luas Bangunan (m²)", type: "number", step: "0.01", hideInTable: true },
         { key: "njop_bumi", label: "NJOP Bumi", type: "number", step: "0.01", hideInTable: true },
@@ -493,12 +1220,12 @@ export function ApbdesAdmin() {
           { value: "belanja", label: "Belanja" },
           { value: "pembiayaan", label: "Pembiayaan" },
         ]},
-        { key: "kategori", label: "Kategori/Bidang" },
+        { key: "kategori", label: "Kategori/Bidang", type: "relation", relation: { table: "ref_apbdes_kategori", labelCol: "nama", valueCol: "nama", filterBy: "jenis", filterField: "jenis" } },
         { key: "sub_kategori", label: "Sub Kategori", hideInTable: true },
         { key: "uraian", label: "Uraian" },
         { key: "anggaran", label: "Anggaran", type: "number", step: "0.01" },
         { key: "realisasi", label: "Realisasi", type: "number", step: "0.01" },
-        { key: "sumber_dana", label: "Sumber Dana" },
+        { key: "sumber_dana", label: "Sumber Dana", type: "relation", relation: { table: "ref_sumber_dana", labelCol: "nama", valueCol: "nama" } },
         { key: "urutan", label: "Urutan", type: "number", hideInTable: true },
         { key: "keterangan", label: "Keterangan", type: "textarea", hideInTable: true },
       ]}
@@ -518,11 +1245,11 @@ export function UmkmAdmin() {
       orderAsc
       blank={{ tipe: "umkm", nama: "", pemilik: "", sektor: "", dusun: "", kontak: "", alamat: "", deskripsi: "", status: "publish" }}
       columns={[
-        { key: "tipe", label: "Tipe", type: "select", options: UMKM_TIPE },
+        { key: "tipe", label: "Tipe", type: "relation", relation: { table: "ref_tipe_umkm", labelCol: "nama", valueCol: "nama" } },
         { key: "nama", label: "Nama" },
         { key: "pemilik", label: "Pemilik / Pengelola" },
-        { key: "sektor", label: "Sektor" },
-        { key: "dusun", label: "Dusun" },
+        { key: "sektor", label: "Sektor", type: "relation", relation: { table: "ref_sektor_umkm", labelCol: "nama", valueCol: "nama" } },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "kontak", label: "Kontak", hideInTable: true },
         { key: "alamat", label: "Alamat", hideInTable: true },
         { key: "deskripsi", label: "Deskripsi", type: "textarea", hideInTable: true },
@@ -544,7 +1271,7 @@ export function ProdukMarketplaceAdmin() {
       columns={[
         { key: "nama", label: "Produk" },
         { key: "penjual_nama", label: "Penjual" },
-        { key: "kategori", label: "Kategori" },
+        { key: "kategori", label: "Kategori", type: "relation", relation: { table: "ref_produk_kategori", labelCol: "nama", valueCol: "nama" } },
         { key: "harga", label: "Harga", type: "number", step: "0.01" },
         { key: "satuan", label: "Satuan" },
         { key: "stok", label: "Stok", type: "number" },
@@ -568,8 +1295,8 @@ export function WisataAdmin() {
       blank={{ nama: "", jenis: "bahari", dusun: "", deskripsi: "", latitude: null, longitude: null, foto_url: "", fasilitas: "", status: "publish" }}
       columns={[
         { key: "nama", label: "Nama" },
-        { key: "jenis", label: "Jenis", type: "select", options: WISATA_JENIS },
-        { key: "dusun", label: "Dusun" },
+        { key: "jenis", label: "Jenis", type: "relation", relation: { table: "ref_jenis_wisata", labelCol: "nama", valueCol: "nama" } },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "latitude", label: "Latitude", type: "number", step: "0.000001" },
         { key: "longitude", label: "Longitude", type: "number", step: "0.000001" },
         { key: "fasilitas", label: "Fasilitas", hideInTable: true },
@@ -637,15 +1364,15 @@ export function EventLogAdmin() {
       <div className="mb-4 grid gap-3 sm:grid-cols-3 rounded-xl border border-border bg-card p-4">
         <label className="text-xs">
           <span className="block mb-1 font-medium">Entitas</span>
-          <input value={entitas} onChange={(e) => setEntitas(e.target.value)} placeholder="mis. berita, aduan_warga" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          <input value={entitas} onChange={(e) => setEntitas(e.target.value)} placeholder="mis. berita, aduan_warga" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
         </label>
         <label className="text-xs">
           <span className="block mb-1 font-medium">Event mengandung</span>
-          <input value={event} onChange={(e) => setEvent(e.target.value)} placeholder="mis. dipublish, dihapus" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          <input value={event} onChange={(e) => setEvent(e.target.value)} placeholder="mis. dipublish, dihapus" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
         </label>
         <label className="text-xs">
           <span className="block mb-1 font-medium">Sejak</span>
-          <input type="datetime-local" value={sejak} onChange={(e) => setSejak(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          <input type="datetime-local" value={sejak} onChange={(e) => setSejak(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
         </label>
       </div>
 
@@ -823,17 +1550,17 @@ function BroadcastForm({ onDone }: { onDone: () => void }) {
       <h2 className="font-display text-lg font-semibold">Broadcast baru</h2>
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="text-xs"><span className="block mb-1">Judul internal (opsional)</span>
-          <input value={judul} onChange={(e) => setJudul(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="mis. Info Musdes Juli" />
+          <input value={judul} onChange={(e) => setJudul(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="mis. Info Musdes Juli" autoComplete="off" />
         </label>
         <label className="text-xs"><span className="block mb-1">Filter Dusun (opsional)</span>
-          <input value={dusun} onChange={(e) => setDusun(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Kosongkan = semua dusun" />
+          <input value={dusun} onChange={(e) => setDusun(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Kosongkan = semua dusun" autoComplete="off" />
         </label>
         <label className="text-xs sm:col-span-2"><span className="block mb-1">Filter Topik (opsional)</span>
-          <input value={topik} onChange={(e) => setTopik(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="mis. Pengumuman Resmi, Info Bencana" />
+          <input value={topik} onChange={(e) => setTopik(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="mis. Pengumuman Resmi, Info Bencana" autoComplete="off" />
         </label>
       </div>
       <label className="text-xs block"><span className="block mb-1">Isi Pesan</span>
-        <textarea rows={4} value={pesan} onChange={(e) => setPesan(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Contoh: [Info Desa] Musdes Sabtu 20 Juli 09.00 di Kantor Desa." />
+        <textarea rows={4} value={pesan} onChange={(e) => setPesan(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Contoh: [Info Desa] Musdes Sabtu 20 Juli 09.00 di Kantor Desa." autoComplete="off" />
       </label>
       <button onClick={kirim} disabled={busy} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 disabled:opacity-60">
         {busy ? "Mengirim…" : "Kirim sekarang"}
@@ -915,5 +1642,467 @@ function BroadcastDetail({ id, onClose, onRefresh }: { id: string; onClose: () =
         </div>
       </div>
     </div>
+  );
+}
+
+// ============ 15. Surat Ajuan ============
+export function SuratAjuanAdmin() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState<any | null>(null);
+  const [dnaData, setDnaData] = useState<any | null>(null);
+  const [dnaFields, setDnaFields] = useState<any[]>([]);
+  const [jenisSurat, setJenisSurat] = useState<any[]>([]);
+
+  const load = () => {
+    setLoading(true);
+    supabase.from("surat_ajuan").select("*").order("created_at", { ascending: false }).then(({ data }) => {
+      setRows(data || []);
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    load();
+    supabase.from("surat_jenis").select("id, kode_surat, nama").eq("aktif", true).order("urutan").then(({ data }) => {
+      setJenisSurat(data || []);
+    });
+  }, []);
+
+  const viewDna = async (row: any) => {
+    setDraft(row);
+    setDnaData(null);
+    const { data: dnaRows } = await supabase
+      .from("surat_ajuan_data").select("*").eq("surat_ajuan_id", row.id).maybeSingle();
+    setDnaData(dnaRows?.data_dna || null);
+    if (row.jenis_surat_id) {
+      const { data: fields } = await supabase
+        .from("surat_jenis_dna").select("*").eq("jenis_surat_id", row.jenis_surat_id).order("urutan");
+      setDnaFields(fields || []);
+    } else {
+      setDnaFields([]);
+    }
+  };
+
+  const getJenisName = (id: string | null) => {
+    if (!id) return "—";
+    const j = jenisSurat.find((s) => s.id === id);
+    return j ? `${j.kode_surat} — ${j.nama}` : id;
+  };
+
+  const save = async (row: any) => {
+    const prevStatus = row._prevStatus;
+    const payload = {
+      ...row,
+      status: row.status || "diproses",
+      diproses_pada: row.status === "diproses" ? new Date().toISOString() : row.diproses_pada,
+    };
+    delete payload._prevStatus;
+
+    const { error } = row.id
+      ? await supabase.from("surat_ajuan").update(payload).eq("id", row.id)
+      : await supabase.from("surat_ajuan").insert(payload);
+    if (error) return toast.error(error.message);
+
+    // Kirim notifikasi WA saat status berubah
+    if (row.id && prevStatus && prevStatus !== payload.status) {
+      (supabase.functions as any).invoke("notifikasi-status-surat", {
+        body: { surat_ajuan_id: row.id, status_baru: payload.status },
+      }).catch(() => { /* non-fatal */ });
+    }
+
+    toast.success("Tersimpan.");
+    setDraft(null);
+    setDnaData(null);
+    setDnaFields([]);
+    load();
+  };
+
+  const del = async (id: string) => {
+    if (!confirm("Hapus pengajuan ini?")) return;
+    const { error } = await supabase.from("surat_ajuan").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Terhapus.");
+    load();
+  };
+
+  const statusBadge = (s: string) => {
+    const colors: Record<string, string> = {
+      menunggu: "bg-yellow-100 text-yellow-800",
+      diproses: "bg-blue-100 text-blue-800",
+      diterima: "bg-green-100 text-green-800",
+      ditolak: "bg-red-100 text-red-800",
+      dibatalkan: "bg-gray-100 text-gray-800",
+    };
+    return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[s] || "bg-gray-100"}`}>{s}</span>;
+  };
+
+  const STATUS_OPTS = [
+    { value: "menunggu", label: "Menunggu" },
+    { value: "diproses", label: "Diproses" },
+    { value: "diterima", label: "Diterima" },
+    { value: "ditolak", label: "Ditolak" },
+    { value: "dibatalkan", label: "Dibatalkan" },
+  ];
+
+  return (
+    <>
+      <div className="mb-6">
+        <h1 className="font-display text-2xl font-bold">Pengajuan Surat</h1>
+        <p className="text-sm text-muted-foreground mt-1">Kelola pengajuan surat keterangan dari warga. Klik &quot;Lihat&quot; untuk melihat data DNA pemohon.</p>
+      </div>
+
+      {draft && (
+        <div className="mb-6 rounded-xl bg-card border border-border p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-semibold">
+              {draft.id ? "Edit / Lihat" : "Tambah"} — {draft.nomor_tiket}
+            </h3>
+            <button onClick={() => { setDraft(null); setDnaData(null); setDnaFields([]); }} className="text-sm text-muted-foreground hover:text-foreground">Tutup</button>
+          </div>
+
+          {/* DNA Data Display */}
+          {dnaData && dnaFields.length > 0 && (
+            <div className="mb-4 rounded-lg bg-muted/50 border border-border p-4">
+              <h4 className="font-display text-xs font-bold uppercase tracking-widest text-accent mb-3">Data Pengajuan (DNA)</h4>
+              <dl className="grid sm:grid-cols-2 gap-2 text-sm">
+                {dnaFields.map((f) => {
+                  const val = dnaData[f.field_name];
+                  if (val === null || val === undefined || val === "") return null;
+                  return (
+                    <div key={f.field_name} className="border-b border-border/50 pb-1.5">
+                      <dt className="text-xs text-muted-foreground font-medium">{f.label}</dt>
+                      <dd className="mt-0.5 font-medium">{String(val)}</dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </div>
+          )}
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Nama Pemohon</span>
+              <input value={draft.nama || ""} onChange={(e) => setDraft({ ...draft, nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="name" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">NIK</span>
+              <input value={draft.nik || ""} onChange={(e) => setDraft({ ...draft, nik: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Kontak (WA)</span>
+              <input value={draft.kontak || ""} onChange={(e) => setDraft({ ...draft, kontak: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="tel" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Status</span>
+              <select value={draft.status || "menunggu"} onChange={(e) => setDraft({ ...draft, status: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                {STATUS_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+            <label className="text-xs sm:col-span-2">
+              <span className="block mb-1 font-medium">Keperluan</span>
+              <textarea rows={3} value={draft.keperluan || ""} onChange={(e) => setDraft({ ...draft, keperluan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+            <label className="text-xs sm:col-span-2">
+              <span className="block mb-1 font-medium">Keterangan Admin</span>
+              <textarea rows={2} value={draft.keterangan || ""} onChange={(e) => setDraft({ ...draft, keterangan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Catatan dari admin..." autoComplete="off" />
+            </label>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button onClick={() => save(draft)} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90">Simpan</button>
+            {draft.status === "diproses" && (
+              <button
+                onClick={() => { setDraft(null); setDnaData(null); setDnaFields([]); toast.info("Buka menu Surat Terbit untuk menerbitkan surat."); }}
+                className="rounded-md bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700"
+              >
+                Terbitkan Surat
+              </button>
+            )}
+            <button onClick={() => { setDraft(null); setDnaData(null); setDnaFields([]); }} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">Batal</button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto rounded-xl bg-card border border-border">
+        <table className="w-full text-sm">
+          <thead className="bg-muted">
+            <tr>
+              <th className="text-left px-4 py-3">No. Tiket</th>
+              <th className="text-left px-4 py-3">Tanggal</th>
+              <th className="text-left px-4 py-3">Nama</th>
+              <th className="text-left px-4 py-3">NIK</th>
+              <th className="text-left px-4 py-3">Jenis</th>
+              <th className="text-left px-4 py-3">Keperluan</th>
+              <th className="text-left px-4 py-3">Status</th>
+              <th className="px-4 py-3 w-48"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Memuat…</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">Belum ada pengajuan.</td></tr>}
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-border">
+                <td className="px-4 py-3 font-mono text-xs">{r.nomor_tiket}</td>
+                <td className="px-4 py-3">{new Date(r.created_at).toLocaleDateString("id-ID")}</td>
+                <td className="px-4 py-3">{r.nama}</td>
+                <td className="px-4 py-3 font-mono text-xs">{r.nik}</td>
+                <td className="px-4 py-3 text-xs max-w-[160px] truncate">{getJenisName(r.jenis_surat_id)}</td>
+                <td className="px-4 py-3 max-w-[200px] truncate">{r.keperluan}</td>
+                <td className="px-4 py-3">{statusBadge(r.status)}</td>
+                <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
+                  <button onClick={() => viewDna(r)} className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted">Lihat</button>
+                  <button onClick={() => setDraft({ ...r, _prevStatus: r.status })} className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted">Edit</button>
+                  <button onClick={() => del(r.id)} className="rounded-md border border-red-200 text-red-600 px-2 py-1 text-xs hover:bg-red-50">Hapus</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// ============ 16. Balita Admin ============
+export function BalitaAdmin() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState<any | null>(null);
+  const [dusunOpts, setDusunOpts] = useState<any[]>([]);
+
+  const load = () => {
+    setLoading(true);
+    supabase.from("balita").select("*").order("nama").then(({ data }) => {
+      setRows(data || []);
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    load();
+    supabase.from("wilayah_dusun").select("nama").order("urutan").then(({ data }) => {
+      setDusunOpts(data || []);
+    });
+  }, []);
+
+  const save = async (row: any) => {
+    const { id, created_at, updated_at, ...payload } = row;
+    const { error } = id
+      ? await supabase.from("balita").update(payload).eq("id", id)
+      : await supabase.from("balita").insert(payload);
+    if (error) return toast.error(error.message);
+    toast.success("Tersimpan.");
+    setDraft(null);
+    load();
+  };
+
+  const del = async (id: string) => {
+    if (!confirm("Hapus data ini?")) return;
+    const { error } = await supabase.from("balita").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Terhapus.");
+    load();
+  };
+
+  const JK_OPTS = [
+    { value: "laki-laki", label: "Laki-laki" },
+    { value: "perempuan", label: "Perempuan" },
+  ];
+
+  return (
+    <>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Data Balita</h1>
+          <p className="text-sm text-muted-foreground mt-1">Kelola data balita untuk monitoring posyandu.</p>
+        </div>
+        <button onClick={() => setDraft({ nama: "", tanggal_lahir: "", jenis_kelamin: "laki-laki", dusun: "", alamat: "" })} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90">+ Tambah</button>
+      </div>
+
+      {draft && (
+        <div className="mb-6 rounded-xl bg-card border border-border p-5">
+          <h3 className="font-display font-semibold mb-3">{draft.id ? "Edit" : "Tambah"} Balita</h3>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Nama Lengkap *</span>
+              <input value={draft.nama || ""} onChange={(e) => setDraft({ ...draft, nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="name" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">NIK Anak</span>
+              <input value={draft.nik_anak || ""} onChange={(e) => setDraft({ ...draft, nik_anak: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Tanggal Lahir *</span>
+              <input type="date" value={draft.tanggal_lahir || ""} onChange={(e) => setDraft({ ...draft, tanggal_lahir: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Jenis Kelamin</span>
+              <select value={draft.jenis_kelamin || "laki-laki"} onChange={(e) => setDraft({ ...draft, jenis_kelamin: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                {JK_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Nama Orang Tua</span>
+              <input value={draft.nama_ortu || ""} onChange={(e) => setDraft({ ...draft, nama_ortu: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="name" />
+            </label>
+            <label className="text-xs">
+              <span className="block mb-1 font-medium">Dusun</span>
+              <select value={draft.dusun || ""} onChange={(e) => setDraft({ ...draft, dusun: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <option value="">— pilih —</option>
+                {dusunOpts.map((d) => <option key={d.nama} value={d.nama}>{d.nama}</option>)}
+              </select>
+            </label>
+            <label className="text-xs sm:col-span-2">
+              <span className="block mb-1 font-medium">Alamat Lengkap</span>
+              <input value={draft.alamat || ""} onChange={(e) => setDraft({ ...draft, alamat: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="street-address" />
+            </label>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button onClick={() => save(draft)} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90">Simpan</button>
+            <button onClick={() => setDraft(null)} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">Batal</button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto rounded-xl bg-card border border-border">
+        <table className="w-full text-sm">
+          <thead className="bg-muted">
+            <tr>
+              <th className="text-left px-4 py-3">Nama</th>
+              <th className="text-left px-4 py-3">JK</th>
+              <th className="text-left px-4 py-3">Tanggal Lahir</th>
+              <th className="text-left px-4 py-3">Usia</th>
+              <th className="text-left px-4 py-3">Orang Tua</th>
+              <th className="text-left px-4 py-3">Dusun</th>
+              <th className="px-4 py-3 w-40"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Memuat…</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Belum ada data balita.</td></tr>}
+            {rows.map((r) => {
+              const age = r.tanggal_lahir ? Math.floor((Date.now() - new Date(r.tanggal_lahir).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : "-";
+              return (
+                <tr key={r.id} className="border-t border-border">
+                  <td className="px-4 py-3">{r.nama}</td>
+                  <td className="px-4 py-3">{r.jenis_kelamin === "laki-laki" ? "L" : "P"}</td>
+                  <td className="px-4 py-3">{r.tanggal_lahir ? new Date(r.tanggal_lahir).toLocaleDateString("id-ID") : "-"}</td>
+                  <td className="px-4 py-3">{typeof age === "number" ? `${age} th` : age}</td>
+                  <td className="px-4 py-3">{r.nama_ortu || "-"}</td>
+                  <td className="px-4 py-3">{r.dusun || "-"}</td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
+                    <button onClick={() => setDraft(r)} className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted">Edit</button>
+                    <button onClick={() => del(r.id)} className="rounded-md border border-red-200 text-red-600 px-2 py-1 text-xs hover:bg-red-50">Hapus</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+// ============ 17. WA Chatbot Monitor ============
+export function WaChatbotAdmin() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = () => {
+    setLoading(true);
+    supabase.from("wa_chatbot_session").select("*").order("created_at", { ascending: false }).limit(100).then(({ data }) => {
+      // Transform data untuk kompatibilitas UI
+      const transformed = (data || []).map(r => ({
+        ...r,
+        // Gunakan kolom yang ada di database
+        phone_number: r.phone_number || r.nomor_wa,
+        intent: r.intent || r.last_menu || extractIntent(r.step_data),
+        last_message: r.last_message || extractLastMessage(r.step_data),
+        chat_status: r.chat_status || r.state,
+      }));
+      setRows(transformed);
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  // Helper untuk extract intent dari step_data JSONB
+  const extractIntent = (stepData: any): string => {
+    if (!stepData) return "-";
+    if (typeof stepData === "string") {
+      try { stepData = JSON.parse(stepData); } catch { return "-"; }
+    }
+    return stepData.intent || stepData.last_intent || "-";
+  };
+
+  // Helper untuk extract last message dari step_data JSONB
+  const extractLastMessage = (stepData: any): string => {
+    if (!stepData) return "-";
+    if (typeof stepData === "string") {
+      try { stepData = JSON.parse(stepData); } catch { return "-"; }
+    }
+    return stepData.last_message || stepData.input || "-";
+  };
+
+  const intentBadge = (intent: string) => {
+    const colors: Record<string, string> = {
+      warga: "bg-blue-100 text-blue-800",
+      umum: "bg-gray-100 text-gray-800",
+      bantuan: "bg-green-100 text-green-800",
+      kegiatan: "bg-purple-100 text-purple-800",
+      surat: "bg-yellow-100 text-yellow-800",
+    };
+    return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[intent] || "bg-gray-100"}`}>{intent || "umum"}</span>;
+  };
+
+  const statusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      active: "bg-green-100 text-green-800",
+      resolved: "bg-blue-100 text-blue-800",
+      closed: "bg-gray-100 text-gray-800",
+    };
+    return <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] || "bg-gray-100"}`}>{status || "unknown"}</span>;
+  };
+
+  return (
+    <>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="font-display text-2xl font-bold">WA Chatbot Monitor</h1>
+          <p className="text-sm text-muted-foreground mt-1">Monitoring percakapan warga dengan chatbot WhatsApp.</p>
+        </div>
+        <button onClick={load} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">Muat ulang</button>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl bg-card border border-border">
+        <table className="w-full text-sm">
+          <thead className="bg-muted">
+            <tr>
+              <th className="text-left px-4 py-3">Waktu</th>
+              <th className="text-left px-4 py-3">Nomor WA</th>
+              <th className="text-left px-4 py-3">Intent</th>
+              <th className="text-left px-4 py-3">Pesan Terakhir</th>
+              <th className="text-left px-4 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Memuat…</td></tr>}
+            {!loading && rows.length === 0 && <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Belum ada percakapan.</td></tr>}
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-border">
+                <td className="px-4 py-3 text-xs">{new Date(r.created_at).toLocaleString("id-ID")}</td>
+                <td className="px-4 py-3 font-mono text-xs">{r.phone_number || "-"}</td>
+                <td className="px-4 py-3">{intentBadge(r.intent)}</td>
+                <td className="px-4 py-3 max-w-[300px] truncate">{r.last_message || "-"}</td>
+                <td className="px-4 py-3">{statusBadge(r.chat_status)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

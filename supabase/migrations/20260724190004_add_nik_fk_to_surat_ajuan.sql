@@ -32,15 +32,26 @@ END;
 $$;
 
 -- Step 2: Add FK constraint as NOT VALID (doesn't scan existing rows)
--- This enforces FK for new inserts but skips validation of existing data
-ALTER TABLE public.surat_ajuan
-  ADD CONSTRAINT fk_surat_ajuan_nik_penduduk
-  FOREIGN KEY (nik)
-  REFERENCES public.penduduk(nik)
-  MATCH SIMPLE
-  ON UPDATE NO ACTION
-  ON DELETE NO ACTION
-  NOT VALID;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_surat_ajuan_nik_penduduk'
+  ) THEN
+    ALTER TABLE public.surat_ajuan
+      ADD CONSTRAINT fk_surat_ajuan_nik_penduduk
+      FOREIGN KEY (nik)
+      REFERENCES public.penduduk(nik)
+      MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION
+      NOT VALID;
+    RAISE NOTICE 'FK constraint fk_surat_ajuan_nik_penduduk added';
+  ELSE
+    RAISE NOTICE 'FK constraint fk_surat_ajuan_nik_penduduk already exists, skipping';
+  END IF;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Could not add FK constraint (may already exist): %', SQLERRM;
+END $$;
 
 -- Step 3: Validate if no orphans (will fail gracefully if orphans exist)
 -- Run separately after reviewing orphan count above

@@ -598,6 +598,7 @@ export function TableCrud({
     });
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [table, orderBy, orderAsc, search, page]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -612,7 +613,7 @@ export function TableCrud({
       return;
     }
     // Auto-inject tenant_id for tables that need it
-    const tenantTables = ["penduduk", "keluarga", "surat_ajuan", "berita", "aduan_warga", "usulan_warga", "apbdes", "kegiatan_pembangunan", "agenda", "pengumuman", "galeri"];
+    const tenantTables = ["penduduk", "keluarga", "surat_ajuan", "berita", "aduan_warga", "usulan_warga", "apbdes", "kegiatan_pembangunan", "agenda", "pengumuman", "galeri", "page_hero_config", "desa_pamong", "wilayah_dusun", "lembaga_desa", "hero_slider", "nav_items", "footer_columns"];
     if (tenantTables.includes(table) && !payload.tenant_id && tenantId) {
       payload.tenant_id = tenantId;
     }
@@ -1126,7 +1127,7 @@ function BeritaCrud() {
       payload.tenant_id = tenantId;
     }
     const { id, ...rest } = payload;
-    const q = id ? supabase.from("berita").update(rest).eq("id", id) : supabase.from("berita").insert(rest);
+    const q = id ? (supabase.from("berita") as any).update(rest as any).eq("id", id) : (supabase.from("berita") as any).insert(rest as any);
     const { error } = await q;
     if (error) return toast.error(error.message);
     toast.success("Tersimpan.");

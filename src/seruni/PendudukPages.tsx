@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { EditorialLayout, SectionWrap } from "./ui";
 import { EditorialTitle, StatsBand } from "./sections";
 import { Seo } from "./lib/seo";
+import { useAutofillPenduduk } from "./lib/queries";
+import { uploadFile } from "./lib/upload";
 
 const inp = "w-full border border-current/25 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent";
 const btn = "bg-accent text-primary px-5 py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-60";
@@ -42,7 +44,7 @@ export function StatistikPendudukLivePage() {
         ]}
       />
       <SectionWrap>
-        <EditorialTitle kicker="Distribusi" judul="Per Dusun" />
+        <EditorialTitle sectionKey="penduduk-dusun" kicker="Distribusi" judul="Per Dusun" />
         {!perDusun.length && <p className="text-sm opacity-70">Belum ada data penduduk yang terinput.</p>}
         <ul className="space-y-4">
           {perDusun.map((r) => (
@@ -98,7 +100,7 @@ export function IDMLivePage() {
         ]}
       />
       <SectionWrap>
-        <EditorialTitle kicker="Rincian" judul="Per Dimensi" />
+        <EditorialTitle sectionKey="penduduk-dimensi" kicker="Rincian" judul="Per Dimensi" />
         {!kini.length && <p className="text-sm opacity-70">Belum ada indikator IDM yang dipublikasikan.</p>}
         <div className="grid md:grid-cols-3 gap-px bg-current/15">
           {Object.entries(perDim).map(([dim, arr]) => (
@@ -159,9 +161,39 @@ export function AnalisisPage() {
 export function SuplesiPage() {
   const [form, setForm] = useState({ nik: "", nama: "", kontak: "", jenis: "koreksi_data", deskripsi: "", lampiran_url: "" });
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [tiket, setTiket] = useState<string | null>(null);
+
+  const onFile = async (f: File | null) => {
+    if (!f) return;
+    setUploading(true);
+    try {
+      const result = await uploadFile(f, {
+        entityType: 'penduduk',
+        kategori: 'lainnya',
+      });
+      if (result.success && result.url) {
+        setForm((s) => ({ ...s, lampiran_url: result.url }));
+        toast.success("Lampiran terunggah.");
+      } else {
+        toast.error(result.error || "Gagal upload.");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Gagal upload.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  useAutofillPenduduk(form.nik, (d) => {
+    setForm(f => ({ ...f, nama: d.nama, kontak: d.nomor_hp || f.kontak }));
+    toast.success(`Data ${d.nama} ditemukan!`);
+  });
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.nik && form.nik.trim().length !== 16) return toast.error("NIK harus 16 digit angka.");
+    if (form.nama.trim().length < 2) return toast.error("Nama wajib diisi.");
     setLoading(true);
     const { data, error } = await (supabase as any).functions.invoke("submit-suplesi", { body: form });
     setLoading(false);
@@ -181,7 +213,7 @@ export function SuplesiPage() {
       <SectionWrap>
         <div className="grid md:grid-cols-2 gap-10">
           <div>
-            <EditorialTitle kicker="Formulir" judul="Ajukan Pembetulan" />
+            <EditorialTitle sectionKey="suplesi-form" kicker="Formulir" judul="Ajukan Pembetulan" />
             {tiket && (
               <div className="mb-6 border border-accent/50 p-4">
                 <div className="text-xs uppercase tracking-widest text-accent">Nomor Tiket</div>
@@ -193,9 +225,9 @@ export function SuplesiPage() {
               <label className="block text-sm"><span className="block text-xs mb-1">Nama Lengkap</span>
                 <input required value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} autoComplete="off" className={inp} /></label>
               <label className="block text-sm"><span className="block text-xs mb-1">NIK (opsional)</span>
-                <input value={form.nik} onChange={(e) => setForm({ ...form, nik: e.target.value })} autoComplete="off" className={inp} /></label>
+                <input value={form.nik} onChange={(e) => setForm({ ...form, nik: e.target.value.replace(/\D/g,'') })} maxLength={16} minLength={16} pattern="\d{16}" inputMode="numeric" autoComplete="off" placeholder="16 digit NIK" className={inp} /></label>
               <label className="block text-sm"><span className="block text-xs mb-1">Kontak (WA/HP)</span>
-                <input value={form.kontak} onChange={(e) => setForm({ ...form, kontak: e.target.value })} autoComplete="off" className={inp} /></label>
+                <input value={form.kontak} type="tel" onChange={(e) => setForm({ ...form, kontak: e.target.value })} autoComplete="off" className={inp} /></label>
               <label className="block text-sm"><span className="block text-xs mb-1">Jenis Pengajuan</span>
                 <select value={form.jenis} onChange={(e) => setForm({ ...form, jenis: e.target.value })} autoComplete="off" className={inp}>
                   <option value="koreksi_data">Koreksi Data</option>
@@ -207,13 +239,20 @@ export function SuplesiPage() {
                 </select></label>
               <label className="block text-sm"><span className="block text-xs mb-1">Uraian</span>
                 <textarea required rows={5} value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} autoComplete="off" className={inp} /></label>
-              <label className="block text-sm"><span className="block text-xs mb-1">Lampiran (URL foto/scan, opsional)</span>
-                <input value={form.lampiran_url} onChange={(e) => setForm({ ...form, lampiran_url: e.target.value })} autoComplete="off" className={inp} /></label>
-              <button disabled={loading} className={btn}>{loading ? "Mengirim…" : "Kirim Pengajuan"}</button>
+              <label className="block text-sm">
+                <span className="block text-xs mb-1">Lampiran (Scan/Foto Dokumen Pendukung)</span>
+                <input type="file" accept="image/*,application/pdf" onChange={(e) => onFile(e.target.files?.[0] || null)} disabled={uploading || loading} className="text-xs mt-2" />
+                {form.lampiran_url && (
+                  <div className="mt-2 text-xs font-semibold text-accent">
+                    ✅ Dokumen berhasil diunggah (Internal Server)
+                  </div>
+                )}
+              </label>
+              <button disabled={loading || uploading} className={btn}>{loading ? "Mengirim…" : "Kirim Pengajuan"}</button>
             </form>
           </div>
           <div className="text-sm space-y-4 opacity-90">
-            <EditorialTitle kicker="Panduan" judul="Alur Suplesi" />
+            <EditorialTitle sectionKey="suplesi-panduan" kicker="Panduan" judul="Alur Suplesi" />
             <ol className="list-decimal pl-5 space-y-2">
               <li>Isi formulir dengan data valid & sertakan lampiran bila perlu.</li>
               <li>Petugas memverifikasi pengajuan Anda dalam 1–3 hari kerja.</li>

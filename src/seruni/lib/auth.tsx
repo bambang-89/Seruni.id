@@ -15,7 +15,7 @@ type AuthState = {
 const AuthCtx = createContext<AuthState | null>(null);
 
 // NIK → email sintetis untuk Supabase Auth (email tidak dipakai user).
-export const nikToEmail = (nik: string) => `nik-${nik.trim()}@admin.seruni.local`;
+const nikToEmail = (nik: string) => `nik-${nik.trim()}@admin.seruni.local`;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -51,24 +51,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithNik: AuthState["signInWithNik"] = async (nik, password) => {
+    const email = nikToEmail(nik);
+    console.log("Attempting login with:", { email, password });
     const { error } = await supabase.auth.signInWithPassword({
-      email: nikToEmail(nik),
+      email,
       password,
     });
-    return error ? { error: "NIK atau password salah." } : {};
+    console.error("signInWithNik Error:", error);
+    return error ? { error: `Gagal: ${error.message}` } : {};
   };
 
   const signUpFirstAdmin: AuthState["signUpFirstAdmin"] = async (nik, nama, password) => {
-    const { error } = await supabase.auth.signUp({
-      email: nikToEmail(nik),
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/admin`,
-        data: { nik, nama },
-      },
+    const { data, error } = await supabase.functions.invoke("create-admin", {
+      body: { nik, nama, password }
     });
-    if (error) return { error: error.message };
-    return {};
+    
+    if (error) {
+      return { error: error.message };
+    }
+    
+    if (data && data.error) {
+      return { error: data.error };
+    }
+    
+    // Auto-login after successful creation
+    return await signInWithNik(nik, password);
   };
 
   const signOut = async () => {

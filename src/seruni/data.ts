@@ -299,16 +299,6 @@ export const pengumumanResmi = [
   { nomor: "138/PMR/SM/VI/2026", tanggal: "2026-06-28", judul: "Verifikasi Ulang DTKS Semester II", ringkasan: "Kader dusun akan berkunjung 1–15 Juli 2026 untuk pemutakhiran data kesejahteraan." },
 ];
 
-export const jenisSurat = [
-  { kode: "SKD", nama: "Surat Keterangan Domisili", sla_hari: 1, syarat: ["KTP", "KK"] },
-  { kode: "SKTM", nama: "Surat Keterangan Tidak Mampu", sla_hari: 2, syarat: ["KTP", "KK", "Surat pengantar RT/RW"] },
-  { kode: "SKU", nama: "Surat Keterangan Usaha", sla_hari: 2, syarat: ["KTP", "KK", "Foto tempat usaha"] },
-  { kode: "SPN", nama: "Surat Pengantar Nikah (N1–N4)", sla_hari: 3, syarat: ["KTP kedua calon", "KK", "Akta lahir"] },
-  { kode: "SKW", nama: "Surat Keterangan Waris", sla_hari: 5, syarat: ["KTP ahli waris", "Akta kematian", "KK pewaris"] },
-  { kode: "SKCK", nama: "Pengantar SKCK", sla_hari: 1, syarat: ["KTP", "KK"] },
-  { kode: "SKKL", nama: "Surat Keterangan Kelahiran", sla_hari: 1, syarat: ["KK", "KTP orang tua", "Surat bidan/RS"] },
-  { kode: "SKKM", nama: "Surat Keterangan Kematian", sla_hari: 1, syarat: ["KTP almarhum", "KK", "Surat medis"] },
-];
 
 export const pariwisataDetail = [
   { nama: "Pantai Seruni Mumbul", tipe: "Wisata Bahari", emoji: "🏖️", deskripsi: "Pantai berpasir putih 2,4 km dengan spot snorkeling terumbu karang di sisi selatan. Fasilitas: gazebo, MCK, warung UMKM." },

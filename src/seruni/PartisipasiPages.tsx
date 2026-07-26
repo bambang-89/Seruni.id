@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { EditorialLayout, EditorialCard, EditorialProgress, SectionWrap, formatTanggal } from "./ui";
 import { EditorialTitle, StatsBand } from "./sections";
 import { Seo } from "./lib/seo";
+import { useAutofillPenduduk } from "./lib/queries";
 import { useDusun } from "./lib/queries";
 import {
   useRpjmdesAktif,
@@ -12,27 +13,17 @@ import {
   useUsulanPublik,
   useVotingTopikList,
   useVotingOpsi,
+  useKategoriUsulan,
   type UsulanWarga,
   type VotingTopik,
 } from "./lib/queries";
-import { uploadImage } from "./lib/upload";
+import { uploadFile } from "./lib/upload";
 
 const inp = "mt-1 w-full border border-current/25 bg-transparent px-3 py-2 text-sm focus:outline-none focus:border-accent";
 const btnPri = "inline-flex items-center gap-3 border border-accent bg-accent text-primary px-5 py-2.5 font-display text-[11px] font-bold uppercase tracking-[0.28em] hover:bg-accent/85 transition-colors disabled:opacity-50";
 const btnSec = "inline-flex items-center gap-3 border border-current/40 px-5 py-2.5 font-display text-[11px] font-bold uppercase tracking-[0.28em] hover:border-accent hover:text-accent transition-colors";
 
 const rupiah = (n: number) => "Rp " + n.toLocaleString("id-ID");
-
-const KATEGORI = [
-  { value: "infrastruktur", label: "Infrastruktur" },
-  { value: "ekonomi", label: "Ekonomi" },
-  { value: "sosial", label: "Sosial" },
-  { value: "pendidikan", label: "Pendidikan" },
-  { value: "kesehatan", label: "Kesehatan" },
-  { value: "lingkungan", label: "Lingkungan" },
-  { value: "pemerintahan", label: "Pemerintahan" },
-  { value: "lainnya", label: "Lainnya" },
-];
 
 // =========================== RPJMDes ===========================
 export function RPJMDesPage() {
@@ -66,7 +57,7 @@ export function RPJMDesPage() {
             ]}
           />
           <SectionWrap>
-            <EditorialTitle kicker={periode.nama} judul="Visi Misi" />
+            <EditorialTitle sectionKey="partisipasi-visi-misi" kicker={periode.nama} judul="Visi Misi" />
             <p className="text-lg leading-relaxed opacity-90 mb-6">{periode.visi}</p>
             <ol className="space-y-3">
               {periode.misi.map((m, i) => (
@@ -78,7 +69,7 @@ export function RPJMDesPage() {
             </ol>
           </SectionWrap>
           <SectionWrap>
-            <EditorialTitle kicker="Bidang" judul="Prioritas Pembangunan" />
+            <EditorialTitle sectionKey="partisipasi-prioritas" kicker="Bidang" judul="Prioritas Pembangunan" />
             <div className="grid md:grid-cols-2 gap-4 mb-8">
               {bidang.map((b) => (
                 <button
@@ -95,7 +86,7 @@ export function RPJMDesPage() {
           </SectionWrap>
           <SectionWrap>
             <div className="flex items-baseline justify-between mb-4">
-              <EditorialTitle kicker="Program" judul={bidangFilter ? "Program Bidang" : "Semua Program"} />
+              <EditorialTitle sectionKey="partisipasi-program" kicker="Program" judul={bidangFilter ? "Program Bidang" : "Semua Program"} />
               {bidangFilter && <button onClick={() => setBidangFilter("")} className="text-xs underline opacity-70">Reset filter</button>}
             </div>
             <div className="overflow-x-auto border border-current/15">
@@ -168,13 +159,13 @@ export function RKPDesPage() {
         <div className="flex flex-wrap gap-3 items-end mb-6">
           <label className="text-sm">
             <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">Tahun</span>
-            <select value={tahunId ?? ""} onChange={(e) => setTahunId(e.target.value)} className={inp}>
+            <select value={tahunId ?? ""} onChange={(e) => setTahunId(e.target.value)} autoComplete="off" className={inp}>
               {tahunList.map((t) => <option key={t.id} value={t.id}>{t.tahun}</option>)}
             </select>
           </label>
           <label className="text-sm">
             <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">Status</span>
-            <select value={statusF} onChange={(e) => setStatusF(e.target.value)} className={inp}>
+            <select value={statusF} onChange={(e) => setStatusF(e.target.value)} autoComplete="off" className={inp}>
               <option value="">Semua</option>
               <option value="rencana">Rencana</option>
               <option value="berjalan">Berjalan</option>
@@ -185,7 +176,7 @@ export function RKPDesPage() {
           </label>
           <label className="text-sm">
             <span className="block text-[10px] uppercase tracking-widest opacity-60 mb-1">Dusun</span>
-            <input value={dusunF} onChange={(e) => setDusunF(e.target.value)} className={inp} placeholder="Cari dusun…" />
+            <input value={dusunF} onChange={(e) => setDusunF(e.target.value)} autoComplete="off" className={inp} placeholder="Cari dusun…" />
           </label>
         </div>
 
@@ -220,26 +211,39 @@ export function RKPDesPage() {
 
 function UsulanForm({ onSubmitted }: { onSubmitted: (tiket: string) => void }) {
   const { data: dusunList } = useDusun();
+  const { data: kategoriList } = useKategoriUsulan();
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
-    nama: "", kontak: "", dusun: "", kategori: "infrastruktur",
+    nik: "", nama: "", kontak: "", dusun: "", kategori: "",
     judul: "", deskripsi: "", lokasi: "", foto_url: "",
+  });
+
+  useAutofillPenduduk(form.nik, (d) => {
+    setForm(f => ({ ...f, nama: d.nama, kontak: d.nomor_hp || f.kontak, dusun: d.alamat_lengkap || f.dusun }));
   });
 
   const onFile = async (f: File | null) => {
     if (!f) return;
     setUploading(true);
     try {
-      const url = await uploadImage("usulan", f);
-      setForm((s) => ({ ...s, foto_url: url }));
-      toast.success("Foto terunggah.");
+      const result = await uploadFile(f, {
+        entityType: 'usulan',
+        kategori: 'foto_galeri',
+      });
+      if (result.success && result.url) {
+        setForm((s) => ({ ...s, foto_url: result.url }));
+        toast.success("Foto terunggah.");
+      } else {
+        toast.error(result.error || "Gagal upload.");
+      }
     } catch (e: any) { toast.error(e.message || "Gagal upload."); }
     finally { setUploading(false); }
   };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.nik && form.nik.trim().length !== 16) return toast.error("NIK harus 16 digit angka.");
     if (form.nama.trim().length < 2) return toast.error("Nama wajib diisi.");
     if (form.judul.trim().length < 5) return toast.error("Judul minimal 5 karakter.");
     if (form.deskripsi.trim().length < 10) return toast.error("Deskripsi terlalu pendek.");
@@ -253,43 +257,48 @@ function UsulanForm({ onSubmitted }: { onSubmitted: (tiket: string) => void }) {
     const tiket = (data as any).nomor_tiket as string;
     toast.success(`Usulan terkirim. Nomor tiket: ${tiket}`);
     onSubmitted(tiket);
-    setForm({ nama: "", kontak: "", dusun: "", kategori: "infrastruktur", judul: "", deskripsi: "", lokasi: "", foto_url: "" });
+    setForm({ nik: "", nama: "", kontak: "", dusun: "", kategori: "", judul: "", deskripsi: "", lokasi: "", foto_url: "" });
   };
 
   return (
     <form onSubmit={submit} className="grid md:grid-cols-2 gap-4">
       <label className="text-sm md:col-span-1">
+        <span className="block text-[10px] uppercase tracking-widest opacity-70 mb-1">NIK (opsional)</span>
+        <input value={form.nik} onChange={(e) => setForm({ ...form, nik: e.target.value.replace(/\D/g,"") })} maxLength={16} minLength={16} pattern="\d{16}" inputMode="numeric" autoComplete="off" placeholder="16 digit NIK" className={inp} />
+      </label>
+      <label className="text-sm md:col-span-1">
         <span className="block text-[10px] uppercase tracking-widest opacity-70 mb-1">Nama <span className="text-accent">*</span></span>
-        <input required maxLength={120} value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} className={inp} />
+        <input required maxLength={120} value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} autoComplete="off" className={inp} />
       </label>
       <label className="text-sm">
         <span className="block text-[10px] uppercase tracking-widest opacity-70 mb-1">Kontak (HP/Email)</span>
-        <input maxLength={60} value={form.kontak} onChange={(e) => setForm({ ...form, kontak: e.target.value })} className={inp} placeholder="opsional" />
+        <input type="tel" maxLength={60} value={form.kontak} onChange={(e) => setForm({ ...form, kontak: e.target.value })} autoComplete="off" className={inp} placeholder="opsional" />
       </label>
       <label className="text-sm">
         <span className="block text-[10px] uppercase tracking-widest opacity-70 mb-1">Dusun</span>
-        <select value={form.dusun} onChange={(e) => setForm({ ...form, dusun: e.target.value })} className={inp}>
+        <select value={form.dusun} onChange={(e) => setForm({ ...form, dusun: e.target.value })} autoComplete="off" className={inp}>
           <option value="">— pilih —</option>
           {dusunList.map((d) => <option key={d.nama} value={d.nama}>{d.nama}</option>)}
         </select>
       </label>
       <label className="text-sm">
         <span className="block text-[10px] uppercase tracking-widest opacity-70 mb-1">Kategori <span className="text-accent">*</span></span>
-        <select required value={form.kategori} onChange={(e) => setForm({ ...form, kategori: e.target.value })} className={inp}>
-          {KATEGORI.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+        <select required value={form.kategori} onChange={(e) => setForm({ ...form, kategori: e.target.value })} autoComplete="off" className={inp}>
+          <option value="">— pilih —</option>
+          {kategoriList.map((k) => <option key={k.nama} value={k.nama}>{k.nama}</option>)}
         </select>
       </label>
       <label className="text-sm md:col-span-2">
         <span className="block text-[10px] uppercase tracking-widest opacity-70 mb-1">Judul <span className="text-accent">*</span></span>
-        <input required maxLength={160} value={form.judul} onChange={(e) => setForm({ ...form, judul: e.target.value })} className={inp} placeholder="Ringkas usulan Anda" />
+        <input required maxLength={160} value={form.judul} onChange={(e) => setForm({ ...form, judul: e.target.value })} autoComplete="off" className={inp} placeholder="Ringkas usulan Anda" />
       </label>
       <label className="text-sm md:col-span-2">
         <span className="block text-[10px] uppercase tracking-widest opacity-70 mb-1">Deskripsi <span className="text-accent">*</span></span>
-        <textarea required maxLength={4000} rows={5} value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} className={inp} />
+        <textarea required maxLength={4000} rows={5} value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} autoComplete="off" className={inp} />
       </label>
       <label className="text-sm">
         <span className="block text-[10px] uppercase tracking-widest opacity-70 mb-1">Lokasi</span>
-        <input maxLength={200} value={form.lokasi} onChange={(e) => setForm({ ...form, lokasi: e.target.value })} className={inp} placeholder="Titik/patokan lokasi" />
+        <input maxLength={200} value={form.lokasi} onChange={(e) => setForm({ ...form, lokasi: e.target.value })} autoComplete="off" className={inp} placeholder="Titik/patokan lokasi" />
       </label>
       <label className="text-sm">
         <span className="block text-[10px] uppercase tracking-widest opacity-70 mb-1">Foto (opsional)</span>
@@ -370,7 +379,7 @@ function LacakTiket() {
       <form onSubmit={cari} className="flex flex-wrap gap-3 items-end">
         <label className="text-sm flex-1 min-w-[220px]">
           <span className="block text-[10px] uppercase tracking-widest opacity-70 mb-1">Nomor Tiket</span>
-          <input value={nomor} onChange={(e) => setNomor(e.target.value)} className={inp} placeholder="USL-YYYYMM-XXXX" />
+          <input value={nomor} onChange={(e) => setNomor(e.target.value)} autoComplete="off" className={inp} placeholder="USL-YYYYMM-XXXX" />
         </label>
         <button type="submit" className={btnSec}>Lacak</button>
       </form>
@@ -396,6 +405,7 @@ function LacakTiket() {
 export function UsulanPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const { rows, loading } = useUsulanPublik(reloadKey);
+  const { data: kategoriList } = useKategoriUsulan();
   const [kat, setKat] = useState("");
   const [dus, setDus] = useState("");
   const [q, setQ] = useState("");
@@ -419,33 +429,33 @@ export function UsulanPage() {
         items={[
           { nilai: String(rows.length), label: "Usulan Terverifikasi", highlight: true },
           { nilai: totalDukungan.toLocaleString("id-ID"), label: "Total Dukungan" },
-          { nilai: String(KATEGORI.length), label: "Kategori" },
+          { nilai: String(kategoriList.length), label: "Kategori" },
           { nilai: "Terbuka", label: "Status Portal" },
         ]}
       />
 
       <SectionWrap>
-        <EditorialTitle kicker="Formulir" judul="Kirim Usulan" />
+        <EditorialTitle sectionKey="usulan-form" kicker="Formulir" judul="Kirim Usulan" />
         <UsulanForm onSubmitted={() => setReloadKey((k) => k + 1)} />
       </SectionWrap>
 
       <SectionWrap>
-        <EditorialTitle kicker="Pelacakan" judul="Lacak Tiket" />
+        <EditorialTitle sectionKey="usulan-lacak" kicker="Pelacakan" judul="Lacak Tiket" />
         <LacakTiket />
       </SectionWrap>
 
       <SectionWrap>
         <div className="flex items-baseline justify-between mb-4">
-          <EditorialTitle kicker="Publik" judul="Usulan Warga" />
+          <EditorialTitle sectionKey="usulan-daftar" kicker="Publik" judul="Usulan Warga" />
           <button onClick={() => setReloadKey((k) => k + 1)} className="text-xs underline opacity-70">Muat ulang</button>
         </div>
         <div className="flex flex-wrap gap-3 mb-4">
-          <select value={kat} onChange={(e) => setKat(e.target.value)} className={inp + " max-w-[200px]"}>
+          <select value={kat} onChange={(e) => setKat(e.target.value)} autoComplete="off" className={inp + " max-w-[200px]"}>
             <option value="">Semua kategori</option>
-            {KATEGORI.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+            {kategoriList.map((k) => <option key={k.nama} value={k.nama}>{k.nama}</option>)}
           </select>
-          <input value={dus} onChange={(e) => setDus(e.target.value)} placeholder="Dusun…" className={inp + " max-w-[200px]"} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari kata kunci…" className={inp + " flex-1 min-w-[220px]"} />
+          <input value={dus} onChange={(e) => setDus(e.target.value)} autoComplete="off" placeholder="Dusun…" className={inp + " max-w-[200px]"} />
+          <input value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" placeholder="Cari kata kunci…" className={inp + " flex-1 min-w-[220px]"} />
         </div>
         {loading ? <p className="opacity-60">Memuat…</p> : (
           <div className="grid md:grid-cols-2 gap-5">
@@ -584,7 +594,7 @@ export function VotingPage() {
         ]}
       />
       <SectionWrap>
-        <EditorialTitle kicker="Aktif" judul="Voting Berjalan" />
+        <EditorialTitle sectionKey="voting-aktif" kicker="Aktif" judul="Voting Berjalan" />
         {aktif.length ? (
           <div className="grid md:grid-cols-2 gap-5">
             {aktif.map((t) => <VotingCard key={t.id} topik={t} onVoted={() => setReload((k) => k + 1)} />)}
@@ -593,7 +603,7 @@ export function VotingPage() {
       </SectionWrap>
       {ditutup.length > 0 && (
         <SectionWrap>
-          <EditorialTitle kicker="Arsip" judul="Voting Lampau" />
+          <EditorialTitle sectionKey="voting-arsip" kicker="Arsip" judul="Voting Lampau" />
           <div className="grid md:grid-cols-2 gap-5">
             {ditutup.map((t) => <VotingCard key={t.id} topik={t} onVoted={() => setReload((k) => k + 1)} />)}
           </div>
@@ -656,10 +666,10 @@ export function RekapPage() {
           />
           <SectionWrap>
             <div className="flex flex-wrap items-baseline justify-between gap-3 mb-4">
-              <EditorialTitle kicker="Ringkasan" judul="Progres Bidang" />
+              <EditorialTitle sectionKey="kawal-progres" kicker="Ringkasan" judul="Progres Bidang" />
               <label className="text-sm">
                 <span className="text-[10px] uppercase tracking-widest opacity-60 mr-2">Tahun RKPDes</span>
-                <select value={tahunId ?? ""} onChange={(e) => setTahunId(e.target.value)} className={inp + " inline-block w-auto"}>
+                <select value={tahunId ?? ""} onChange={(e) => setTahunId(e.target.value)} autoComplete="off" className={inp + " inline-block w-auto"}>
                   {tahunList.map((t) => <option key={t.id} value={t.id}>{t.tahun}</option>)}
                 </select>
               </label>
@@ -694,7 +704,7 @@ export function RekapPage() {
           </SectionWrap>
 
           <SectionWrap>
-            <EditorialTitle kicker="Terhubung" judul="Program RPJMDes" />
+            <EditorialTitle sectionKey="kawal-rpjmdes" kicker="Terhubung" judul="Program RPJMDes" />
             <p className="text-sm opacity-70 mb-4">Kegiatan RKPDes yang berkontribusi pada tiap program (tahun {tahunList.find((t) => t.id === tahunId)?.tahun ?? "—"}).</p>
             {loadingKg ? <p className="opacity-60">Memuat kegiatan…</p> : (
               <div className="space-y-6">

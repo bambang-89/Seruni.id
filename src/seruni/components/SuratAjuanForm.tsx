@@ -17,6 +17,7 @@ import {
   formatTanggalLahir,
   type IdentitasData,
 } from "@/seruni/lib/queries";
+import { useTenantId } from "@/seruni/lib/tenant";
 import { UploadField } from "@/seruni/components/SuratDokumenUpload";
 
 const inputCls =
@@ -80,6 +81,7 @@ function RelationalSelectField({ field, value, onChange, error }: { field: Surat
         <select
           value={(value as string) || ""}
           onChange={(e) => onChange(e.target.value)}
+          autoComplete="off"
           className={cn(inputCls, error ? "border-red-500" : "")}
         >
           <option value="">— Pilih —</option>
@@ -124,6 +126,7 @@ function FieldRenderer({
               placeholder={placeholder}
               rows={4}
               maxLength={field.max_length || 2000}
+              autoComplete="off"
               className={cn(inputCls, error ? "border-red-500" : "")}
             />
           </label>
@@ -147,6 +150,7 @@ function FieldRenderer({
               placeholder={placeholder}
               min={field.min_value ?? undefined}
               max={field.max_value ?? undefined}
+              autoComplete="off"
               className={cn(inputCls, error ? "border-red-500" : "")}
             />
           </label>
@@ -167,6 +171,7 @@ function FieldRenderer({
               type="date"
               value={(value as string) || ""}
               onChange={(e) => onChange(e.target.value)}
+              autoComplete="off"
               className={cn(inputCls, error ? "border-red-500" : "")}
             />
           </label>
@@ -211,6 +216,7 @@ function FieldRenderer({
               onChange={(e) => onChange(e.target.value)}
               placeholder={placeholder || "08xxxxxxxxxx"}
               maxLength={20}
+              autoComplete="tel"
               className={cn(inputCls, error ? "border-red-500" : "")}
             />
           </label>
@@ -232,6 +238,7 @@ function FieldRenderer({
               value={(value as string) || ""}
               onChange={(e) => onChange(e.target.value)}
               placeholder={placeholder || "email@contoh.com"}
+              autoComplete="email"
               className={cn(inputCls, error ? "border-red-500" : "")}
             />
           </label>
@@ -273,6 +280,7 @@ function FieldRenderer({
               placeholder={placeholder}
               maxLength={field.max_length || 500}
               minLength={field.min_length || undefined}
+              autoComplete="off"
               className={cn(inputCls, error ? "border-red-500" : "")}
             />
           </label>
@@ -348,8 +356,9 @@ function groupFields(fields: SuratDNAField[]): GroupedFields {
 
 export function SuratAjuanForm() {
   const { id: jenisSuratId } = useParams<{ id: string }>();
+  const tenantId = useTenantId();
   const navigate = useNavigate();
-
+  const [submitting, setSubmitting] = useState(false);
   const [jenisSurat, setJenisSurat] = useState<{ nama: string; kode_surat: string } | null>(null);
   const [nik, setNik] = useState("");
   const [nama, setNama] = useState("");
@@ -365,7 +374,6 @@ export function SuratAjuanForm() {
   // DNA field values: field_name -> value
   const [dnaValues, setDnaValues] = useState<Record<string, unknown>>({});
   const [dnaErrors, setDnaErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<{ nomor_tiket: string } | null>(null);
 
   const { data: dnaFields, loading: dnaLoading } = useSuratDNAFields(jenisSuratId ?? null);
@@ -373,22 +381,27 @@ export function SuratAjuanForm() {
   // Load jenis surat metadata
   useEffect(() => {
     if (!jenisSuratId) return;
-    supabase
-      .from("surat_jenis")
-      .select("nama, kode_surat")
-      .eq("id", jenisSuratId)
-      .maybeSingle()
-      .then(({ data, error }) => {
+    
+    const fetchJenisSurat = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("surat_jenis")
+          .select("nama, kode_surat")
+          .eq("id", jenisSuratId)
+          .maybeSingle();
+
         if (data) {
           setJenisSurat(data);
         } else if (error || !data) {
           // If ID is not UUID or not found in DB
           setJenisSurat({ nama: "Formulir Surat", kode_surat: "SURAT" });
         }
-      })
-      .catch(() => {
+      } catch (err) {
         setJenisSurat({ nama: "Formulir Surat", kode_surat: "SURAT" });
-      });
+      }
+    };
+    
+    fetchJenisSurat();
   }, [jenisSuratId]);
 
 
@@ -539,15 +552,24 @@ export function SuratAjuanForm() {
         };
       }
 
-      const { data, error } = await (supabase.functions as any).invoke("submit-surat", {
-        body: payload,
+      const res = await fetch("/api/submit-surat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
-
-      if (error || !data?.ok) {
-        throw new Error(error?.message || (data as any)?.error || "Gagal mengirim pengajuan");
+      
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error("Gagal mengirim pengajuan");
       }
 
-      setSubmitted({ nomor_tiket: (data as any).nomor_tiket });
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Gagal mengirim pengajuan");
+      }
+
+      setSubmitted({ nomor_tiket: data.nomor_tiket });
     } catch (err: any) {
       toast.error(err?.message || "Gagal mengirim pengajuan");
     } finally {
@@ -641,6 +663,9 @@ export function SuratAjuanForm() {
                   }}
                   placeholder="16 digit NIK"
                   maxLength={16}
+                  minLength={16}
+                  pattern="\d{16}"
+                  autoComplete="off"
                   className={cn(
                     inputCls,
                     "font-mono tabular-nums pr-8",
@@ -669,6 +694,7 @@ export function SuratAjuanForm() {
                 placeholder="Nama sesuai KTP"
                 maxLength={120}
                 readOnly={!!identitas}
+                autoComplete="name"
                 className={cn(inputCls, dnaErrors.nama ? "border-red-500" : "", identitas ? "bg-accent/5 cursor-not-allowed" : "")}
               />
             </label>
@@ -796,6 +822,7 @@ export function SuratAjuanForm() {
                 placeholder={identitas?.nomor_hp ? "" : "08xxxxxxxxxx"}
                 maxLength={20}
                 readOnly={!!identitas?.nomor_hp}
+                autoComplete="tel"
                 className={cn(inputCls, dnaErrors.kontak ? "border-red-500" : "", identitas?.nomor_hp ? "bg-accent/5 cursor-not-allowed" : "")}
               />
             </label>
@@ -845,6 +872,7 @@ export function SuratAjuanForm() {
             placeholder="Ceritakan keperluan pengajuan surat ini…"
             rows={4}
             maxLength={2000}
+            autoComplete="off"
             className={`${inputCls} ${dnaErrors.keperluan ? "border-red-500" : ""}`}
           />
         </label>

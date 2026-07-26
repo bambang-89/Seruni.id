@@ -79,7 +79,7 @@ export function RpjmdesProgramAdmin() {
         { key: "nama", label: "Nama Program" },
         { key: "indikator", label: "Indikator", type: "textarea" },
         { key: "target", label: "Target" },
-        { key: "sumber_dana", label: "Sumber Dana" },
+        { key: "sumber_dana", label: "Sumber Dana", type: "relation", relation: { table: "ref_sumber_dana", labelCol: "nama", valueCol: "nama" } },
         { key: "tahun_mulai", label: "Tahun Mulai", type: "number" },
         { key: "tahun_selesai", label: "Tahun Selesai", type: "number" },
         { key: "anggaran_indikatif", label: "Anggaran (Rp)", type: "number" },
@@ -126,11 +126,11 @@ export function RkpdesKegiatanAdmin() {
         { key: "bidang_id", label: "Bidang (opsional)", type: "select", options: [{ value: "", label: "— tidak dipilih —" }, ...bidangOpts] },
         { key: "nama", label: "Nama Kegiatan" },
         { key: "lokasi", label: "Lokasi" },
-        { key: "dusun", label: "Dusun" },
+        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
         { key: "volume", label: "Volume" },
         { key: "satuan", label: "Satuan" },
         { key: "anggaran", label: "Anggaran (Rp)", type: "number" },
-        { key: "sumber_dana", label: "Sumber Dana" },
+        { key: "sumber_dana", label: "Sumber Dana", type: "relation", relation: { table: "ref_sumber_dana", labelCol: "nama", valueCol: "nama" } },
         { key: "pelaksana", label: "Pelaksana" },
         { key: "waktu", label: "Waktu" },
         { key: "status_realisasi", label: "Status", type: "select", options: [
@@ -188,7 +188,7 @@ export function UsulanAdmin() {
       <div className="mb-4 flex gap-3 items-end">
         <label className="text-sm">
           <span className="block text-xs mb-1">Filter Status</span>
-          <select value={statusF} onChange={(e) => setStatusF(e.target.value)} className={inp}>
+          <select value={statusF} onChange={(e) => setStatusF(e.target.value)} className={inp} autoComplete="off">
             <option value="">Semua</option>
             {["baru","diverifikasi","ditindaklanjuti","selesai","ditolak"].map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
@@ -206,13 +206,13 @@ export function UsulanAdmin() {
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="text-sm">
               <span className="block text-xs mb-1">Status</span>
-              <select value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value })} className={inp}>
+              <select value={editing.status} onChange={(e) => setEditing({ ...editing, status: e.target.value })} className={inp} autoComplete="off">
                 {["baru","diverifikasi","ditindaklanjuti","selesai","ditolak"].map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </label>
             <label className="text-sm sm:col-span-2">
               <span className="block text-xs mb-1">Tanggapan Desa</span>
-              <textarea rows={4} value={editing.tanggapan || ""} onChange={(e) => setEditing({ ...editing, tanggapan: e.target.value })} className={inp} />
+              <textarea rows={4} value={editing.tanggapan || ""} onChange={(e) => setEditing({ ...editing, tanggapan: e.target.value })} className={inp} autoComplete="off" />
             </label>
           </div>
           <div className="mt-4 flex gap-2">

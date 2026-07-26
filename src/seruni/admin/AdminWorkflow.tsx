@@ -131,14 +131,14 @@ export function SiteDraftAdmin() {
       <div className="flex flex-wrap gap-3 mb-4">
         <label className="text-sm">
           <span className="block text-xs mb-1">Status</span>
-          <select value={statusF} onChange={(e) => setStatusF(e.target.value)} className={inp}>
+          <select value={statusF} onChange={(e) => setStatusF(e.target.value)} className={inp} autoComplete="off">
             <option value="">Semua</option>
             {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </label>
         <label className="text-sm">
           <span className="block text-xs mb-1">Entitas</span>
-          <select value={entF} onChange={(e) => setEntF(e.target.value)} className={inp}>
+          <select value={entF} onChange={(e) => setEntF(e.target.value)} className={inp} autoComplete="off">
             <option value="">Semua</option>
             {ENTITAS.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
           </select>
@@ -245,13 +245,13 @@ function NewDraftButton({ onCreated }: { onCreated: () => void }) {
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="text-sm">
           <span className="block text-xs mb-1">Entitas</span>
-          <select value={entitas} onChange={(e) => setEntitas(e.target.value)} className={inp}>
+          <select value={entitas} onChange={(e) => setEntitas(e.target.value)} className={inp} autoComplete="off">
             {ENTITAS.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
           </select>
         </label>
         <label className="text-sm">
           <span className="block text-xs mb-1">Target (kosongkan untuk buat baru)</span>
-          <select value={entitasId} onChange={(e) => setEntitasId(e.target.value)} className={inp}>
+          <select value={entitasId} onChange={(e) => setEntitasId(e.target.value)} className={inp} autoComplete="off">
             <option value="">— buat baru —</option>
             {rows.map((r) => <option key={r.id} value={r.id}>{rowLabel(r)}</option>)}
           </select>
@@ -259,11 +259,11 @@ function NewDraftButton({ onCreated }: { onCreated: () => void }) {
       </div>
       <label className="block text-sm mt-3">
         <span className="block text-xs mb-1">Payload (JSON)</span>
-        <textarea rows={8} value={payloadText} onChange={(e) => setPayloadText(e.target.value)} className={inp + " font-mono text-xs"} />
+        <textarea rows={8} value={payloadText} onChange={(e) => setPayloadText(e.target.value)} className={inp + " font-mono text-xs"} autoComplete="off" />
       </label>
       <label className="block text-sm mt-3">
         <span className="block text-xs mb-1">Catatan</span>
-        <input value={catatan} onChange={(e) => setCatatan(e.target.value)} className={inp} placeholder="Deskripsi singkat perubahan" />
+        <input value={catatan} onChange={(e) => setCatatan(e.target.value)} className={inp} placeholder="Deskripsi singkat perubahan" autoComplete="off" />
       </label>
       <div className="mt-3 flex gap-2">
         <button disabled={busy} onClick={create} className={btnPri}>Simpan Draft</button>
@@ -310,7 +310,7 @@ export function SiteVersionAdmin() {
       <div className="mb-4">
         <label className="text-sm">
           <span className="block text-xs mb-1">Entitas</span>
-          <select value={entitas} onChange={(e) => setEntitas(e.target.value)} className={inp + " max-w-xs"}>
+          <select value={entitas} onChange={(e) => setEntitas(e.target.value)} className={inp + " max-w-xs"} autoComplete="off">
             {ENTITAS.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
           </select>
         </label>
@@ -421,6 +421,7 @@ export function VotingClosureAdmin() {
                 defaultValue={r.hasil_ringkasan || ""}
                 onChange={(e) => setRingkasan({ ...ringkasan, [r.id]: e.target.value })}
                 className={inp + " mt-3 text-sm"}
+                autoComplete="off"
               />
             </div>
           ))}

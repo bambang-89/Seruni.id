@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { ToneProvider, toneOf } from "./lib/tone";
 import { usePageConfig } from "./lib/pageConfig";
+import { usePageHeroConfig } from "./lib/queries";
 
 export function formatTanggal(iso: string) {
   return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
@@ -228,15 +229,16 @@ export function EditorialLayout({
   const loc = useLocation();
   const effectiveRoute = route ?? loc.pathname;
   const cfg = usePageConfig(effectiveRoute);
+  const { data: heroConfig } = usePageHeroConfig(effectiveRoute);
   
   return (
     <>
       <PageHeader
         eyebrow={cfg?.eyebrow?.trim() || eyebrow}
-        judul={cfg?.judul?.trim() || judul}
-        deskripsi={cfg?.deskripsi ?? deskripsi}
+        judul={heroConfig?.title?.trim() || cfg?.judul?.trim() || judul}
+        deskripsi={heroConfig?.subtitle?.trim() || (cfg?.deskripsi ?? deskripsi)}
         crumbs={crumbs}
-        image={cfg?.hero_image_url || heroImage}
+        image={heroConfig?.image_path || cfg?.hero_image_url || heroImage}
       />
       <main className="editorial-main [&>section+section]:border-t [&>section+section]:border-current/10">
         {children}

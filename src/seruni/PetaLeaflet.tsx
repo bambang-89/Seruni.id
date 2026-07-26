@@ -54,7 +54,7 @@ export function PetaLeaflet({ points, center = [-8.535, 116.655], zoom = 13 }: {
           `<div style="font-family:'Poppins',sans-serif;min-width:180px">
             <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#FF9E20;font-weight:700">${p.jenis || ""}</div>
             <div style="font-weight:600;margin-top:4px">${p.nama}</div>
-            ${p.deskripsi ? `<div style=\"font-size:12px;margin-top:6px;color:#444\">${p.deskripsi}</div>` : ""}
+            ${p.deskripsi ? `<div style="font-size:12px;margin-top:6px;color:#444">${p.deskripsi}</div>` : ""}
           </div>`
         );
     });

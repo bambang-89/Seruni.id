@@ -31,76 +31,8 @@ import {
   TileGrid,
   QuoteBand,
 } from "./sections";
-import heroImg from "@/assets/hero-village.jpg";
-import portraitKades from "@/assets/portrait-kepala-desa.jpg";
-import wartaPasar from "@/assets/warta-pasar.jpg";
-import potensiLansekap from "@/assets/potensi-lansekap.jpg";
-import umkmTenun from "@/assets/umkm-tenun.jpg";
-
-function Hero() {
-  const { data: settings } = useSiteSettings();
-  const siteName = settings?.nama_resmi ?? "Desa Seruni";
-  const namaTanpaDesa = siteName.replace(/^Desa\s+/i, "");
-  return (
-    <section
-      aria-label="Identitas desa"
-      className="relative isolate overflow-hidden bg-primary text-primary-foreground min-h-screen"
-    >
-      {/* Full-bleed background photo */}
-      <img
-        src={heroImg}
-        alt="Panorama pesisir dan pegunungan Desa Seruni Mumbul saat matahari terbenam"
-        width={1920}
-        height={1080}
-        className="absolute inset-0 h-full w-full object-cover"
-        fetchPriority="high"
-      />
-      {/* Cinematic scrim — dark top so navbar reads, dark bottom so wordmark reads */}
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/20 to-primary/85" />
-      <div aria-hidden className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/60 to-transparent" />
-
-      {/* Content layer — clear vertical rhythm so navbar never collides with copy */}
-      <div className="relative flex flex-col min-h-screen pt-[180px] md:pt-[200px] pb-6">
-        <div className="flex-1" />
-
-        {/* Subtitle: hanya wilayah administratif */}
-        <div className="mx-4 sm:mx-6 lg:mx-8 pb-4">
-          <p className="font-display text-sm sm:text-base md:text-lg uppercase tracking-[0.28em] text-accent drop-shadow">
-            {settings?.wilayah ?? "Kecamatan, Kabupaten, Provinsi"}
-          </p>
-        </div>
-
-        {/* Giant wordmark — auto-fit satu baris via SVG, tanpa prefix "Desa" */}
-        <div className="relative">
-          <div aria-hidden className="mx-4 sm:mx-6 lg:mx-8 border-t border-primary-foreground/40" />
-          <div className="px-4 sm:px-6 lg:px-8 pt-3">
-            <svg
-              viewBox="0 0 100 15"
-              preserveAspectRatio="xMidYMid meet"
-              className="block w-full h-auto drop-shadow-lg"
-              role="img"
-              aria-label={siteName}
-            >
-              <text
-                x="50"
-                y="12.5"
-                textAnchor="middle"
-                fontFamily="var(--font-display, Poppins), sans-serif"
-                fontWeight={500}
-                fontSize="14"
-                letterSpacing="-0.4"
-                fill="#ffffff"
-                style={{ opacity: 1 }}
-              >
-                {namaTanpaDesa}
-              </text>
-            </svg>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+import { PageHero } from "./components/PageHero";
+import { supabase } from "@/integrations/supabase/client";
 
 function TaglineBar() {
   const { data: settings } = useSiteSettings();
@@ -123,26 +55,24 @@ function TaglineBar() {
  * ============================================================ */
 
 function S1() {
+  const { data: profilDesa } = useProfilDesa();
+  const imageUrl = profilDesa?.gambar_hero_url ? supabase.storage.from('seruni-media').getPublicUrl(profilDesa.gambar_hero_url).data.publicUrl : undefined;
+  
   return (
     <EditorialSplit
       kicker="Bagian Satu — Tentang"
-      judul="Desa pesisir di kaki timur Rinjani."
-      image={portraitKades}
-      imageAlt="Potret Kepala Desa Seruni Mumbul"
+      judul={profilDesa?.visi || "Profil Singkat Desa"}
+      image={imageUrl}
+      imageAlt="Potret Desa"
       tone="paper"
       href="/profil-desa"
       hrefLabel="Kenali Desa"
     >
       <p>
-        Seruni Mumbul dibentuk pada 1968 sebagai pemekaran dari Desa Pringgabaya.
-        Dikenal dengan hamparan padi, tenun songket, dan pantai berpasir putih,
-        desa ini berdiri di antara laut dan gunung — sebuah ruang hidup yang
-        menautkan kerja tani, warisan tenun, dan keramahan warga pesisir.
+        {profilDesa?.sejarah?.[0] || "Selamat datang di website resmi. Website ini adalah portal informasi dan layanan publik."}
       </p>
       <p>
-        Portal ini adalah rumah data satu pintu: pelayanan, informasi
-        pembangunan, dan partisipasi warga — semuanya terbuka dan dapat
-        ditelusuri.
+        {profilDesa?.sejarah?.[1] || "Akses layanan pemerintahan desa, data statistik, dan potensi unggulan dengan transparan dan mudah."}
       </p>
     </EditorialSplit>
   );
@@ -285,7 +215,7 @@ function S4() {
       <div className="grid lg:grid-cols-[3fr_2fr] gap-10 lg:gap-16 items-start">
         {utama && (
           <FeaturedCard
-            image={wartaPasar}
+            image={utama.foto_url ? supabase.storage.from('seruni-media').getPublicUrl(utama.foto_url).data.publicUrl : ""}
             imageAlt={utama.judul}
             kicker={utama.kategori}
             meta={formatTanggal(utama.tanggal)}
@@ -418,8 +348,8 @@ function S6() {
     <EditorialSplit
       kicker="Bagian Enam — Marketplace Desa"
       judul="Kerja tangan warga, siap dipesan."
-      image={umkmTenun}
-      imageAlt="Tangan warga menenun kain songket di alat tenun kayu"
+      image={""}
+      imageAlt="Potret Produk"
       tone="paper"
       reverse
       href="/marketplace"
@@ -543,8 +473,6 @@ function S8() {
 
 function S9() {
   const { data: wisataData } = usePotensiWisata();
-  const { data: umkmData } = usePotensiUmkm();
-  // Transform data for display
   const sektorData = [
     { nama: "Perikanan Tangkap", nilai: "Rp 4,2 M/thn" },
     { nama: "Pertanian Padi & Palawija", nilai: "Rp 3,1 M/thn" },
@@ -556,8 +484,8 @@ function S9() {
       <section className="relative bg-[#0F0E0E] text-white">
         <div className="relative aspect-[16/8] sm:aspect-[16/7] w-full overflow-hidden">
           <img
-            src={potensiLansekap}
-            alt="Lansekap rice terraces dan pantai Desa Seruni Mumbul"
+            src={""}
+            alt="Lansekap Desa"
             className="absolute inset-0 h-full w-full object-cover"
             loading="lazy"
           />
@@ -602,10 +530,6 @@ function S9() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 pt-6 border-t border-white/20">
-                <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">BUMDes</p>
-                <p className="mt-2 font-display text-lg font-semibold">{"BUMDes Bina Seruni Mandiri"}</p>
-              </div>
             </div>
           </div>
           <div className="mt-10">
@@ -627,13 +551,15 @@ function S9() {
  * ============================================================ */
 
 function QuoteKades() {
+  const { data: profilDesa } = useProfilDesa();
+  
   return (
     <QuoteBand
-      quote="Pemerintahan desa yang baik tidak diukur dari kemegahan kantor, melainkan dari cepatnya warga mendapatkan haknya."
-      nama="H. Amirudin, S.Sos"
-      jabatan="Kepala Desa Seruni Mumbul"
-      image={portraitKades}
-      imageAlt="Potret Kepala Desa Seruni Mumbul"
+      quote={profilDesa?.visi || "Pemerintahan desa yang baik tidak diukur dari kemegahan kantor, melainkan dari cepatnya warga mendapatkan haknya."}
+      nama={profilDesa?.kepala_desa_nama || "Kepala Desa"}
+      jabatan="Kepala Desa"
+      image={profilDesa?.kepala_desa_foto ? supabase.storage.from('seruni-media').getPublicUrl(profilDesa.kepala_desa_foto).data.publicUrl : ""}
+      imageAlt="Potret Kepala Desa"
     />
   );
 }
@@ -644,7 +570,6 @@ function QuoteKades() {
 
 function S10() {
   const { data: galeriData } = useGaleri();
-  const covers = [wartaPasar, umkmTenun, potensiLansekap, heroImg, portraitKades, wartaPasar];
   return (
     <Band id="galeri" tone="paper">
       <EditorialTitle
@@ -661,7 +586,7 @@ function S10() {
             className="group relative aspect-square overflow-hidden bg-background"
           >
             <img
-              src={covers[i % covers.length]}
+              src={g.foto_url ? supabase.storage.from('seruni-media').getPublicUrl(g.foto_url).data.publicUrl : ""}
               alt={g.judul}
               loading="lazy"
               className="absolute inset-0 h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-[1.04]"
@@ -687,6 +612,7 @@ function S10() {
  * ============================================================ */
 
 function S11() {
+  const { data: settings } = useSiteSettings();
   const { data: dusunList } = useDusun();
   const { data: kategoriList } = useAduanKategori();
   const [kategori, setKategori] = useState<string>('');
@@ -820,10 +746,9 @@ function S11() {
  * ============================================================ */
 
 function S12() {
-  // Default layers - can be fetched from site_settings
   const petaLayer = [
-    { kode: "wilayah", label: "Batas Wilayah & Burnett", aktif: true },
-    { kode: "aset", label: "Aset Burnett", aktif: true },
+    { kode: "wilayah", label: "Batas Wilayah", aktif: true },
+    { kode: "aset", label: "Aset", aktif: true },
     { kode: "pbb", label: "Objek Pajak PBB", aktif: false },
     { kode: "bencana", label: "Zona Rawan Bencana", aktif: true },
     { kode: "pariwisata", label: "Destinasi Wisata", aktif: true },
@@ -863,8 +788,8 @@ function S12() {
         </aside>
         <div className="relative bg-[#0F0E0E] min-h-[420px] overflow-hidden">
           <img
-            src={potensiLansekap}
-            alt="Peta interaktif lansekap Desa Seruni Mumbul"
+            src={""}
+            alt="Peta Interaktif"
             className="absolute inset-0 h-full w-full object-cover opacity-40"
             loading="lazy"
           />
@@ -895,27 +820,23 @@ export default function HomePage() {
   return (
     <>
       <Seo
-        title="Kantor Desa Seruni Mumbul — Portal Layanan Desa"
-        description="Portal resmi Desa Seruni Mumbul: layanan surat, APBDes, pengaduan, agenda, dan status IDM secara transparan."
+        title="Kantor Desa — Portal Layanan Desa"
+        description="Portal resmi untuk layanan surat, APBDes, pengaduan, agenda, dan status IDM secara transparan."
         path="/"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "GovernmentOrganization",
-          name: "Kantor Desa Seruni Mumbul",
+          name: "Kantor Desa",
           address: {
             "@type": "PostalAddress",
-            addressLocality: "Jerowaru",
-            addressRegion: "Lombok Timur, NTB",
             addressCountry: "ID",
           },
         }}
       />
-      <Hero />
+      <PageHero route="/" />
       <TaglineBar />
       <IntroBand>
-        Portal resmi Desa Seruni Mumbul — satu jendela untuk pelayanan warga,
-        transparansi pembangunan, dan partisipasi publik. Ditulis oleh warga,
-        untuk warga.
+        Portal resmi — satu jendela untuk pelayanan warga, transparansi pembangunan, dan partisipasi publik. Ditulis oleh warga, untuk warga.
       </IntroBand>
       <S1 />
       <StatistikBand />

@@ -68,18 +68,18 @@ function getDefaultSiteSettings(): SiteSettings {
   return {
     id: "",
     tenant_id: "",
-    nama_resmi: "Desa Seruni Mumbul",
-    tagline: "Satu Data Desa. Pelayanan Terbuka. Warga Terhubung.",
-    alamat_kantor: "Jl. Raya Seruni Mumbul No. 1, Pringgabaya, Lombok Timur 83654",
-    telepon: "(0376) 000-0000",
-    email: "kantor@serunimumbul.desa.id",
-    jam_layanan: "Senin–Jumat · 08.00–15.00 WITA",
-    nomor_wa_resmi: "+6281200000000",
-    wa_business_verified: true,
+    nama_resmi: "",
+    tagline: "",
+    alamat_kantor: "",
+    telepon: "",
+    email: "",
+    jam_layanan: "",
+    nomor_wa_resmi: "",
+    wa_business_verified: false,
     social_media: {
-      facebook: "https://facebook.com/desa.serunimumbul",
-      instagram: "https://instagram.com/desa.serunimumbul",
-      youtube: "https://youtube.com/@desa.serunimumbul",
+      facebook: "",
+      instagram: "",
+      youtube: "",
     },
     maps_embed_url: null,
   };
@@ -205,6 +205,7 @@ export function useFeatureFlags() {
         }
         setLoading(false);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { flags, loading };

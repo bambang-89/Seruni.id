@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
+import { useSectionTitle } from "./lib/pageConfig";
 import { SplitTitle } from "./ui";
 import { ToneProvider, toneOf } from "./lib/tone";
 
@@ -45,6 +46,8 @@ export function EditorialTitle({
   hrefLabel = "Selengkapnya",
   align = "left",
   invert = false,
+  sectionKey,
+  route,
 }: {
   kicker: string;
   judul: string;
@@ -52,17 +55,26 @@ export function EditorialTitle({
   hrefLabel?: string;
   align?: "left" | "between";
   invert?: boolean;
+  sectionKey?: string;
+  route?: string;
 }) {
+  const loc = useLocation();
+  const effectiveRoute = route ?? loc.pathname;
+  const override = useSectionTitle(effectiveRoute, sectionKey || "");
+  
+  const finalKicker = sectionKey && override?.kicker ? override.kicker : kicker;
+  const finalJudul = sectionKey && override?.judul ? override.judul : judul;
+
   const kickerCls = invert ? "text-accent" : "text-accent";
   const lineCls = invert ? "bg-white/20" : "bg-current/20";
   return (
     <div className={`mb-12 sm:mb-14 ${align === "between" ? "flex flex-wrap items-end justify-between gap-6" : ""}`}>
       <div className="max-w-3xl">
         <p className={`font-display text-[11px] sm:text-xs font-bold uppercase tracking-[0.28em] ${kickerCls} mb-4`}>
-          {kicker}
+          {finalKicker}
         </p>
         <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05] ${invert ? "text-white" : "text-current"}`}>
-          <SplitTitle text={judul} />
+          <SplitTitle text={finalJudul} />
         </h2>
         <div className={`mt-6 h-px w-full max-w-[520px] ${lineCls}`} />
       </div>

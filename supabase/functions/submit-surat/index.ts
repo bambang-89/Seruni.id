@@ -57,7 +57,7 @@ function buildWaPesan(nama: string, nomorTiket: string, jenisSurat: string | nul
     `⏳ Status saat ini: *MENUNGGU*`,
     ``,
     `📌 Pantau status pengajuan:`,
-    `→ https://serunimumbul.id/service-center`,
+    `→ https://${Deno.env.get("PUBLIC_DOMAIN") || "serunimumbul.id"}/service-center`,
     ``,
     `Tim desa akan memproses dalam 1-3 hari kerja.`,
     ``,
@@ -95,15 +95,11 @@ Deno.serve(async (req) => {
   // Rate limit: satu perangkat maksimal 3 pengajuan surat per hari
   const fp = await voterHash("surat-submit", req);
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const now = new Date();
-  const ym = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-  const prefix = `SRT-${ym}-`;
 
-  // Parallel queries: rate limit + tenant + jenis surat + last ticket
-  const [rateLimitResult, tenantResult, lastTiketResult] = await Promise.all([
+  // Parallel queries: rate limit + tenant + jenis surat
+  const [rateLimitResult, tenantResult] = await Promise.all([
     supabase.from("event_log").select("id").eq("event_name", "surat.diajukan").gte("created_at", since).eq("payload->>fp", fp),
     supabase.from("tenants").select("id").limit(1).maybeSingle(),
-    supabase.from("surat_ajuan").select("nomor_tiket").like("nomor_tiket", `${prefix}%`).order("nomor_tiket", { ascending: false }).limit(1),
   ]);
 
   const recent = rateLimitResult.data;
@@ -127,12 +123,14 @@ Deno.serve(async (req) => {
     jenisSurat = jenis;
   }
 
-  // Generate nomor tiket: SRT-YYYYMM-XXXX
-  const lastTiket = lastTiketResult.data;
-  const nextSeq = lastTiket?.[0]?.nomor_tiket
-    ? parseInt((lastTiket[0].nomor_tiket as string).split("-").pop() || "0", 10) + 1
-    : 1;
-  const nomor_tiket = `${prefix}${String(nextSeq).padStart(4, "0")}`;
+  // Generate nomor tiket: SRT-YYYYMM-XXXX — atomic via RPC
+  // Generate nomor tiket atomically via database function
+  const { data: nomor_tiket, error: tiketError } = await supabase
+    .rpc("get_next_nomor_tiket", { p_prefix: "SRT-" });
+
+  if (tiketError || !nomor_tiket) {
+    return json({ error: "Gagal menghasilkan nomor tiket" }, 500, origin);
+  }
 
   // Insert pengajuan surat
   const { data: ins, error } = await supabase
