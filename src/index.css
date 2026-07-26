@@ -447,6 +447,21 @@
   ::-webkit-scrollbar-thumb:hover {
     background: var(--ring);
   }
+
+  /* Custom scrollbar for dark backgrounds (like Admin Sidebar) */
+  .custom-scrollbar-dark::-webkit-scrollbar {
+    width: 5px;
+  }
+  .custom-scrollbar-dark::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar-dark::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+  }
+  .custom-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
 }
 
 /**

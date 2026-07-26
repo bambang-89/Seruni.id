@@ -173,26 +173,30 @@ export default function AdminShell() {
   }
 
   return (
-    <div className="min-h-screen flex bg-secondary text-foreground">
+    <div className="h-screen flex bg-secondary text-foreground overflow-hidden">
       <aside className="w-64 shrink-0 bg-primary text-primary-foreground flex flex-col">
         <div className="px-5 py-5 border-b border-white/10">
           <div className="font-display text-xs uppercase tracking-widest text-accent">Admin Portal</div>
           <div className="font-display font-semibold leading-tight mt-1">{siteName}</div>
         </div>
-        <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
-          {navGroups.map((g) => (
-            <div key={g.title}>
-              <div className="px-3 pb-1 text-[10px] uppercase tracking-widest text-primary-foreground/50 font-semibold">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar-dark">
+          {navGroups.map((g, i) => (
+            <div key={g.title} className={i !== 0 ? "pt-4" : ""}>
+              <div className="px-3 text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2 flex items-center">
                 {g.title}
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {g.items.map((n) => (
                   <NavLink
                     key={n.to}
                     to={n.to}
                     end={n.end}
                     className={({ isActive }) =>
-                      `block px-3 py-2 rounded-md text-sm font-medium ${isActive ? "bg-accent text-primary" : "hover:bg-white/10"}`
+                      `block px-3 py-2.5 rounded-md text-sm font-medium transition-all ${
+                        isActive 
+                          ? "bg-accent/10 text-accent border border-accent/20 shadow-sm" 
+                          : "text-white/70 hover:bg-white/10 hover:text-white"
+                      }`
                     }
                   >
                     {n.label}
@@ -202,7 +206,7 @@ export default function AdminShell() {
             </div>
           ))}
         </nav>
-        <div className="p-3 border-t border-white/10 space-y-2">
+        <div className="p-4 border-t border-white/10 space-y-3 bg-primary">
           <Link to="/" className="block text-xs text-primary-foreground/70 hover:text-accent">
             ← Lihat portal publik
           </Link>
@@ -211,7 +215,7 @@ export default function AdminShell() {
           </button>
         </div>
       </aside>
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 overflow-y-auto">
         <div className="p-6 sm:p-8 max-w-5xl">
           <Outlet />
         </div>
