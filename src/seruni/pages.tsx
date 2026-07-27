@@ -13,58 +13,26 @@ import {
 } from "./ui";
 import { EditorialTitle, StatsBand, NumberedList } from "./sections";
 import {
-  useProfilDesa,
-  usePamong,
-  useDusun,
-  useLembaga,
-  useBerita,
-  useBeritaBySlug,
-  useAgenda,
-  usePengumuman,
-  useGaleri,
-  usePotensiUmkm,
-  usePotensiProduk,
-  usePotensiWisata,
-  useApbdes,
-  useApbdesYears,
-  useStatistikDesa,
-  useIdmData,
-  usePembangunanData,
-  useUsulanStats,
-  useBantuanSosial,
-  useStuntingAgregat,
-  usePosyanduAgregat,
-  useBalita,
-  useBencanaKejadian,
-  useSuratJenis,
-  useLayananStatistik,
-  useAduanKategori,
-  useAgendaById,
-  useGaleriById,
-  usePengumumanById,
-  usePosyanduById,
-  useStuntingById,
-  useUmkmById,
-  useProdukById,
-  useWisataById,
-  usePembangunanById,
-  useBansosById,
-  usePenerimaBansos,
-  usePenerimaBansosStats,
-  useAduanById,
-  useIdmIndikatorById,
-  useAutofillPenduduk,
-  usePendudukById,
-  useKeluargaById,
-  Galeri,
-  PotensiUmkm,
-  PotensiWisata,
-  PembangunanDetail,
-  PotensiProduk,
-  BantuanSosial,
-  PenerimaBansos,
-  AduanWarga,
-  IdmIndikator,
+  useProfilDesa, usePamong, useDusun, useLembaga, useBerita, useBeritaBySlug, useAgenda,
+  usePengumuman, useGaleri, usePotensiUmkm, usePotensiProduk, usePotensiWisata, useApbdes,
+  useApbdesYears, useStatistikDesa, useIdmData, usePembangunanData, useUsulanStats,
+  useBantuanSosial, useStuntingAgregat, usePosyanduAgregat, useBalita, useBencanaKejadian,
+  useSuratJenis, useLayananStatistik, useAduanKategori,
+  useAgendaById, useGaleriById, usePengumumanById, usePosyanduById, useStuntingById,
+  useUmkmById, useProdukById, useWisataById, usePembangunanById, useBansosById,
+  usePenerimaBansos, usePenerimaBansosStats, useAduanById, useIdmIndikatorById,
+  useAutofillPenduduk, usePendudukById, useKeluargaById,
+  useBalitaById, BalitaDetail,
+  useBidangTanahById, BidangTanahDetail,
+  useInfrastrukturById, InfrastrukturDetail,
+  useBencanaById, BencanaDetail,
+  useUsulanWargaById, UsulanWargaDetail,
+  useVotingTopikById, useVotingOpsi, VotingTopikDetail,
+  usePbbTagihanById, PbbTagihanDetail,
+  useSuratTerbitById, SuratTerbitDetail,
+  useRpjmdesBidangById, useRpjmdesProgramById, useRkpdesKegiatanById,
+  Galeri, PotensiUmkm, PotensiWisata, PembangunanDetail, PotensiProduk,
+  BantuanSosial, PenerimaBansos, AduanWarga, IdmIndikator,
 } from "./lib/queries";
 import { PetaLeaflet } from "./PetaLeaflet";
 import { Seo } from "./lib/seo";
@@ -2311,6 +2279,49 @@ function NotFoundState() {
   return <div className="min-h-screen flex items-center justify-center"><p className="opacity-60">Data tidak ditemukan</p></div>;
 }
 
+// Reusable info card used across detail pages
+const ICON_PATHS: Record<string, string> = {
+  calendar: "M6 2a1 1 0 00-2 2v2H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-1V4a1 1 0 10-2 0v2H8V4a1 1 0 00-1-1H6z",
+  card: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+  user: "M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z",
+  map: "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7",
+  mapPin: "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z",
+  activity: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
+  shield: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
+  fileText: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2zM15 3v4a2 2 0 002 2h4",
+  area: "M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4",
+  box: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4",
+  target: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+  wallet: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+  tool: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
+  home: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+  layers: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10",
+  building: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
+  calculator: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+  clock: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+  users: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+  checkCircle: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+};
+
+function InfoCard({ icon, label, value, className = "" }: { icon: string; label: string; value: string; className?: string }) {
+  const path = ICON_PATHS[icon] || ICON_PATHS.fileText;
+  return (
+    <div className={`bg-background border border-current/15 rounded-xl p-4 shadow-sm ${className}`}>
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4 text-foreground/40">
+            <path strokeLinecap="round" strokeLinejoin="round" d={path} />
+          </svg>
+        </div>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">{label}</p>
+          <p className="text-sm font-medium text-foreground mt-0.5">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AgendaDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data, loading: isLoading } = useAgendaById(id);
@@ -4213,10 +4224,765 @@ export function IdmIndikatorDetailPage() {
   );
 }
 
+// =============================================================
+// BALITA DETAIL PAGE
+// =============================================================
+export function BalitaDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useBalitaById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const jk = data.jenis_kelamin === "L" ? "Laki-laki" : data.jenis_kelamin === "P" ? "Perempuan" : "—";
+  const jkBadge = data.jenis_kelamin === "L"
+    ? "bg-blue-100 text-blue-700"
+    : data.jenis_kelamin === "P"
+    ? "bg-pink-100 text-pink-700"
+    : "bg-gray-100 text-gray-700";
+
+  const age = data.tanggal_lahir
+    ? Math.floor((Date.now() - new Date(data.tanggal_lahir).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    : null;
+
+  const ttl = data.tanggal_lahir ? `${formatTanggal(data.tanggal_lahir)}` : "—";
+  const alamat = [data.alamat, data.dusun ? `Dusun ${data.dusun}` : null, data.rt || data.rw ? `RT ${data.rt || "?"}/RW ${data.rw || "?"}` : null].filter(Boolean).join(", ") || "—";
+
+  const maskNik = (nik: string | null | undefined) =>
+    nik ? `${nik.slice(0, 6)}${"*".repeat(nik.length - 8)}${nik.slice(-2)}` : null;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali
+        </button>
+
+        {/* Header Card */}
+        <div className="bg-gradient-to-br from-primary/5 via-background to-accent/5 border border-current/15 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 py-6 flex items-start gap-5">
+            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="text-4xl font-bold text-primary/40">{data.nama[0] || "?"}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.nama}</h1>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${jkBadge}`}>{jk}</span>
+                {age !== null && <span className="inline-flex px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Usia {age} tahun</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Info Grid */}
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          <InfoCard icon="calendar" label="Tanggal Lahir" value={ttl} />
+          {maskNik(data.nik_anak) && <InfoCard icon="card" label="NIK Anak" value={maskNik(data.nik_anak)} />}
+          {data.nama_ortu && <InfoCard icon="user" label="Orang Tua / Wali" value={data.nama_ortu} />}
+          {data.dusun && <InfoCard icon="map" label="Dusun" value={data.dusun} />}
+          {(data.rt || data.rw) && <InfoCard icon="mapPin" label="RT / RW" value={`${data.rt || "?"} / ${data.rw || "?"}`} />}
+        </div>
+
+        {/* Alamat Card */}
+        <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm mb-6">
+          <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Alamat Lengkap</h3>
+          <p className="text-sm text-foreground/80 leading-relaxed">{alamat}</p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// BIDANG TANAH DETAIL PAGE
+// =============================================================
+export function BidangTanahDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useBidangTanahById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const luas = data.luas_m2 != null ? `${data.luas_m2.toLocaleString("id-ID")} m²` : "—";
+
+  const maskNik = (nik: string | null) =>
+    nik ? `${nik.slice(0, 6)}${"*".repeat(nik.length - 8)}${nik.slice(-2)}` : null;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali
+        </button>
+
+        {/* Header */}
+        <div className="bg-gradient-to-br from-emerald-50/60 via-background to-emerald-50/30 border border-emerald-200/40 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 py-6">
+            <p className="text-[10px] font-mono font-semibold text-emerald-600 uppercase tracking-wider mb-2">No. Persil #{data.nomor_persil || "—"}</p>
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">Data Bidang Tanah</h1>
+          </div>
+        </div>
+
+        {/* Info Grid */}
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          <InfoCard icon="map" label="Dusun" value={data.dusun || "—"} />
+          <InfoCard icon="area" label="Luas" value={luas} />
+          {data.pemilik_nama && <InfoCard icon="user" label="Nama Pemilik" value={data.pemilik_nama} />}
+          {maskNik(data.pemilik_nik) && <InfoCard icon="card" label="NIK Pemilik" value={maskNik(data.pemilik_nik)} />}
+          {data.penggunaan && <InfoCard icon="activity" label="Penggunaan" value={data.penggunaan} />}
+          {data.status_hak && <InfoCard icon="shield" label="Status Hak" value={data.status_hak} />}
+          {data.nomor_sertifikat && <InfoCard icon="fileText" label="No. Sertifikat" value={data.nomor_sertifikat} />}
+          {data.tanggal_daftar && <InfoCard icon="calendar" label="Tanggal Daftar" value={formatTanggal(data.tanggal_daftar)} />}
+        </div>
+
+        {data.catatan && (
+          <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Catatan</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.catatan}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// INFRASTRUKTUR DETAIL PAGE
+// =============================================================
+export function InfrastrukturDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useInfrastrukturById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const kondisiColor: Record<string, { bg: string; text: string }> = {
+    baik: { bg: "bg-green-100", text: "text-green-700" },
+    "rusak-ringan": { bg: "bg-yellow-100", text: "text-yellow-700" },
+    "rusak-berat": { bg: "bg-red-100", text: "text-red-700" },
+  };
+  const kondisiCfg = kondisiColor[data.kondisi || ""] || { bg: "bg-gray-100", text: "text-gray-700" };
+  const kondisiLabel: Record<string, string> = {
+    baik: "Baik", "rusak-ringan": "Rusak Ringan", "rusak-berat": "Rusak Berat",
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali
+        </button>
+
+        <div className="bg-gradient-to-br from-violet-50/60 via-background to-violet-50/30 border border-violet-200/40 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 py-6 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-mono font-semibold text-violet-600 uppercase tracking-wider mb-2">{data.jenis || "Infrastruktur"}</p>
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.nama || "—"}</h1>
+            </div>
+            <span className={`inline-flex px-3 py-1.5 rounded-full text-xs font-bold shrink-0 ${kondisiCfg.bg} ${kondisiCfg.text}`}>
+              {kondisiLabel[data.kondisi || ""] || data.kondisi || "—"}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          {data.dusun && <InfoCard icon="map" label="Dusun" value={data.dusun} />}
+          {data.tahun_bangun && <InfoCard icon="calendar" label="Tahun Bangun" value={String(data.tahun_bangun)} />}
+          {data.tahun_perbaikan && <InfoCard icon="tool" label="Tahun Perbaikan" value={String(data.tahun_perbaikan)} />}
+          {data.volume && <InfoCard icon="box" label="Volume" value={data.volume} />}
+          {data.sumber_dana && <InfoCard icon="wallet" label="Sumber Dana" value={data.sumber_dana} />}
+        </div>
+
+        {data.keterangan && (
+          <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Keterangan</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.keterangan}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// BENCANA DETAIL PAGE
+// =============================================================
+export function BencanaDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useBencanaById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const severityColor: Record<string, { bg: string; text: string }> = {
+    ringan: { bg: "bg-green-100", text: "text-green-700" },
+    sedang: { bg: "bg-yellow-100", text: "text-yellow-700" },
+    berat: { bg: "bg-orange-100", text: "text-orange-700" },
+    kritis: { bg: "bg-red-100", text: "text-red-700" },
+  };
+  const severityCfg = severityColor[data.severity || ""] || { bg: "bg-gray-100", text: "text-gray-700" };
+  const statusColor: Record<string, { bg: string; text: string }> = {
+    aktif: { bg: "bg-red-100", text: "text-red-700" },
+    ditangani: { bg: "bg-blue-100", text: "text-blue-700" },
+    selesai: { bg: "bg-green-100", text: "text-green-700" },
+  };
+  const statusCfg = statusColor[data.status || ""] || { bg: "bg-gray-100", text: "text-gray-700" };
+
+  const fmtRupiah = (n: number | null) =>
+    n != null ? `Rp ${n.toLocaleString("id-ID")}` : "—";
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Kejadian Bencana
+        </button>
+
+        <div className="bg-gradient-to-br from-orange-50/60 via-background to-red-50/30 border border-orange-200/50 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 py-6 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-mono font-semibold text-orange-600 uppercase tracking-wider mb-2">{data.jenis || "Bencana"}</p>
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.lokasi || "—"}</h1>
+              {data.tanggal && <p className="text-sm text-foreground/50 mt-1">{formatTanggal(data.tanggal)}</p>}
+            </div>
+            <div className="flex flex-col gap-2 items-end">
+              <span className={`inline-flex px-3 py-1.5 rounded-full text-xs font-bold ${severityCfg.bg} ${severityCfg.text}`}>{data.severity || "—"}</span>
+              <span className={`inline-flex px-3 py-1.5 rounded-full text-xs font-bold ${statusCfg.bg} ${statusCfg.text}`}>{data.status || "—"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Impact Stats */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="bg-background border border-current/15 rounded-xl p-4 text-center shadow-sm">
+            <p className="text-2xl font-bold text-red-600">{data.korban_jiwa ?? 0}</p>
+            <p className="text-[10px] uppercase tracking-wider text-foreground/40 mt-1">Korban Jiwa</p>
+          </div>
+          <div className="bg-background border border-current/15 rounded-xl p-4 text-center shadow-sm">
+            <p className="text-2xl font-bold text-orange-600">{data.pengungsi ?? 0}</p>
+            <p className="text-[10px] uppercase tracking-wider text-foreground/40 mt-1">Pengungsi</p>
+          </div>
+          <div className="bg-background border border-current/15 rounded-xl p-4 text-center shadow-sm">
+            <p className="text-2xl font-bold text-foreground/60">{data.kerugian_rp ? fmtRupiah(data.kerugian_rp).replace("Rp ", "") : "—"}</p>
+            <p className="text-[10px] uppercase tracking-wider text-foreground/40 mt-1">Kerugian</p>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          {data.dusun && <InfoCard icon="map" label="Dusun" value={data.dusun} />}
+        </div>
+
+        {data.deskripsi && (
+          <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm mb-4">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi Kejadian</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.deskripsi}</p>
+          </div>
+        )}
+
+        {data.penanganan && (
+          <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Penanganan</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.penanganan}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// USULAN WARGA DETAIL PAGE
+// =============================================================
+export function UsulanWargaDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useUsulanWargaById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const statusColor: Record<string, { bg: string; text: string }> = {
+    verifikasi: { bg: "bg-purple-100", text: "text-purple-700" },
+    ditindaklanjuti: { bg: "bg-blue-100", text: "text-blue-700" },
+    selesai: { bg: "bg-green-100", text: "text-green-700" },
+    ditolak: { bg: "bg-red-100", text: "text-red-700" },
+  };
+  const statusCfg = statusColor[data.status || ""] || { bg: "bg-gray-100", text: "text-gray-700" };
+  const statusLabel: Record<string, string> = {
+    verifikasi: "Diverifikasi", ditindaklanjuti: "Ditindaklanjuti", selesai: "Selesai", ditolak: "Ditolak",
+  };
+
+  const fotoUrl = data.foto_url
+    ? supabase.storage.from("seruni-media").getPublicUrl(data.foto_url).data.publicUrl
+    : null;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Usulan Warga
+        </button>
+
+        {/* Header */}
+        <div className="bg-gradient-to-br from-teal-50/60 via-background to-teal-50/30 border border-teal-200/40 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 pt-6 pb-5">
+            {data.nomor_tiket && <p className="text-[10px] font-mono font-semibold text-teal-600 uppercase tracking-wider mb-2">Tiket #{data.nomor_tiket}</p>}
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.judul || "—"}</h1>
+          </div>
+          <div className="px-6 pb-5 flex flex-wrap gap-3">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${statusCfg.bg} ${statusCfg.text}`}>
+              {statusCfg.dot && <span className="w-2 h-2 rounded-full bg-current" />}
+              {statusLabel[data.status || ""] || data.status || "—"}
+            </span>
+            {data.kategori && <span className="inline-flex px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">{data.kategori}</span>}
+            {data.dusun && <span className="inline-flex px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">Dusun {data.dusun}</span>}
+          </div>
+        </div>
+
+        {/* Vote count */}
+        <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm mb-6 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-6 h-6 text-teal-600"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" /></svg>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-foreground">{data.vote_count ?? 0}</p>
+            <p className="text-xs text-foreground/50">Dukungan warga</p>
+          </div>
+        </div>
+
+        {/* Foto */}
+        {fotoUrl && (
+          <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-6">
+            <img src={fotoUrl} alt={data.judul || ""} className="w-full aspect-video object-cover" />
+          </div>
+        )}
+
+        {/* Info */}
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          {data.nama && <InfoCard icon="user" label="Pengusul" value={data.nama} />}
+          {data.lokasi && <InfoCard icon="mapPin" label="Lokasi" value={data.lokasi} />}
+          {data.created_at && <InfoCard icon="calendar" label="Diajukan" value={formatTanggal(data.created_at)} />}
+        </div>
+
+        {/* Deskripsi */}
+        {data.deskripsi && (
+          <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm mb-4">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{data.deskripsi}</p>
+          </div>
+        )}
+
+        {/* Tanggapan */}
+        {data.tanggapan && (
+          <div className="bg-teal-50/40 border border-teal-200/40 rounded-xl p-5 shadow-sm">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-teal-700 mb-3">Tanggapan Pemerintah Desa</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{data.tanggapan}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// VOTING TOPIK DETAIL PAGE
+// =============================================================
+export function VotingTopikDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useVotingTopikById(id);
+  const opsi = useVotingOpsi(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const totalSuara = opsi.rows.reduce((sum, o) => sum + (o.jumlah_suara || 0), 0);
+
+  const statusColor: Record<string, { bg: string; text: string }> = {
+    aktif: { bg: "bg-green-100", text: "text-green-700" },
+    selesai: { bg: "bg-gray-100", text: "text-gray-700" },
+    draft: { bg: "bg-yellow-100", text: "text-yellow-700" },
+  };
+  const statusCfg = statusColor[data.status || ""] || { bg: "bg-gray-100", text: "text-gray-700" };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Voting
+        </button>
+
+        {/* Header */}
+        <div className="bg-gradient-to-br from-indigo-50/60 via-background to-indigo-50/30 border border-indigo-200/40 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 py-6">
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.judul || "—"}</h1>
+              <span className={`inline-flex px-3 py-1.5 rounded-full text-xs font-bold shrink-0 ${statusCfg.bg} ${statusCfg.text}`}>{data.status || "—"}</span>
+            </div>
+            {data.deskripsi && <p className="text-sm text-foreground/60 leading-relaxed mb-4">{data.deskripsi}</p>}
+            <div className="flex flex-wrap gap-4 text-sm text-foreground/50">
+              {data.mulai && <span>Dimulai: {formatTanggal(data.mulai)}</span>}
+              {data.selesai && <span>Berakhir: {formatTanggal(data.selesai)}</span>}
+              {data.single_choice != null && <span>{data.single_choice ? "Satu pilihan" : "Pilihan jamak"}</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Total suara */}
+        <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm mb-6 text-center">
+          <p className="text-4xl font-bold text-indigo-600">{totalSuara}</p>
+          <p className="text-xs uppercase tracking-wider text-foreground/40 mt-1">Total Suara Masuk</p>
+        </div>
+
+        {/* Opsi chart */}
+        <div className="space-y-3">
+          {opsi.rows.map((o) => {
+            const pct = totalSuara > 0 ? Math.round(((o.jumlah_suara || 0) / totalSuara) * 100) : 0;
+            return (
+              <div key={o.id} className="bg-background border border-current/15 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="font-medium text-sm text-foreground">{o.label}</p>
+                    {o.deskripsi && <p className="text-xs text-foreground/50 mt-0.5">{o.deskripsi}</p>}
+                  </div>
+                  <span className="text-sm font-bold text-foreground/70">{o.jumlah_suara || 0} suara ({pct}%)</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// PBB TAGIHAN DETAIL PAGE
+// =============================================================
+export function PbbDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = usePbbTagihanById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const fmtRupiah = (n: number | null) =>
+    n != null ? `Rp ${n.toLocaleString("id-ID")}` : "—";
+
+  const lunasBadge = data.status_bayar === "lunas"
+    ? "bg-green-100 text-green-700"
+    : "bg-red-100 text-red-700";
+  const lunasLabel = data.status_bayar === "lunas" ? "Lunas" : "Belum Lunas";
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke PBB
+        </button>
+
+        <div className="bg-gradient-to-br from-amber-50/60 via-background to-amber-50/30 border border-amber-200/40 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 py-6 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-mono font-semibold text-amber-600 uppercase tracking-wider mb-2">PBB — Tahun {data.tahun || "—"}</p>
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.nama_wp || "—"}</h1>
+              {data.NOP && <p className="text-xs text-foreground/40 mt-1 font-mono">NOP: {data.NOP}</p>}
+            </div>
+            <span className={`inline-flex px-3 py-1.5 rounded-full text-xs font-bold shrink-0 ${lunasBadge}`}>{lunasLabel}</span>
+          </div>
+        </div>
+
+        {/* NJOP Summary */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+          <div className="bg-background border border-current/15 rounded-xl p-4 text-center shadow-sm">
+            <p className="text-xs text-foreground/50 uppercase tracking-wider">NJOP Tanah</p>
+            <p className="text-lg font-bold text-foreground mt-1">{fmtRupiah(data.NJOP_tanah)}</p>
+          </div>
+          <div className="bg-background border border-current/15 rounded-xl p-4 text-center shadow-sm">
+            <p className="text-xs text-foreground/50 uppercase tracking-wider">NJOP Bangunan</p>
+            <p className="text-lg font-bold text-foreground mt-1">{fmtRupiah(data.NJOP_bangunan)}</p>
+          </div>
+          <div className="bg-amber-50/60 border border-amber-200/40 rounded-xl p-4 text-center shadow-sm sm:col-span-1 col-span-2">
+            <p className="text-xs text-amber-700 uppercase tracking-wider">PBB Terutang</p>
+            <p className="text-xl font-bold text-amber-700 mt-1">{fmtRupiah(data.PBB_terutang)}</p>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          {data.letak_objek && <InfoCard icon="mapPin" label="Letak Objek" value={data.letak_objek} />}
+          {data.alamat_wp && <InfoCard icon="home" label="Alamat WP" value={data.alamat_wp} />}
+          {data.luas_tanah != null && <InfoCard icon="area" label="Luas Tanah" value={`${data.luas_tanah} m²`} />}
+          {data.luas_bangunan != null && <InfoCard icon="box" label="Luas Bangunan" value={`${data.luas_bangunan} m²`} />}
+          {data.kelas_tanah && <InfoCard icon="layers" label="Kelas Tanah" value={data.kelas_tanah} />}
+          {data.kelas_bangunan && <InfoCard icon="building" label="Kelas Bangunan" value={data.kelas_bangunan} />}
+          {data.NJOP_total != null && <InfoCard icon="calculator" label="NJOP Total" value={fmtRupiah(data.NJOP_total)} />}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// SURAT TERBIT DETAIL PAGE
+// =============================================================
+export function SuratTerbitDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useSuratTerbitById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const maskNik = (nik: string | null) =>
+    nik ? `${nik.slice(0, 6)}${"*".repeat(nik.length - 8)}${nik.slice(-2)}` : "—";
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Daftar Surat
+        </button>
+
+        <div className="bg-gradient-to-br from-slate-50/60 via-background to-slate-50/30 border border-slate-200/40 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 py-6 flex items-start gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8 text-slate-400"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+            </div>
+            <div>
+              <p className="text-[10px] font-mono font-semibold text-slate-500 uppercase tracking-wider mb-2">{data.nomor_surat || "—"}</p>
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">Surat Terbit</h1>
+              {data.tanggal_terbit && <p className="text-sm text-foreground/50 mt-1">Tanggal: {formatTanggal(data.tanggal_terbit)}</p>}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          {data.nama && <InfoCard icon="user" label="Nama" value={data.nama} />}
+          {data.nik && <InfoCard icon="card" label="NIK" value={maskNik(data.nik)} />}
+          {data.status && <InfoCard icon="checkCircle" label="Status" value={data.status} />}
+          {data.keperluan && <InfoCard icon="fileText" label="Keperluan" value={data.keperluan} className="sm:col-span-2" />}
+        </div>
+
+        {/* Tanda Tangan */}
+        {(data.ttd_nama || data.ttd_oleh) && (
+          <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm mb-6">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-4">Tanda Tangan</h3>
+            <div className="space-y-2">
+              {data.ttd_oleh && <div><p className="text-xs text-foreground/40">Jabatan</p><p className="text-sm font-medium">{data.ttd_oleh}</p></div>}
+              {data.ttd_nama && <div><p className="text-xs text-foreground/40">Nama</p><p className="text-sm font-medium">{data.ttd_nama}</p></div>}
+              {data.ttd_nip && <div><p className="text-xs text-foreground/40">NIP</p><p className="text-sm font-medium">{data.ttd_nip}</p></div>}
+            </div>
+          </div>
+        )}
+
+        {/* Preview */}
+        {data.preview_url && (
+          <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm">
+            <div className="px-5 py-3 border-b border-current/10">
+              <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">Preview Surat</p>
+            </div>
+            <iframe src={data.preview_url} className="w-full aspect-[3/4] border-0" title="Preview Surat" />
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// RPJMDes BIDANG DETAIL PAGE
+// =============================================================
+export function RpjmdesBidangDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useRpjmdesBidangById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke RPJMDes
+        </button>
+
+        <div className="bg-gradient-to-br from-cyan-50/60 via-background to-cyan-50/30 border border-cyan-200/40 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 py-6 flex items-start gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-cyan-100 flex items-center justify-center shrink-0">
+              <span className="text-2xl font-bold text-cyan-600">{data.kode || "?"}</span>
+            </div>
+            <div>
+              <p className="text-[10px] font-mono font-semibold text-cyan-600 uppercase tracking-wider mb-2">Bidang {data.kode}</p>
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.nama || "—"}</h1>
+            </div>
+          </div>
+        </div>
+
+        {data.deskripsi && (
+          <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
+            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Deskripsi</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.deskripsi}</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// RPJMDes PROGRAM DETAIL PAGE
+// =============================================================
+export function RpjmdesProgramDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useRpjmdesProgramById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const fmtRupiah = (n: number) => `Rp ${n.toLocaleString("id-ID")}`;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke Program
+        </button>
+
+        <div className="bg-gradient-to-br from-emerald-50/60 via-background to-emerald-50/30 border border-emerald-200/40 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 py-6">
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.nama || "—"}</h1>
+            {data.indikator && <p className="text-sm text-foreground/60 mt-2">Indikator: {data.indikator}</p>}
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          <div className="bg-emerald-50/60 border border-emerald-200/40 rounded-xl p-5 text-center shadow-sm">
+            <p className="text-2xl font-bold text-emerald-700">{fmtRupiah(data.anggaran_indikatif)}</p>
+            <p className="text-xs uppercase tracking-wider text-emerald-600 mt-1">Anggaran Indikatif</p>
+          </div>
+          {data.sumber_dana && <InfoCard icon="wallet" label="Sumber Dana" value={data.sumber_dana} />}
+          {data.target && <InfoCard icon="target" label="Target" value={data.target} />}
+          {(data.tahun_mulai || data.tahun_selesai) && (
+            <InfoCard icon="calendar" label="Periode" value={`${data.tahun_mulai || "?"} - ${data.tahun_selesai || "?"}`} />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// RKPDes KEGIATAN DETAIL PAGE
+// =============================================================
+export function RkpdesKegiatanDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useRkpdesKegiatanById(id);
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const fmtRupiah = (n: number) => `Rp ${n.toLocaleString("id-ID")}`;
+  const progres = data.progress_pct || 0;
+
+  const statusColor: Record<string, { bg: string; text: string }> = {
+    "Belum Terlaksana": { bg: "bg-gray-100", text: "text-gray-700" },
+    "Sedang Terlaksana": { bg: "bg-blue-100", text: "text-blue-700" },
+    "Terlaksana": { bg: "bg-green-100", text: "text-green-700" },
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali ke RKPDes
+        </button>
+
+        <div className="bg-gradient-to-br from-fuchsia-50/60 via-background to-fuchsia-50/30 border border-fuchsia-200/40 rounded-2xl overflow-hidden mb-6">
+          <div className="px-6 py-6">
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.nama || "—"}</h1>
+            <div className="flex flex-wrap gap-3 mt-3">
+              {data.lokasi && <span className="text-sm text-foreground/50">{data.lokasi}</span>}
+              {data.volume && <span className="text-sm text-foreground/50">{data.volume} {data.satuan}</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-foreground/50">Progress Fisik</p>
+            <span className="text-sm font-bold text-foreground">{progres}%</span>
+          </div>
+          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-fuchsia-500 rounded-full transition-all duration-700" style={{ width: `${progres}%` }} />
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          <div className="bg-fuchsia-50/60 border border-fuchsia-200/40 rounded-xl p-5 text-center shadow-sm">
+            <p className="text-2xl font-bold text-fuchsia-700">{fmtRupiah(data.anggaran)}</p>
+            <p className="text-xs uppercase tracking-wider text-fuchsia-600 mt-1">Anggaran</p>
+          </div>
+          {data.sumber_dana && <InfoCard icon="wallet" label="Sumber Dana" value={data.sumber_dana} />}
+          {data.dusun && <InfoCard icon="map" label="Dusun" value={data.dusun} />}
+          {data.pelaksana && <InfoCard icon="users" label="Pelaksana" value={data.pelaksana} />}
+          {data.waktu && <InfoCard icon="clock" label="Waktu" value={data.waktu} />}
+          {data.status_realisasi && <InfoCard icon="checkCircle" label="Status" value={data.status_realisasi} />}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// =============================================================
+// BALITA LIST PAGE (klik nama → detail)
+// =============================================================
+export function BalitaPage() {
+  const { data: balitaList } = useBalita();
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <button onClick={() => window.history.back()} className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali
+        </button>
+        <h1 className="font-display text-3xl font-semibold text-foreground mb-6">Data Balita</h1>
+        {balitaList && balitaList.length > 0 ? (
+          <div className="space-y-3">
+            {balitaList.map((b) => {
+              const age = b.tanggal_lahir ? Math.floor((Date.now() - new Date(b.tanggal_lahir).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
+              return (
+                <Link key={b.id} to={`/balita/${b.id}`} className="block bg-background border border-current/15 rounded-xl p-4 hover:border-accent transition-colors shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                      <span className="text-xl font-bold text-amber-600">{b.nama[0]}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground">{b.nama}</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${b.jenis_kelamin === "L" ? "bg-blue-100 text-blue-700" : "bg-pink-100 text-pink-700"}`}>{b.jenis_kelamin === "L" ? "Laki-laki" : "Perempuan"}</span>
+                        {age !== null && <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-600">{age} tahun</span>}
+                        {b.dusun && <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600">Dusun {b.dusun}</span>}
+                      </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-foreground/20 shrink-0"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-center text-foreground/40 py-12">Belum ada data balita.</p>
+        )}
+      </main>
+    </div>
+  );
+}
+
 export function NotFoundPage() {
   return (
     <EditorialLayout
-        
+
       >
       <SectionWrap>
         <Link to="/" className={btnPrimary}>Kembali ke Beranda</Link>

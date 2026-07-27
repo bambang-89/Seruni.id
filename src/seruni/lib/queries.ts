@@ -1420,6 +1420,278 @@ export function useSuratAjuanList() {
 // ===================== ById Query Hooks (detail pages) =====================
 // Each hook fetches ONE row by UUID primary key. Used by detail/view pages.
 
+// Balita
+export type BalitaDetail = {
+  id: string;
+  nama: string;
+  tanggal_lahir: string;
+  jenis_kelamin: string;
+  nik_anak?: string | null;
+  nama_ortu?: string | null;
+  dusun: string | null;
+  rt: string | null;
+  rw: string | null;
+  alamat: string | null;
+  orang_tua_penduduk_id: string | null;
+};
+export function useBalitaById(id?: string) {
+  const [data, setData] = useState<BalitaDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("balita").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => { setData((r as unknown as BalitaDetail) || null); setLoading(false); });
+  }, [id]);
+  return { data, loading };
+}
+
+// Bidang Tanah
+export type BidangTanahDetail = {
+  id: string;
+  nomor_persil: string | null;
+  pemilik_nama: string | null;
+  pemilik_nik: string | null;
+  dusun: string | null;
+  luas_m2: number | null;
+  penggunaan: string | null;
+  status_hak: string | null;
+  nomor_sertifikat: string | null;
+  tanggal_daftar: string | null;
+  catatan: string | null;
+};
+export function useBidangTanahById(id?: string) {
+  const [data, setData] = useState<BidangTanahDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("bidang_tanah").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => {
+        setData((r ? { ...r, luas_m2: Number((r as Record<string, unknown>)['luas_m2'] ?? 0) } : null) as unknown as BidangTanahDetail | null);
+        setLoading(false);
+      });
+  }, [id]);
+  return { data, loading };
+}
+
+// Infrastruktur
+export type InfrastrukturDetail = {
+  id: string;
+  nama: string | null;
+  jenis: string | null;
+  dusun: string | null;
+  kondisi: string | null;
+  tahun_bangun: number | null;
+  tahun_perbaikan: number | null;
+  volume: string | null;
+  sumber_dana: string | null;
+  keterangan: string | null;
+};
+export function useInfrastrukturById(id?: string) {
+  const [data, setData] = useState<InfrastrukturDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("infrastruktur").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => { setData((r as unknown as InfrastrukturDetail) || null); setLoading(false); });
+  }, [id]);
+  return { data, loading };
+}
+
+// Bencana
+export type BencanaDetail = {
+  id: string;
+  jenis: string | null;
+  lokasi: string | null;
+  dusun: string | null;
+  tanggal: string | null;
+  severity: string | null;
+  status: string | null;
+  korban_jiwa: number | null;
+  pengungsi: number | null;
+  kerugian_rp: number | null;
+  deskripsi: string | null;
+  penanganan: string | null;
+};
+export function useBencanaById(id?: string) {
+  const [data, setData] = useState<BencanaDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("bencana_kejadian").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => {
+        setData(r ? { ...r, korban_jiwa: Number(r.korban_jiwa ?? 0), pengungsi: Number(r.pengungsi ?? 0), kerugian_rp: Number(r.kerugian_rp ?? 0) } as unknown as BencanaDetail : null);
+        setLoading(false);
+      });
+  }, [id]);
+  return { data, loading };
+}
+
+// Usulan Warga
+export type UsulanWargaDetail = {
+  id: string;
+  nomor_tiket: string | null;
+  nama: string | null;
+  kontak: string | null;
+  dusun: string | null;
+  kategori: string | null;
+  judul: string | null;
+  deskripsi: string | null;
+  lokasi: string | null;
+  foto_url: string | null;
+  status: string | null;
+  tanggapan: string | null;
+  vote_count: number | null;
+  created_at: string | null;
+};
+export function useUsulanWargaById(id?: string) {
+  const [data, setData] = useState<UsulanWargaDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("usulan_warga").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => { setData((r as unknown as UsulanWargaDetail) || null); setLoading(false); });
+  }, [id]);
+  return { data, loading };
+}
+
+// Voting Topik (full detail with opsi)
+export type VotingTopikDetail = {
+  id: string;
+  judul: string | null;
+  deskripsi: string | null;
+  mulai: string | null;
+  selesai: string | null;
+  single_choice: boolean | null;
+  status: string | null;
+  published: boolean | null;
+  total_suara: number | null;
+};
+export function useVotingTopikById(id?: string) {
+  const [data, setData] = useState<VotingTopikDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("voting_topik").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => { setData((r as unknown as VotingTopikDetail) || null); setLoading(false); });
+  }, [id]);
+  return { data, loading };
+}
+
+// PBB Tagihan
+export type PbbTagihanDetail = {
+  id: string;
+  tahun: number | null;
+  NOP: string | null;
+  nama_wp: string | null;
+  alamat_wp: string | null;
+  letak_objek: string | null;
+  luas_tanah: number | null;
+  luas_bangunan: number | null;
+  kelas_tanah: string | null;
+  kelas_bangunan: string | null;
+  NJOP_tanah: number | null;
+  NJOP_bangunan: number | null;
+  NJOP_total: number | null;
+  PBB_terutang: number | null;
+  status_bayar: string | null;
+};
+export function usePbbTagihanById(id?: string) {
+  const [data, setData] = useState<PbbTagihanDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("pbb_tagihan").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => {
+        if (r) {
+          const rec = r as Record<string, unknown>;
+          setData({
+            ...r,
+            tahun: rec.tahun as number | null,
+            luas_tanah: Number(rec.luas_tanah ?? 0),
+            luas_bangunan: Number(rec.luas_bangunan ?? 0),
+            NJOP_tanah: Number(rec.NJOP_tanah ?? 0),
+            NJOP_bangunan: Number(rec.NJOP_bangunan ?? 0),
+            NJOP_total: Number(rec.NJOP_total ?? 0),
+            PBB_terutang: Number(rec.PBB_terutang ?? 0),
+          } as unknown as PbbTagihanDetail);
+        } else { setData(null); }
+        setLoading(false);
+      });
+  }, [id]);
+  return { data, loading };
+}
+
+// Surat Terbit
+export type SuratTerbitDetail = {
+  id: string;
+  nomor_surat: string | null;
+  jenis_surat_id: string | null;
+  nik: string | null;
+  nama: string | null;
+  tanggal_terbit: string | null;
+  keperluan: string | null;
+  status: string | null;
+  preview_url: string | null;
+  qr_code_url?: string | null;
+  ttd_oleh?: string | null;
+  ttd_nama?: string | null;
+  ttd_nip?: string | null;
+};
+export function useSuratTerbitById(id?: string) {
+  const [data, setData] = useState<SuratTerbitDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("surat_terbit").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => { setData((r as unknown as SuratTerbitDetail) || null); setLoading(false); });
+  }, [id]);
+  return { data, loading };
+}
+
+// RPJMDes Bidang
+export function useRpjmdesBidangById(id?: string) {
+  const [data, setData] = useState<RpjmdesBidang | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("rpjmdes_bidang").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => { setData((r as unknown as RpjmdesBidang) || null); setLoading(false); });
+  }, [id]);
+  return { data, loading };
+}
+
+// RPJMDes Program
+export function useRpjmdesProgramById(id?: string) {
+  const [data, setData] = useState<RpjmdesProgram | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("rpjmdes_program").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => {
+        if (r) setData({ ...r, anggaran_indikatif: Number(r.anggaran_indikatif ?? 0) } as unknown as RpjmdesProgram);
+        else setData(null);
+        setLoading(false);
+      });
+  }, [id]);
+  return { data, loading };
+}
+
+// RKPDes Kegiatan
+export function useRkpdesKegiatanById(id?: string) {
+  const [data, setData] = useState<RkpdesKegiatan | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("rkpdes_kegiatan").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => {
+        if (r) setData({ ...r, anggaran: Number(r.anggaran ?? 0), progress_pct: Number(r.progress_pct ?? 0) } as unknown as RkpdesKegiatan);
+        else setData(null);
+        setLoading(false);
+      });
+  }, [id]);
+  return { data, loading };
+}
+
 export function useAgendaById(id?: string) {
   const [data, setData] = useState<Agenda | null>(null);
   const [loading, setLoading] = useState(true);
