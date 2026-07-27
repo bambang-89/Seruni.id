@@ -166,6 +166,8 @@ const PembangunanDetailPage = lazy(() => P().then((m) => ({ default: m.Pembangun
 const BansosDetailPage = lazy(() => P().then((m) => ({ default: m.BansosDetailPage })));
 const AduanDetailPage = lazy(() => P().then((m) => ({ default: m.AduanDetailPage })));
 const IdmIndikatorDetailPage = lazy(() => P().then((m) => ({ default: m.IdmIndikatorDetailPage })));
+const PendudukDetailPage = lazy(() => P().then((m) => ({ default: m.PendudukDetailPage })));
+const KeluargaDetailPage = lazy(() => P().then((m) => ({ default: m.KeluargaDetailPage })));
 
 // Phase 11 — Perencanaan & Partisipasi
 const PP = () => import("./seruni/PartisipasiPages");
@@ -323,6 +325,8 @@ export default function App() {
             <Route path="bansos/:id" element={<BansosDetailPage />} />
             <Route path="aduan/:id" element={<AduanDetailPage />} />
             <Route path="idm-detail/:id" element={<IdmIndikatorDetailPage />} />
+            <Route path="penduduk/:id" element={<PendudukDetailPage />} />
+            <Route path="keluarga/:id" element={<KeluargaDetailPage />} />
           </Route>
         </Routes>
         </Suspense>

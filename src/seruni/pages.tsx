@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "./lib/tenant";
@@ -54,6 +54,8 @@ import {
   useAduanById,
   useIdmIndikatorById,
   useAutofillPenduduk,
+  usePendudukById,
+  useKeluargaById,
   Galeri,
   PotensiUmkm,
   PotensiWisata,
@@ -3627,6 +3629,277 @@ export function BansosDetailPage() {
               </button>
             </div>
           )}
+        </div>
+
+      </main>
+    </div>
+  );
+}
+
+// ============================ Penduduk Detail ============================
+
+export function PendudukDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = usePendudukById(id);
+  const { data: keluarga } = useKeluargaById(data?.keluarga_id);
+  const navigate = useNavigate();
+
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  const jk = data.jenis_kelamin === "L" ? "Laki-laki" : data.jenis_kelamin === "P" ? "Perempuan" : "—";
+  const jkBadge = data.jenis_kelamin === "L"
+    ? "bg-blue-100 text-blue-700"
+    : data.jenis_kelamin === "P"
+    ? "bg-pink-100 text-pink-700"
+    : "bg-gray-100 text-gray-700";
+
+  const statusBadge = {
+    hidup: "bg-green-100 text-green-700",
+    meninggal: "bg-red-100 text-red-700",
+    pindah: "bg-yellow-100 text-yellow-700",
+  }[data.status_hidup || ""] || "bg-gray-100 text-gray-700";
+
+  const maskNik = (nik: string | null) =>
+    nik ? `${nik.slice(0, 6)}${"*".repeat(nik.length - 8)}${nik.slice(-2)}` : "—";
+
+  const fmtTtl = `${data.tempat_lahir || ""}${data.tanggal_lahir ? `, ${formatTanggal(data.tanggal_lahir)}` : ""}`;
+
+  const fotoUrl = data.foto_url
+    ? supabase.storage.from("seruni-media").getPublicUrl(data.foto_url).data.publicUrl
+    : null;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
+        {/* Back */}
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali
+        </button>
+
+        {/* Header */}
+        <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm mb-6">
+          <div className="px-6 pt-6 pb-5 flex items-start gap-5">
+            {/* Avatar */}
+            <div className="shrink-0">
+              {fotoUrl ? (
+                <img src={fotoUrl} alt={data.nama || ""} className="w-20 h-20 rounded-xl object-cover" />
+              ) : (
+                <div className="w-20 h-20 rounded-xl bg-foreground/5 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-10 h-10 text-foreground/20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" /></svg>
+                </div>
+              )}
+            </div>
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.nama || "—"}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold ${jkBadge}`}>{jk}</span>
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold ${statusBadge}`}>{data.status_hidup === "hidup" ? "Aktif" : data.status_hidup === "meninggal" ? "Meninggal" : "Pindah"}</span>
+                {data.status_hidup !== "hidup" && (
+                  <span className="text-[10px] text-foreground/40 italic">Data ini menandakan penduduk sudah tidak berdomisili aktif</span>
+                )}
+              </div>
+              {fmtTtl !== "," && <p className="mt-2 text-sm text-foreground/60">{fmtTtl}</p>}
+            </div>
+          </div>
+
+          {/* Quick info grid */}
+          <div className="px-6 pb-5 border-t border-current/10 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5">
+            {[
+              { label: "NIK", value: maskNik(data.nik) },
+              { label: "Agama", value: data.agama || "—" },
+              { label: "Pendidikan", value: data.pendidikan || "—" },
+              { label: "Pekerjaan", value: data.pekerjaan || "—" },
+            ].map((item) => (
+              <div key={item.label}>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">{item.label}</p>
+                <p className="text-sm font-medium text-foreground">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Detail cards */}
+        <div className="space-y-4">
+          {/* Alamat */}
+          <div className="bg-background border border-current/15 rounded-xl p-5">
+            <h3 className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-3">Alamat</h3>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.alamat || "—"}</p>
+            {(data.dusun || data.rt || data.rw) && (
+              <p className="mt-2 text-sm text-foreground/60">
+                {data.dusun && `Dusun ${data.dusun}`}
+                {data.rt && ` · RT ${data.rt}`}
+                {data.rw && ` / RW ${data.rw}`}
+              </p>
+            )}
+          </div>
+
+          {/* Keluarga */}
+          <div className="bg-background border border-current/15 rounded-xl p-5">
+            <h3 className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-3">Kartu Keluarga</h3>
+            {keluarga ? (
+              <div>
+                <p className="text-sm font-semibold text-foreground">No. KK: <span className="font-mono font-normal">{keluarga.no_kk || "—"}</span></p>
+                <p className="mt-1 text-sm text-foreground/70">Kepala Keluarga: {keluarga.kepala_nama || "—"}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {[
+                    { label: "Hubungan", value: data.hubungan_kk || "—" },
+                    { label: "Status Kawin", value: data.status_kawin || "—" },
+                  ].map((item) => (
+                    <div key={item.label} className="bg-foreground/5 rounded-lg px-3 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">{item.label}</p>
+                      <p className="text-sm font-medium text-foreground">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-foreground/40 italic">Data keluarga tidak tersedia.</p>
+            )}
+          </div>
+
+          {/* BPJS */}
+          {(data.bpjs_status || data.bpjs_nomor) && (
+            <div className="bg-background border border-current/15 rounded-xl p-5">
+              <h3 className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-3">BPJS Kesehatan</h3>
+              <div className="flex flex-wrap gap-2">
+                {data.bpjs_status && (
+                  <div className="bg-foreground/5 rounded-lg px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Status</p>
+                    <p className="text-sm font-medium text-foreground">{data.bpjs_status}</p>
+                  </div>
+                )}
+                {data.bpjs_nomor && (
+                  <div className="bg-foreground/5 rounded-lg px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">No. Peserta</p>
+                    <p className="text-sm font-mono font-medium text-foreground">{data.bpjs_nomor}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Catatan */}
+          {data.catatan && (
+            <div className="bg-background border border-current/15 rounded-xl p-5">
+              <h3 className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-3">Catatan</h3>
+              <p className="text-sm text-foreground/70 leading-relaxed">{data.catatan}</p>
+            </div>
+          )}
+        </div>
+
+      </main>
+    </div>
+  );
+}
+
+// ============================ Keluarga Detail ============================
+
+export function KeluargaDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, loading: isLoading } = useKeluargaById(id);
+  const [anggota, setAnggota] = useState<any[]>([]);
+  const [loadingAnggota, setLoadingAnggota] = useState(false);
+
+  useEffect(() => {
+    if (!data?.id) return;
+    setLoadingAnggota(true);
+    supabase.from("penduduk").select("*").eq("keluarga_id", data.id).order("created_at")
+      .then(({ data: r }) => { setAnggota(r || []); setLoadingAnggota(false); });
+  }, [data?.id]);
+
+  if (isLoading) return <LoadingState />;
+  if (!data) return <NotFoundState />;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
+        {/* Back */}
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
+          Kembali
+        </button>
+
+        {/* Header */}
+        <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm mb-6">
+          <div className="px-6 pt-6 pb-5 border-b border-current/10">
+            <p className="text-[10px] font-mono font-semibold text-foreground/40 uppercase tracking-wider mb-1">Kartu Keluarga</p>
+            <h1 className="font-display text-xl sm:text-2xl font-semibold text-foreground">
+              No. {data.no_kk || "—"}
+            </h1>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold ${data.status_kk === "aktif" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+                {data.status_kk === "aktif" ? "Aktif" : "Nonaktif"}
+              </span>
+            </div>
+          </div>
+
+          {/* Info grid */}
+          <div className="px-6 py-5 grid sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Kepala Keluarga</p>
+              <p className="text-sm font-medium text-foreground">{data.kepala_nama || "—"}</p>
+            </div>
+            {data.alamat && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Alamat</p>
+                <p className="text-sm text-foreground/70">{data.alamat}</p>
+              </div>
+            )}
+            {(data.dusun || data.rt || data.rw) && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Wilayah</p>
+                <p className="text-sm text-foreground/70">
+                  {data.dusun && `Dusun ${data.dusun}`}
+                  {data.rt && ` · RT ${data.rt}`}
+                  {data.rw && ` / RW ${data.rw}`}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Anggota */}
+        <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm">
+          <div className="px-6 pt-5 pb-4 border-b border-current/10">
+            <h3 className="font-display text-sm font-semibold uppercase tracking-[0.1em] text-foreground/60">
+              Anggota Keluarga
+              {anggota.length > 0 && <span className="ml-2 text-foreground/30">({anggota.length} orang)</span>}
+            </h3>
+          </div>
+
+          <div className="divide-y divide-current/10">
+            {loadingAnggota ? (
+              <p className="py-12 text-center text-foreground/40 text-sm">Memuat...</p>
+            ) : anggota.length === 0 ? (
+              <p className="py-12 text-center text-foreground/40 text-sm">Belum ada data anggota.</p>
+            ) : (
+              anggota.map((a) => (
+                <Link key={a.id} to={`/penduduk/${a.id}`} className="flex items-center gap-4 px-6 py-4 hover:bg-foreground/[0.02] transition-colors">
+                  <div className="w-9 h-9 rounded-lg bg-foreground/5 flex items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-foreground/30"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" /></svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{a.nama || "—"}</p>
+                    <p className="text-xs text-foreground/50">
+                      {a.hubungan_kk || "—"} · {a.jenis_kelamin === "L" ? "Laki-laki" : a.jenis_kelamin === "P" ? "Perempuan" : "—"}
+                    </p>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/30 shrink-0"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
+                </Link>
+              ))
+            )}
+          </div>
         </div>
 
       </main>

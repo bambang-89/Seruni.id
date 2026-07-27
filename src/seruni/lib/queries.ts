@@ -1107,6 +1107,49 @@ export function usePenerimaBansosStats(bansosId?: string) {
   return { stats, loading };
 }
 
+export type PendudukDetail = {
+  id: string; nik: string | null; nama: string | null; jenis_kelamin: string | null;
+  tempat_lahir: string | null; tanggal_lahir: string | null; agama: string | null;
+  pendidikan: string | null; pekerjaan: string | null; status_kawin: string | null;
+  hubungan_kk: string | null; keluarga_id: string | null; dusun: string | null;
+  rt: string | null; rw: string | null; alamat: string | null;
+  bpjs_status: string | null; bpjs_nomor: string | null; nomor_hp: string | null;
+  foto_url: string | null; status_hidup: string | null; catatan: string | null;
+};
+
+export function usePendudukById(id?: string) {
+  const [data, setData] = useState<PendudukDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("penduduk").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => {
+        setData((r as unknown as PendudukDetail) || null);
+        setLoading(false);
+      });
+  }, [id]);
+  return { data, loading };
+}
+
+export type KeluargaDetail = {
+  id: string; no_kk: string | null; kepala_nama: string | null; alamat: string | null;
+  dusun: string | null; rt: string | null; rw: string | null; status_kk: string | null;
+};
+
+export function useKeluargaById(id?: string) {
+  const [data, setData] = useState<KeluargaDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!id) { setData(null); setLoading(false); return; }
+    supabase.from("keluarga").select("*").eq("id", id).maybeSingle()
+      .then(({ data: r }) => {
+        setData((r as unknown as KeluargaDetail) || null);
+        setLoading(false);
+      });
+  }, [id]);
+  return { data, loading };
+}
+
 // ===================== Stunting & Posyandu =====================
 
 export type StuntingAgregat = {
