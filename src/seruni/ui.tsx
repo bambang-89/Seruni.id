@@ -333,3 +333,37 @@ export function StandaloneLayout() {
   );
 }
 
+
+export function StandaloneFormOverlay({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  // Prevent body scroll when overlay is active
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-background/80 backdrop-blur-md overflow-y-auto">
+      <div className="min-h-screen p-4 sm:p-6 lg:p-12 animate-in fade-in zoom-in-95 duration-200">
+        <div className="mx-auto max-w-4xl bg-background border border-current/10 shadow-2xl rounded-2xl overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-current/10 bg-secondary/50">
+            <h2 className="font-display text-xl font-bold">{title}</h2>
+            <button 
+              onClick={onClose}
+              className="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-current/10 transition-colors"
+              title="Kembali"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          </div>
+          {/* Body */}
+          <div className="p-6 sm:p-8">
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

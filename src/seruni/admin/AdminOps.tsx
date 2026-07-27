@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TableCrud, type Column } from "./AdminPages";
+import { StandaloneFormOverlay } from "../ui";
 import { useBroadcasts, useBroadcastTargets, useEventLog, usePenerimaBansosStats } from "../lib/queries";
 import { SuratPreview, SuratPreviewModal } from "../components/SuratPreview";
 
@@ -652,9 +653,8 @@ export function JenisSuratAdmin() {
 
       {/* Edit Form */}
       {draft && (
-        <div className="mb-6 rounded-xl bg-card border border-border p-5">
-          <h3 className="font-display font-semibold mb-4">{draft.id ? "Edit" : "Tambah"} Jenis Surat</h3>
-
+        <StandaloneFormOverlay title={`${draft.id ? "Edit" : "Tambah"} Jenis Surat`} onClose={() => setDraft(null)}>
+          <div className="space-y-4">
           <div className="grid sm:grid-cols-3 gap-4 mb-6">
             <div>
               <label className="block text-xs font-medium mb-1">Kode Surat *</label>
@@ -708,16 +708,12 @@ export function JenisSuratAdmin() {
               </div>
             )}
           </div>
-
-          <div className="flex gap-2 mt-6">
-            <button onClick={save} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90">
-              Simpan
-            </button>
-            <button onClick={() => { setDraft(null); setDnaFields([]); }} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">
-              Batal
-            </button>
+            <div className="flex justify-end gap-3 pt-4 border-t border-current/10 mt-6">
+              <button onClick={() => setDraft(null)} className="px-4 py-2 text-sm bg-secondary text-secondary-foreground rounded-lg hover:opacity-90">Batal</button>
+              <button onClick={save} disabled={saving} className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90">{saving ? "Menyimpan..." : "Simpan"}</button>
+            </div>
           </div>
-        </div>
+        </StandaloneFormOverlay>
       )}
 
       {/* Table */}
@@ -1026,98 +1022,93 @@ export function SuratTerbitAdmin() {
 
       {/* Form Terbit */}
       {draft && (
-        <div className="mb-6 rounded-xl bg-card border border-border p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-display font-semibold">
-              {draft.id ? "Edit" : "Terbitkan"} Surat{draftAjuan ? ` — ${draftAjuan.nomor_tiket}` : ""}
-            </h3>
-            <button onClick={() => { setDraft(null); setDraftAjuan(null); setDraftDna(null); setDraftDnaFields([]); }} className="text-sm text-muted-foreground hover:text-foreground">Tutup</button>
-          </div>
-
-          {draftAjuan && (
-            <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border text-sm">
-              <div className="font-medium">{draftAjuan.nama} ({draftAjuan.nik})</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Keperluan: {draftAjuan.keperluan || "—"}
+        <StandaloneFormOverlay title={`${draft.id ? "Edit" : "Terbitkan"} Surat${draftAjuan ? ` — ${draftAjuan.nomor_tiket}` : ""}`} onClose={() => { setDraft(null); setDraftAjuan(null); setDraftDna(null); setDraftDnaFields([]); }}>
+          <div className="space-y-4">
+            {draftAjuan && (
+              <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border text-sm">
+                <div className="font-medium">{draftAjuan.nama} ({draftAjuan.nik})</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Keperluan: {draftAjuan.keperluan || "—"}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {draftDnaFields.length > 0 && (
-            <div className="mb-4 rounded-lg bg-muted/30 border border-border p-4">
-              <h4 className="font-display text-xs font-bold uppercase tracking-widest text-accent mb-3">Data dari Form Pengajuan (DNA)</h4>
-              <DnaFieldEditor
-                fields={draftDnaFields}
-                values={draftDna || {}}
-                onChange={(updated) => setDraftDna(updated)}
-              />
-            </div>
-          )}
+            {draftDnaFields.length > 0 && (
+              <div className="mb-4 rounded-lg bg-muted/30 border border-border p-4">
+                <h4 className="font-display text-xs font-bold uppercase tracking-widest text-accent mb-3">Data dari Form Pengajuan (DNA)</h4>
+                <DnaFieldEditor
+                  fields={draftDnaFields}
+                  values={draftDna || {}}
+                  onChange={(updated) => setDraftDna(updated)}
+                />
+              </div>
+            )}
 
-          <div className="grid sm:grid-cols-2 gap-3">
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Nomor Surat</span>
-              <input value={draft.nomor_surat || ""} onChange={(e) => setDraft({ ...draft, nomor_surat: e.target.value })} placeholder="470/001/SM/2026" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" autoComplete="off" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Kode Verifikasi</span>
-              <input value={draft.kode_verifikasi || ""} onChange={(e) => setDraft({ ...draft, kode_verifikasi: e.target.value })} placeholder="SRN-XXXXXXXX" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" autoComplete="off" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Kode Jenis</span>
-              <input value={draft.jenis_kode || ""} onChange={(e) => setDraft({ ...draft, jenis_kode: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Nama Jenis Surat</span>
-              <input value={draft.jenis_nama || ""} onChange={(e) => setDraft({ ...draft, jenis_nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
-            </label>
-            <label className="text-xs sm:col-span-2">
-              <span className="block mb-1 font-medium">Perihal</span>
-              <input value={draft.perihal || ""} onChange={(e) => setDraft({ ...draft, perihal: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Nama Pemohon</span>
-              <input value={draft.pemohon_nama || ""} onChange={(e) => setDraft({ ...draft, pemohon_nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">NIK Pemohon</span>
-              <input value={draft.pemohon_nik || ""} onChange={(e) => setDraft({ ...draft, pemohon_nik: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" autoComplete="off" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Tanggal Terbit</span>
-              <input type="date" value={draft.tanggal_terbit || ""} onChange={(e) => setDraft({ ...draft, tanggal_terbit: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Berlaku Sampai</span>
-              <input type="date" value={draft.berlaku_sampai || ""} onChange={(e) => setDraft({ ...draft, berlaku_sampai: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Status</span>
-              <select value={draft.status || "berlaku"} onChange={(e) => setDraft({ ...draft, status: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off">
-                <option value="berlaku">Berlaku</option>
-                <option value="kadaluarsa">Kadaluarsa</option>
-                <option value="dicabut">Dicabut</option>
-              </select>
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Ditandatangani Oleh</span>
-              <select value={draft.penandatangan || ""} onChange={(e) => setDraft({ ...draft, penandatangan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">— Pilih —</option>
-                {PAMONG_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </label>
-            <label className="text-xs sm:col-span-2">
-              <span className="block mb-1 font-medium">Keterangan</span>
-              <textarea rows={2} value={draft.keterangan || ""} onChange={(e) => setDraft({ ...draft, keterangan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
-            </label>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Nomor Surat</span>
+                <input value={draft.nomor_surat || ""} onChange={(e) => setDraft({ ...draft, nomor_surat: e.target.value })} placeholder="470/001/SM/2026" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" autoComplete="off" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Kode Verifikasi</span>
+                <input value={draft.kode_verifikasi || ""} onChange={(e) => setDraft({ ...draft, kode_verifikasi: e.target.value })} placeholder="SRN-XXXXXXXX" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" autoComplete="off" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Kode Jenis</span>
+                <input value={draft.jenis_kode || ""} onChange={(e) => setDraft({ ...draft, jenis_kode: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Nama Jenis Surat</span>
+                <input value={draft.jenis_nama || ""} onChange={(e) => setDraft({ ...draft, jenis_nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+              </label>
+              <label className="text-xs sm:col-span-2">
+                <span className="block mb-1 font-medium">Perihal</span>
+                <input value={draft.perihal || ""} onChange={(e) => setDraft({ ...draft, perihal: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Nama Pemohon</span>
+                <input value={draft.pemohon_nama || ""} onChange={(e) => setDraft({ ...draft, pemohon_nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">NIK Pemohon</span>
+                <input value={draft.pemohon_nik || ""} onChange={(e) => setDraft({ ...draft, pemohon_nik: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" autoComplete="off" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Tanggal Terbit</span>
+                <input type="date" value={draft.tanggal_terbit || ""} onChange={(e) => setDraft({ ...draft, tanggal_terbit: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Berlaku Sampai</span>
+                <input type="date" value={draft.berlaku_sampai || ""} onChange={(e) => setDraft({ ...draft, berlaku_sampai: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Status</span>
+                <select value={draft.status || "berlaku"} onChange={(e) => setDraft({ ...draft, status: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off">
+                  <option value="berlaku">Berlaku</option>
+                  <option value="kadaluarsa">Kadaluarsa</option>
+                  <option value="dicabut">Dicabut</option>
+                </select>
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Ditandatangani Oleh</span>
+                <select value={draft.penandatangan || ""} onChange={(e) => setDraft({ ...draft, penandatangan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <option value="">— Pilih —</option>
+                  {PAMONG_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </label>
+              <label className="text-xs sm:col-span-2">
+                <span className="block mb-1 font-medium">Keterangan</span>
+                <textarea rows={2} value={draft.keterangan || ""} onChange={(e) => setDraft({ ...draft, keterangan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+              </label>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button onClick={() => save(draft)} className="rounded-md bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700 font-medium">
+                {draft.id ? "Simpan Perubahan" : "Terbitkan Surat"}
+              </button>
+              <button onClick={() => { setDraft(null); setDraftAjuan(null); setDraftDna(null); setDraftDnaFields([]); }} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">Batal</button>
+            </div>
           </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={() => save(draft)} className="rounded-md bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700 font-medium">
-              {draft.id ? "Simpan Perubahan" : "Terbitkan Surat"}
-            </button>
-            <button onClick={() => { setDraft(null); setDraftAjuan(null); setDraftDna(null); setDraftDnaFields([]); }} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">Batal</button>
-          </div>
-        </div>
+        </StandaloneFormOverlay>
       )}
 
       {/* Daftar Surat Terbit */}
@@ -1789,73 +1780,68 @@ export function SuratAjuanAdmin() {
       </div>
 
       {draft && (
-        <div className="mb-6 rounded-xl bg-card border border-border p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display font-semibold">
-              {draft.id ? "Edit / Lihat" : "Tambah"} — {draft.nomor_tiket}
-            </h3>
-            <button onClick={() => { setDraft(null); setDnaData(null); setDnaFields([]); }} className="text-sm text-muted-foreground hover:text-foreground">Tutup</button>
-          </div>
-
-          {/* DNA Data Display */}
-          {dnaData && dnaFields.length > 0 && (
-            <div className="mb-4 rounded-lg bg-muted/50 border border-border p-4">
-              <h4 className="font-display text-xs font-bold uppercase tracking-widest text-accent mb-3">Data Pengajuan (DNA)</h4>
-              <dl className="grid sm:grid-cols-2 gap-2 text-sm">
-                {dnaFields.map((f) => {
-                  const val = dnaData[f.field_name];
-                  if (val === null || val === undefined || val === "") return null;
-                  return (
-                    <div key={f.field_name} className="border-b border-border/50 pb-1.5">
-                      <dt className="text-xs text-muted-foreground font-medium">{f.label}</dt>
-                      <dd className="mt-0.5 font-medium">{String(val)}</dd>
-                    </div>
-                  );
-                })}
-              </dl>
-            </div>
-          )}
-          <div className="grid sm:grid-cols-2 gap-3">
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Nama Pemohon</span>
-              <input value={draft.nama || ""} onChange={(e) => setDraft({ ...draft, nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="name" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">NIK</span>
-              <input value={draft.nik || ""} onChange={(e) => setDraft({ ...draft, nik: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Kontak (WA)</span>
-              <input value={draft.kontak || ""} onChange={(e) => setDraft({ ...draft, kontak: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="tel" />
-            </label>
-            <label className="text-xs">
-              <span className="block mb-1 font-medium">Status</span>
-              <select value={draft.status || "menunggu"} onChange={(e) => setDraft({ ...draft, status: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                {STATUS_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </label>
-            <label className="text-xs sm:col-span-2">
-              <span className="block mb-1 font-medium">Keperluan</span>
-              <textarea rows={3} value={draft.keperluan || ""} onChange={(e) => setDraft({ ...draft, keperluan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
-            </label>
-            <label className="text-xs sm:col-span-2">
-              <span className="block mb-1 font-medium">Keterangan Admin</span>
-              <textarea rows={2} value={draft.keterangan || ""} onChange={(e) => setDraft({ ...draft, keterangan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Catatan dari admin..." autoComplete="off" />
-            </label>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={() => save(draft)} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90">Simpan</button>
-            {draft.status === "diproses" && (
-              <button
-                onClick={() => { setDraft(null); setDnaData(null); setDnaFields([]); toast.info("Buka menu Surat Terbit untuk menerbitkan surat."); }}
-                className="rounded-md bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700"
-              >
-                Terbitkan Surat
-              </button>
+        <StandaloneFormOverlay title={`${draft.id ? "Edit / Lihat" : "Tambah"} — ${draft.nomor_tiket}`} onClose={() => { setDraft(null); setDnaData(null); setDnaFields([]); }}>
+          <div className="space-y-4">
+            {/* DNA Data Display */}
+            {dnaData && dnaFields.length > 0 && (
+              <div className="mb-4 rounded-lg bg-muted/50 border border-border p-4">
+                <h4 className="font-display text-xs font-bold uppercase tracking-widest text-accent mb-3">Data Pengajuan (DNA)</h4>
+                <dl className="grid sm:grid-cols-2 gap-2 text-sm">
+                  {dnaFields.map((f) => {
+                    const val = dnaData[f.field_name];
+                    if (val === null || val === undefined || val === "") return null;
+                    return (
+                      <div key={f.field_name} className="border-b border-border/50 pb-1.5">
+                        <dt className="text-xs text-muted-foreground font-medium">{f.label}</dt>
+                        <dd className="mt-0.5 font-medium">{String(val)}</dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+              </div>
             )}
-            <button onClick={() => { setDraft(null); setDnaData(null); setDnaFields([]); }} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">Batal</button>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Nama Pemohon</span>
+                <input value={draft.nama || ""} onChange={(e) => setDraft({ ...draft, nama: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="name" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">NIK</span>
+                <input value={draft.nik || ""} onChange={(e) => setDraft({ ...draft, nik: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Kontak (WA)</span>
+                <input value={draft.kontak || ""} onChange={(e) => setDraft({ ...draft, kontak: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="tel" />
+              </label>
+              <label className="text-xs">
+                <span className="block mb-1 font-medium">Status</span>
+                <select value={draft.status || "menunggu"} onChange={(e) => setDraft({ ...draft, status: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  {STATUS_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </label>
+              <label className="text-xs sm:col-span-2">
+                <span className="block mb-1 font-medium">Keperluan</span>
+                <textarea rows={3} value={draft.keperluan || ""} onChange={(e) => setDraft({ ...draft, keperluan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" autoComplete="off" />
+              </label>
+              <label className="text-xs sm:col-span-2">
+                <span className="block mb-1 font-medium">Keterangan Admin</span>
+                <textarea rows={2} value={draft.keterangan || ""} onChange={(e) => setDraft({ ...draft, keterangan: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Catatan dari admin..." autoComplete="off" />
+              </label>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button onClick={() => save(draft)} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90">Simpan</button>
+              {draft.status === "diproses" && (
+                <button
+                  onClick={() => { setDraft(null); setDnaData(null); setDnaFields([]); toast.info("Buka menu Surat Terbit untuk menerbitkan surat."); }}
+                  className="rounded-md bg-green-600 text-white px-4 py-2 text-sm hover:bg-green-700"
+                >
+                  Terbitkan Surat
+                </button>
+              )}
+              <button onClick={() => { setDraft(null); setDnaData(null); setDnaFields([]); }} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">Batal</button>
+            </div>
           </div>
-        </div>
+        </StandaloneFormOverlay>
       )}
 
       <div className="overflow-x-auto rounded-xl bg-card border border-border">
@@ -1955,8 +1941,8 @@ export function BalitaAdmin() {
       </div>
 
       {draft && (
-        <div className="mb-6 rounded-xl bg-card border border-border p-5">
-          <h3 className="font-display font-semibold mb-3">{draft.id ? "Edit" : "Tambah"} Balita</h3>
+        <StandaloneFormOverlay title={`${draft.id ? "Edit" : "Tambah"} Balita`} onClose={() => setDraft(null)}>
+          <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="text-xs">
               <span className="block mb-1 font-medium">Nama Lengkap *</span>
@@ -1997,6 +1983,7 @@ export function BalitaAdmin() {
             <button onClick={() => setDraft(null)} className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">Batal</button>
           </div>
         </div>
+      </StandaloneFormOverlay>
       )}
 
       <div className="overflow-x-auto rounded-xl bg-card border border-border">

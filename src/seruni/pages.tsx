@@ -6,9 +6,10 @@ import { useTenantId } from "./lib/tenant";
 import { Share2, Facebook, Twitter, MessageCircle } from "lucide-react";
 import {
   EditorialLayout,
-  SectionWrap,
   EditorialCard,
   EditorialProgress,
+  SectionWrap,
+  StandaloneLayout,
   formatTanggal,
 } from "./ui";
 import { EditorialTitle, StatsBand, NumberedList } from "./sections";
@@ -719,11 +720,9 @@ export function LayananPBBPage() {
   }
 
   return (
-    <EditorialLayout
-        
-      >
-      
-      <SectionWrap>
+    <StandaloneLayout>
+      <div className="max-w-4xl mx-auto py-12 px-6">
+        <h1 className="text-2xl font-bold mb-6">Layanan PBB</h1>
         <form className="max-w-2xl border border-current/20 p-6 sm:p-8 grid gap-5" onSubmit={cariPbb}>
           <div className="grid sm:grid-cols-[1fr_140px] gap-4">
             <label className="block text-sm">
@@ -774,8 +773,8 @@ export function LayananPBBPage() {
             )}
           </div>
         )}
-      </SectionWrap>
-    </EditorialLayout>
+      </div>
+    </StandaloneLayout>
   );
 }
 
@@ -1121,11 +1120,9 @@ export function VerifikasiPage() {
   }
 
   return (
-    <EditorialLayout
-        
-      >
-      
-      <SectionWrap>
+    <StandaloneLayout>
+      <div className="max-w-4xl mx-auto py-12 px-6">
+        <h1 className="text-2xl font-bold mb-6">Verifikasi Dokumen</h1>
         {/* Tab Switcher */}
         <div className="flex border-b border-current/20 mb-6">
           <button
@@ -1313,8 +1310,8 @@ export function VerifikasiPage() {
             )}
           </>
         )}
-      </SectionWrap>
-    </EditorialLayout>
+      </div>
+    </StandaloneLayout>
   );
 }
 
@@ -1801,11 +1798,9 @@ export function LanggananWaPage() {
     toast.success("Langganan aktif");
   }
   return (
-    <EditorialLayout
-        
-      >
-      
-      <SectionWrap>
+    <StandaloneLayout>
+      <div className="max-w-4xl mx-auto py-12 px-6">
+        <h1 className="text-2xl font-bold mb-6">Langganan WhatsApp</h1>
         {terkirim ? (
           <div className="max-w-lg border-l-2 border-accent pl-6 py-4">
             <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Berhasil</div>
@@ -1842,8 +1837,8 @@ export function LanggananWaPage() {
             <button disabled={loading} type="submit" className={`${btnPrimary} justify-self-start disabled:opacity-50`}>{loading ? "Mendaftarkan…" : "Daftar Sekarang"}</button>
           </form>
         )}
-      </SectionWrap>
-    </EditorialLayout>
+      </div>
+    </StandaloneLayout>
   );
 }
 
@@ -3967,9 +3962,9 @@ export function AduanDetailPage() {
     <div className="min-h-screen bg-background">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Back link */}
-        <Link to="/aduan" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
+        <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
-          Kembali ke Aduan
+          Kembali ke Beranda
         </Link>
 
         {/* Ticket header card */}

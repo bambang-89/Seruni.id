@@ -20,6 +20,8 @@ import {
   useLayananStatistik,
   useDusun,
   useAduanKategori,
+  useProfilDesa,
+  usePamong,
 } from "./lib/queries";
 import {
   Band,
@@ -565,14 +567,15 @@ function S9() {
  * ============================================================ */
 
 function QuoteKades() {
-  const { data: profilDesa } = useProfilDesa();
-  
+  const { data: pamongList } = usePamong();
+  const kades = pamongList?.find(p => p.jabatan === 'Kepala Desa');
+
   return (
     <QuoteBand
-      quote={profilDesa?.visi || ""}
-      nama={profilDesa?.kepala_desa_nama || ""}
+      quote={kades ? "Terpercaya dalam membangun desa untuk masyarakat" : ""}
+      nama={kades?.nama || ""}
       jabatan="Kepala Desa"
-      image={profilDesa?.kepala_desa_foto ? supabase.storage.from('seruni-media').getPublicUrl(profilDesa.kepala_desa_foto).data.publicUrl : ""}
+      image={kades?.foto_url ? supabase.storage.from('seruni-media').getPublicUrl(kades.foto_url).data.publicUrl : ""}
       imageAlt="Potret Kepala Desa"
     />
   );
@@ -645,113 +648,29 @@ function S11() {
         sectionKey="home-aduan"
       />
       <div className="grid lg:grid-cols-[2fr_3fr] gap-10 lg:gap-16">
-        <div className="border-t border-[#0F0E0E]/25 pt-8">
+        <div className="border-t border-[#0F0E0E]/25 pt-8 lg:col-span-2">
           <p className="font-display text-lg sm:text-xl font-light leading-snug">
             Setiap aduan diteruskan otomatis ke petugas Service Center dan
             dieskalasi sesuai kategori. Nomor tiket dikirim via WhatsApp resmi
             desa yang terverifikasi.
           </p>
-          <div className="mt-8 pt-6 border-t border-[#0F0E0E]/25 space-y-3 font-display text-[11px] uppercase tracking-[0.28em] font-semibold">
-            <p className="opacity-70 mt-2">
-              Layanan &middot; <span className="opacity-100 tabular-nums">{settings?.jam_layanan ?? "Senin - Jumat, 08:00 - 15:00"}</span>
-            </p>
-            <p className="opacity-70">
-              Darurat &middot; <span className="opacity-100 tabular-nums">{settings?.telepon_darurat ?? "112"}</span>
-            </p>
+          <div className="mt-8 pt-6 border-t border-[#0F0E0E]/25 flex flex-wrap items-center justify-between gap-6">
+            <div className="space-y-3 font-display text-[11px] uppercase tracking-[0.28em] font-semibold">
+              <p className="opacity-70 mt-2">
+                Layanan &middot; <span className="opacity-100 tabular-nums">{settings?.jam_layanan ?? "Senin - Jumat, 08:00 - 15:00"}</span>
+              </p>
+              <p className="opacity-70">
+                Darurat &middot; <span className="opacity-100 tabular-nums">{settings?.telepon_darurat ?? "112"}</span>
+              </p>
+            </div>
+            <Link
+              to="/service-center"
+              className="inline-flex font-display text-[11px] font-bold uppercase tracking-[0.28em] bg-primary text-primary-foreground px-8 py-4 hover:bg-accent hover:text-[#0F0E0E] transition-colors"
+            >
+              Kirim Laporan / Aduan
+            </Link>
           </div>
         </div>
-        {terkirim ? (
-          <div className="border border-accent bg-accent/10 p-10">
-            <p className="font-display text-[11px] font-bold uppercase tracking-[0.28em] text-primary">
-              Aduan Diterima
-            </p>
-            <p className="mt-4 font-display text-2xl sm:text-3xl font-bold italic tracking-tight">
-              Terima kasih atas partisipasi Anda.
-            </p>
-            <p className="mt-4 text-sm opacity-75">
-              Nomor tiket telah dikirim ke nomor WhatsApp yang terdaftar.
-            </p>
-            <button
-              type="button"
-              onClick={() => setTerkirim(false)}
-              className="mt-8 inline-block font-display text-[11px] font-bold uppercase tracking-[0.28em] border border-current px-6 py-3 hover:border-accent hover:text-accent transition-colors"
-            >
-              Kirim Aduan Lain
-            </button>
-          </div>
-        ) : (
-          <form
-            className="border border-[#0F0E0E]/25 p-8 sm:p-10 space-y-6 bg-background"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setTerkirim(true);
-            }}
-          >
-            <div className="grid sm:grid-cols-2 gap-6">
-              <label>
-                <span className={labelCls}>Kategori</span>
-                <select
-                  value={kategori}
-                  onChange={(e) => setKategori(e.target.value)}
-                  autoComplete="off"
-                  className={inputCls}
-                >
-                  {kategoriList.map((k) => (
-                    <option key={k.nama} value={k.nama}>
-                      {k.nama}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span className={labelCls}>Lokasi</span>
-                <select
-                  required
-                  value={lokasi}
-                  onChange={(e) => setLokasi(e.target.value)}
-                  autoComplete="off"
-                  className={inputCls}
-                >
-                  <option value="">— pilih dusun —</option>
-                  {dusunList.map((d) => (
-                    <option key={d.nama} value={d.nama}>{d.nama}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label className="block">
-              <span className={labelCls}>Uraian Aduan</span>
-              <textarea
-                required
-                autoComplete="off"
-                rows={4}
-                placeholder="Ceritakan kejadian, kapan terjadi, dan dampaknya."
-                className={inputCls}
-              />
-            </label>
-            <label className="block">
-              <span className={labelCls}>Nomor WhatsApp Pelapor</span>
-              <input
-                required
-                type="tel"
-                autoComplete="tel"
-                placeholder="08xxxxxxxxxx"
-                className={inputCls}
-              />
-            </label>
-            <div className="pt-4 border-t border-[#0F0E0E]/20 flex flex-wrap items-center justify-between gap-4">
-              <p className="text-xs opacity-60 max-w-sm">
-                Data pelapor dirahasiakan. Verifikasi via OTP WhatsApp.
-              </p>
-              <button
-                type="submit"
-                className="font-display text-[11px] font-bold uppercase tracking-[0.28em] bg-primary text-primary-foreground px-6 py-3 hover:bg-accent hover:text-[#0F0E0E] transition-colors"
-              >
-                Kirim Aduan
-              </button>
-            </div>
-          </form>
-        )}
       </div>
     </Band>
   );

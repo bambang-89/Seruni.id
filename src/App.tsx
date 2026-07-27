@@ -121,6 +121,8 @@ const StatistikPendudukLivePage = lazy(() => PDP().then((m) => ({ default: m.Sta
 const IDMLivePage = lazy(() => PDP().then((m) => ({ default: m.IDMLivePage })));
 const AnalisisPage = lazy(() => PDP().then((m) => ({ default: m.AnalisisPage })));
 const SuplesiPage = lazy(() => PDP().then((m) => ({ default: m.SuplesiPage })));
+const StatusIDMPage = lazy(() => P().then((m) => ({ default: m.StatusIDMPage })));
+const StatistikPendudukPage = lazy(() => P().then((m) => ({ default: m.StatistikPendudukPage })));
 
 // Lazy-load public inner pages.
 const P = () => import("./seruni/pages");
@@ -295,7 +297,9 @@ export default function App() {
           {/* Data & Statistik */}
           <Route path="statistik" element={<StatistikHubPage />} />
           <Route path="status-idm" element={<IDMLivePage />} />
+          <Route path="status-idm-detail" element={<StatusIDMPage />} />
           <Route path="statistik/penduduk" element={<StatistikPendudukLivePage />} />
+          <Route path="statistik-penduduk" element={<StatistikPendudukPage />} />
           <Route path="analisis" element={<AnalisisPage />} />
           <Route path="bansos" element={<BansosPage />} />
           <Route path="stunting" element={<StuntingPage />} />

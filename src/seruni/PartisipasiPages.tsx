@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { EditorialLayout, EditorialCard, EditorialProgress, SectionWrap, formatTanggal } from "./ui";
+import { EditorialLayout, EditorialCard, EditorialProgress, SectionWrap, StandaloneLayout, formatTanggal } from "./ui";
 import { EditorialTitle, StatsBand } from "./sections";
 import { Seo } from "./lib/seo";
-import { useAutofillPenduduk } from "./lib/queries";
-import { useDusun } from "./lib/queries";
+import { useAutofillPenduduk, useDusun } from "./lib/queries";
 import {
   useRpjmdesAktif,
   useRkpdesTahunList,
@@ -409,10 +408,8 @@ export function UsulanPage() {
   const totalDukungan = rows.reduce((s, r) => s + r.vote_count, 0);
 
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+
       <StatsBand
         tone="dark"
         items={[

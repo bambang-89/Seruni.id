@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { EditorialLayout, SectionWrap } from "./ui";
+import { EditorialLayout, SectionWrap, StandaloneLayout } from "./ui";
 import { EditorialTitle, StatsBand } from "./sections";
 import { Seo } from "./lib/seo";
 import { useAutofillPenduduk } from "./lib/queries";
@@ -194,11 +194,8 @@ export function SuplesiPage() {
     setForm({ nik: "", nama: "", kontak: "", jenis: "koreksi_data", deskripsi: "", lampiran_url: "" });
   };
   return (
-    <EditorialLayout
-        
-      >
-      
-      <SectionWrap>
+    <StandaloneLayout>
+      <div className="max-w-4xl mx-auto py-8">
         <div className="grid md:grid-cols-2 gap-10">
           <div>
             <EditorialTitle sectionKey="suplesi-form" kicker="Formulir" judul="Ajukan Pembetulan" />
@@ -249,7 +246,7 @@ export function SuplesiPage() {
             </ol>
           </div>
         </div>
-      </SectionWrap>
-    </EditorialLayout>
+      </div>
+    </StandaloneLayout>
   );
 }
