@@ -170,13 +170,17 @@ const PendudukDetailPage = lazy(() => P().then((m) => ({ default: m.PendudukDeta
 const KeluargaDetailPage = lazy(() => P().then((m) => ({ default: m.KeluargaDetailPage })));
 const BalitaDetailPage = lazy(() => P().then((m) => ({ default: m.BalitaDetailPage })));
 const BalitaPage = lazy(() => P().then((m) => ({ default: m.BalitaPage })));
+const PertanahanPage = lazy(() => P().then((m) => ({ default: m.PertanahanPage })));
 const BidangTanahDetailPage = lazy(() => P().then((m) => ({ default: m.BidangTanahDetailPage })));
+const InfrastrukturPage = lazy(() => P().then((m) => ({ default: m.InfrastrukturPage })));
 const InfrastrukturDetailPage = lazy(() => P().then((m) => ({ default: m.InfrastrukturDetailPage })));
+const PbbPage = lazy(() => P().then((m) => ({ default: m.PbbPage })));
+const PbbDetailPage = lazy(() => P().then((m) => ({ default: m.PbbDetailPage })));
+const SuratTerbitPage = lazy(() => P().then((m) => ({ default: m.SuratTerbitPage })));
+const SuratTerbitDetailPage = lazy(() => P().then((m) => ({ default: m.SuratTerbitDetailPage })));
 const BencanaDetailPage = lazy(() => P().then((m) => ({ default: m.BencanaDetailPage })));
 const UsulanWargaDetailPage = lazy(() => P().then((m) => ({ default: m.UsulanWargaDetailPage })));
 const VotingTopikDetailPage = lazy(() => P().then((m) => ({ default: m.VotingTopikDetailPage })));
-const PbbDetailPage = lazy(() => P().then((m) => ({ default: m.PbbDetailPage })));
-const SuratTerbitDetailPage = lazy(() => P().then((m) => ({ default: m.SuratTerbitDetailPage })));
 const RpjmdesBidangDetailPage = lazy(() => P().then((m) => ({ default: m.RpjmdesBidangDetailPage })));
 const RpjmdesProgramDetailPage = lazy(() => P().then((m) => ({ default: m.RpjmdesProgramDetailPage })));
 const RkpdesKegiatanDetailPage = lazy(() => P().then((m) => ({ default: m.RkpdesKegiatanDetailPage })));
@@ -341,12 +345,16 @@ export default function App() {
             <Route path="keluarga/:id" element={<KeluargaDetailPage />} />
             <Route path="balita" element={<BalitaPage />} />
             <Route path="balita/:id" element={<BalitaDetailPage />} />
+            <Route path="pertanahan" element={<PertanahanPage />} />
             <Route path="pertanahan/:id" element={<BidangTanahDetailPage />} />
+            <Route path="infrastruktur" element={<InfrastrukturPage />} />
             <Route path="infrastruktur/:id" element={<InfrastrukturDetailPage />} />
             <Route path="bencana/:id" element={<BencanaDetailPage />} />
             <Route path="usulan/:id" element={<UsulanWargaDetailPage />} />
             <Route path="voting/:id" element={<VotingTopikDetailPage />} />
+            <Route path="pbb" element={<PbbPage />} />
             <Route path="pbb/:id" element={<PbbDetailPage />} />
+            <Route path="surat-terbit" element={<SuratTerbitPage />} />
             <Route path="surat-terbit/:id" element={<SuratTerbitDetailPage />} />
             <Route path="rpjmdes-bidang/:id" element={<RpjmdesBidangDetailPage />} />
             <Route path="rpjmdes-program/:id" element={<RpjmdesProgramDetailPage />} />

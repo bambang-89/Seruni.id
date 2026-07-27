@@ -23,13 +23,13 @@ import {
   usePenerimaBansos, usePenerimaBansosStats, useAduanById, useIdmIndikatorById,
   useAutofillPenduduk, usePendudukById, useKeluargaById,
   useBalitaById, BalitaDetail,
-  useBidangTanahById, BidangTanahDetail,
-  useInfrastrukturById, InfrastrukturDetail,
+  useBidangTanahById, useBidangTanahList, BidangTanahDetail,
+  useInfrastrukturById, useInfrastrukturList, InfrastrukturDetail,
   useBencanaById, BencanaDetail,
   useUsulanWargaById, UsulanWargaDetail,
   useVotingTopikById, useVotingOpsi, VotingTopikDetail,
-  usePbbTagihanById, PbbTagihanDetail,
-  useSuratTerbitById, SuratTerbitDetail,
+  usePbbTagihanById, usePbbTagihanList, PbbTagihanDetail,
+  useSuratTerbitById, useSuratTerbitList, SuratTerbitDetail,
   useRpjmdesBidangById, useRpjmdesProgramById, useRkpdesKegiatanById,
   Galeri, PotensiUmkm, PotensiWisata, PembangunanDetail, PotensiProduk,
   BantuanSosial, PenerimaBansos, AduanWarga, IdmIndikator,
@@ -2169,6 +2169,7 @@ export function BencanaPage() {
           <div className="grid gap-px bg-current/15">
             {bencana.map((b) => (
               <div key={b.id} className="bg-background p-6">
+                <Link to={`/bencana/${b.id}`} className="block">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
@@ -2197,6 +2198,7 @@ export function BencanaPage() {
                     {b.pengungsi > 0 && <span>Pengungsi: {b.pengungsi}</span>}
                   </div>
                 )}
+                </Link>
               </div>
             ))}
           </div>
@@ -4973,6 +4975,270 @@ export function BalitaPage() {
           </div>
         ) : (
           <p className="text-center text-foreground/40 py-12">Belum ada data balita.</p>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// ===== PertanahanPage =====
+export function PertanahanPage() {
+  const { data, loading } = useBidangTanahList();
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border flex items-center px-4 h-14 gap-3">
+        <Link to="/" className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-foreground/5 transition-colors">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8832 10l3.69 3.71a.75.75 0 11-1.06 1.06l-4.25-4.25a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06.02z" clipRule="evenodd" /></svg>
+        </Link>
+        <h1 className="font-display font-semibold text-sm">Pertanahan</h1>
+      </div>
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h2 className="font-display text-2xl font-bold tracking-tight">Data Pertanahan</h2>
+          <p className="text-sm text-foreground/50 mt-1">Daftar bidang tanah di wilayah desa</p>
+        </div>
+        {loading ? (
+          <div className="space-y-3">
+            {[1,2,3].map(i => <div key={i} className="h-20 rounded-xl bg-foreground/5 animate-pulse" />)}
+          </div>
+        ) : data.length > 0 ? (
+          <div className="space-y-3">
+            {data.map((t) => (
+              <Link key={t.id} to={`/pertanahan/${t.id}`} className="block bg-foreground/[0.03] hover:bg-foreground/[0.07] border border-foreground/10 rounded-2xl p-5 transition-all">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-display font-bold text-base">{t.nomor_persil || "—"}</span>
+                      {t.status_hak && (
+                        <span className="text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-full bg-foreground/5 text-foreground/60">
+                          {t.status_hak}
+                        </span>
+                      )}
+                    </div>
+                    {t.pemilik_nama && <p className="text-sm text-foreground/60 mt-0.5 truncate">{t.pemilik_nama}</p>}
+                  </div>
+                  <div className="text-right shrink-0">
+                    {t.luas_m2 && <p className="font-display font-bold text-accent">{t.luas_m2.toLocaleString("id-ID")} m²</p>}
+                    {t.dusun && <p className="text-[10px] text-foreground/40 mt-0.5">Dusun {t.dusun}</p>}
+                  </div>
+                </div>
+                {t.penggunaan && <p className="mt-2 text-xs text-foreground/40">Penggunaan: {t.penggunaan}</p>}
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-foreground/40 py-12">Belum ada data pertanahan.</p>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// ===== InfrastrukturPage =====
+const infrasTypeColor: Record<string, string> = {
+  jalan: "bg-amber-50 text-amber-700",
+  jembatan: "bg-blue-50 text-blue-700",
+  air: "bg-cyan-50 text-cyan-700",
+  listrik: "bg-yellow-50 text-yellow-700",
+  gedung: "bg-purple-50 text-purple-700",
+  drainase: "bg-teal-50 text-teal-700",
+  irigasi: "bg-green-50 text-green-700",
+  sanitize: "bg-rose-50 text-rose-700",
+  transport: "bg-orange-50 text-orange-700",
+};
+const infrasKondisiColor: Record<string, string> = {
+  baik: "bg-green-100 text-green-700",
+  sedang: "bg-amber-100 text-amber-700",
+  rusak: "bg-red-100 text-red-700",
+  kritis: "bg-red-200 text-red-800",
+};
+
+export function InfrastrukturPage() {
+  const { data, loading } = useInfrastrukturList();
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border flex items-center px-4 h-14 gap-3">
+        <Link to="/" className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-foreground/5 transition-colors">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.69 3.71a.75.75 0 11-1.06 1.06l-4.25-4.25a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06.02z" clipRule="evenodd" /></svg>
+        </Link>
+        <h1 className="font-display font-semibold text-sm">Pembangunan</h1>
+      </div>
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h2 className="font-display text-2xl font-bold tracking-tight">Infrastruktur Desa</h2>
+          <p className="text-sm text-foreground/50 mt-1">Aset pembangunan dan infrastruktur wilayah</p>
+        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 gap-3">
+            {[1,2,3,4].map(i => <div key={i} className="h-28 rounded-xl bg-foreground/5 animate-pulse" />)}
+          </div>
+        ) : data.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {data.map((item) => {
+              const jenis = (item.jenis || "").toLowerCase();
+              const tClass = infrasTypeColor[jenis] || "bg-gray-50 text-gray-600";
+              const kClass = item.kondisi ? (infrasKondisiColor[item.kondisi.toLowerCase()] || "bg-gray-100 text-gray-600") : "";
+              return (
+                <Link key={item.id} to={`/infrastruktur/${item.id}`} className="bg-foreground/[0.03] hover:bg-foreground/[0.07] border border-foreground/10 rounded-2xl p-4 transition-all">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${tClass}`}>
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                        <path d="M10.75 16.82A7.462 7.462 0 0115 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0018 15.06v-11a.75.75 0 00-.546-.721A9.006 9.006 0 0015 3a8.963 8.963 0 00-4.25 1.065V16.82zM9.25 4.065A8.963 8.963 0 005 3c-.85 0-1.673.118-2.454.339A.75.75 0 002 4.06v11a.75.75 0 00.954.721A7.462 7.462 0 015 15.5c1.579 0 3.042.487 4.25 1.32V4.065z" />
+                      </svg>
+                    </div>
+                    {item.kondisi && <span className={`shrink-0 text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-full ${kClass}`}>{item.kondisi}</span>}
+                  </div>
+                  <h3 className="font-display font-semibold text-sm leading-tight">{item.nama || "—"}</h3>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {item.jenis && <span className={`text-[10px] font-bold uppercase tracking-[0.1em] px-2 py-0.5 rounded-full ${tClass}`}>{item.jenis}</span>}
+                    {item.dusun && <span className="text-[10px] text-foreground/40">Dusun {item.dusun}</span>}
+                  </div>
+                  <div className="mt-2 flex items-center gap-3 text-xs text-foreground/40">
+                    {item.tahun_bangun && <span>Bangun: {item.tahun_bangun}</span>}
+                    {item.sumber_dana && <span>{item.sumber_dana}</span>}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-center text-foreground/40 py-12">Belum ada data infrastruktur.</p>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// ===== PbbPage =====
+const pbbStatusColor: Record<string, string> = {
+  lunas: "bg-green-50 text-green-700",
+  belum_lunas: "bg-red-50 text-red-700",
+  batal: "bg-gray-100 text-gray-500",
+};
+
+export function PbbPage() {
+  const { data, loading } = usePbbTagihanList();
+  const tahuns = [...new Set((data || []).map(d => d.tahun).filter(Boolean))].sort((a, b) => (b || 0) - (a || 0));
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border flex items-center px-4 h-14 gap-3">
+        <Link to="/" className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-foreground/5 transition-colors">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.69 3.71a.75.75 0 11-1.06 1.06l-4.25-4.25a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06.02z" clipRule="evenodd" /></svg>
+        </Link>
+        <h1 className="font-display font-semibold text-sm">PBB</h1>
+      </div>
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h2 className="font-display text-2xl font-bold tracking-tight">PBB-P2</h2>
+          <p className="text-sm text-foreground/50 mt-1">Tagihan Pajak Bumi dan Bangunan Perdesa</p>
+        </div>
+        {loading ? (
+          <div className="space-y-4">
+            {[1,2,3].map(i => <div key={i} className="h-24 rounded-xl bg-foreground/5 animate-pulse" />)}
+          </div>
+        ) : data.length > 0 ? (
+          <div className="space-y-8">
+            {tahuns.map(tahun => (
+              <div key={tahun}>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="font-display font-bold text-base">{tahun}</span>
+                  <div className="flex-1 h-px bg-foreground/10" />
+                </div>
+                <div className="bg-foreground/[0.03] rounded-2xl overflow-hidden border border-foreground/10 divide-y divide-foreground/10">
+                  {data.filter(d => d.tahun === tahun).map(pbb => {
+                    const sClass = pbb.status_bayar ? (pbbStatusColor[pbb.status_bayar.toLowerCase()] || "bg-gray-50 text-gray-600") : "bg-gray-50 text-gray-600";
+                    return (
+                      <Link key={pbb.id} to={`/pbb/${pbb.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-foreground/[0.03] transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-display font-semibold text-sm truncate">{pbb.nama_wp || "—"}</p>
+                            {pbb.status_bayar && <span className={`shrink-0 text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-full ${sClass}`}>{pbb.status_bayar}</span>}
+                          </div>
+                          <p className="text-xs text-foreground/40 mt-0.5 truncate">{pbb.NOP || "—"}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-display font-bold text-sm text-accent">
+                            {pbb.PBB_terutang ? `Rp ${pbb.PBB_terutang.toLocaleString("id-ID")}` : "—"}
+                          </p>
+                          {pbb.letak_objek && <p className="text-[10px] text-foreground/40 mt-0.5 max-w-[120px] text-right truncate">{pbb.letak_objek}</p>}
+                        </div>
+                        <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/20 shrink-0"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-foreground/40 py-12">Belum ada data PBB.</p>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// ===== SuratTerbitPage =====
+const suratStatusColor: Record<string, string> = {
+  selesai: "bg-green-50 text-green-700",
+  diproses: "bg-amber-50 text-amber-700",
+  ditolak: "bg-red-50 text-red-700",
+  draft: "bg-gray-50 text-gray-600",
+};
+
+export function SuratTerbitPage() {
+  const { data, loading } = useSuratTerbitList();
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border flex items-center px-4 h-14 gap-3">
+        <Link to="/" className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-foreground/5 transition-colors">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.69 3.71a.75.75 0 11-1.06 1.06l-4.25-4.25a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06.02z" clipRule="evenodd" /></svg>
+        </Link>
+        <h1 className="font-display font-semibold text-sm">Surat</h1>
+      </div>
+      <main className="max-w-2xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h2 className="font-display text-2xl font-bold tracking-tight">Surat Terbit</h2>
+          <p className="text-sm text-foreground/50 mt-1">Daftar surat yang telah diterbitkan</p>
+        </div>
+        {loading ? (
+          <div className="space-y-3">
+            {[1,2,3,4].map(i => <div key={i} className="h-16 rounded-xl bg-foreground/5 animate-pulse" />)}
+          </div>
+        ) : data.length > 0 ? (
+          <div className="relative pl-6 space-y-0">
+            <div className="absolute left-[11px] top-0 bottom-0 w-px bg-foreground/10" />
+            {data.map((s) => {
+              const sClass = s.status ? (suratStatusColor[s.status.toLowerCase()] || "bg-gray-50 text-gray-600") : "bg-gray-50 text-gray-600";
+              return (
+                <Link key={s.id} to={`/surat-terbit/${s.id}`} className="relative block group mb-0.5">
+                  <div className="absolute left-[-21px] top-4 w-5 h-5 rounded-full bg-background border-2 border-foreground/20 group-hover:border-accent transition-colors flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-foreground/20 group-hover:bg-accent transition-colors" />
+                  </div>
+                  <div className="flex items-start justify-between gap-3 py-3 border-b border-foreground/5 hover:border-foreground/15 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-display font-semibold text-sm">{s.nomor_surat || "—"}</span>
+                        {s.status && <span className={`shrink-0 text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-full ${sClass}`}>{s.status}</span>}
+                      </div>
+                      <p className="text-sm text-foreground/60 mt-0.5">{s.nama || "—"}</p>
+                      {s.keperluan && <p className="text-xs text-foreground/40 mt-0.5 truncate">{s.keperluan}</p>}
+                    </div>
+                    <div className="text-right shrink-0">
+                      {s.tanggal_terbit && <p className="text-xs text-foreground/50">{formatTanggal(s.tanggal_terbit)}</p>}
+                      {s.nik && <p className="text-[10px] text-foreground/30 mt-0.5">{s.nik.slice(0,6)}*******{s.nik.slice(-2)}</p>}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-center text-foreground/40 py-12">Belum ada data surat.</p>
         )}
       </main>
     </div>

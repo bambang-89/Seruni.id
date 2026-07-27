@@ -1948,12 +1948,69 @@ export interface PageHeroConfig {
   is_active: boolean;
 }
 
+export function useInfrastrukturList() {
+  const [data, setData] = useState<InfrastrukturDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("infrastruktur").select("*").order("nama")
+      .then(({ data: r }) => { setData((r as unknown as InfrastrukturDetail[]) || []); setLoading(false); });
+  }, []);
+  return { data, loading };
+}
+
+export function useBidangTanahList() {
+  const [data, setData] = useState<BidangTanahDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("bidang_tanah").select("*").order("nomor_persil")
+      .then(({ data: r }) => {
+        setData((r || []).map((row: Record<string, unknown>) => ({
+          ...row,
+          luas_m2: Number(row['luas_m2'] ?? 0),
+        })) as unknown as BidangTanahDetail[]);
+        setLoading(false);
+      });
+  }, []);
+  return { data, loading };
+}
+
+export function usePbbTagihanList() {
+  const [data, setData] = useState<PbbTagihanDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("pbb_tagihan").select("*").order("tahun", { ascending: false }).order("nama_wp")
+      .then(({ data: r }) => {
+        setData((r || []).map((row: Record<string, unknown>) => ({
+          ...row,
+          luas_tanah: Number(row['luas_tanah'] ?? 0),
+          luas_bangunan: Number(row['luas_bangunan'] ?? 0),
+          NJOP_tanah: Number(row['NJOP_tanah'] ?? 0),
+          NJOP_bangunan: Number(row['NJOP_bangunan'] ?? 0),
+          NJOP_total: Number(row['NJOP_total'] ?? 0),
+          PBB_terutang: Number(row['PBB_terutang'] ?? 0),
+        })) as unknown as PbbTagihanDetail[]);
+        setLoading(false);
+      });
+  }, []);
+  return { data, loading };
+}
+
+export function useSuratTerbitList() {
+  const [data, setData] = useState<SuratTerbitDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("surat_terbit").select("*").order("tanggal_terbit", { ascending: false })
+      .then(({ data: r }) => { setData((r as unknown as SuratTerbitDetail[]) || []); setLoading(false); });
+  }, []);
+  return { data, loading };
+}
+
 export function usePageHeroConfig(route: string) {
   const tenantId = useTenantId();
   const [data, setData] = useState<PageHeroConfig | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    
+
     let mounted = true;
     async function load() {
       const { data: rows } = await (supabase.from('page_hero_config') as any)
