@@ -187,13 +187,6 @@ export function useLembaga() {
   }, []);
   return { data, loading };
 }
-
-export async function fetchPendudukByNik(nik: string) {
-  if (!nik || nik.length !== 16) return null;
-  const { data } = await (supabase.from("penduduk") as any).select("*").eq("nik", nik).maybeSingle();
-  return data;
-}
-
 // ===================== Surat Identitas Autofill =====================
 
 export type IdentitasData = {
@@ -1923,18 +1916,29 @@ export function useIdmIndikatorById(id?: string) {
   }, [id]);
   return { data, loading };
 }
-export function useAutofillPenduduk(nik: string, onFound: (data: NonNullable<Awaited<ReturnType<typeof fetchPendudukByNik>>>) => void) {
+
+export async function fetchPendudukByNik(nik: string, tenantId: string) {
+  if (!nik || nik.length !== 16 || !tenantId) return null;
+  const { data } = await (supabase.from("penduduk") as any)
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .eq("nik", nik)
+    .maybeSingle();
+  return data;
+}
+
+export function useAutofillPenduduk(nik: string, tenantId: string, onFound: (data: NonNullable<Awaited<ReturnType<typeof fetchPendudukByNik>>>) => void) {
   const [loading, setLoading] = useState(false);
   useEffect(() => {
-    if (!nik || nik.length !== 16) return;
+    if (!nik || nik.length !== 16 || !tenantId) return;
     const t = setTimeout(async () => {
       setLoading(true);
-      const data = await fetchPendudukByNik(nik);
+      const data = await fetchPendudukByNik(nik, tenantId);
       if (data) onFound(data);
       setLoading(false);
     }, 500);
     return () => clearTimeout(t);
-  }, [nik, onFound]);
+  }, [nik, tenantId, onFound]);
   return { loading };
 }
 export interface PageHeroConfig {
