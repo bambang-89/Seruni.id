@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TableCrud, type Column } from "./AdminPages";
-import { useBroadcasts, useBroadcastTargets, useEventLog } from "../lib/queries";
+import { useBroadcasts, useBroadcastTargets, useEventLog, usePenerimaBansosStats } from "../lib/queries";
 import { SuratPreview, SuratPreviewModal } from "../components/SuratPreview";
 
 const WORKFLOW = [
@@ -330,7 +330,10 @@ export function PenerimaBansosAdmin() {
       setPrograms(list);
       if (list.length && !bansosId) setBansosId(list[0].id);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const { stats, loading: isStatsLoading } = usePenerimaBansosStats(bansosId);
 
   if (!programs.length) {
     return (
@@ -342,6 +345,28 @@ export function PenerimaBansosAdmin() {
 
   return (
     <div>
+      {/* Stats Header */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <div className="font-display text-3xl font-bold text-accent tabular-nums">
+            {isStatsLoading ? "..." : stats.total}
+          </div>
+          <div className="mt-1 font-display text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Total</div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <div className="font-display text-3xl font-bold text-green-600 tabular-nums">
+            {isStatsLoading ? "..." : stats.aktif}
+          </div>
+          <div className="mt-1 font-display text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Aktif</div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <div className="font-display text-3xl font-bold text-gray-400 tabular-nums">
+            {isStatsLoading ? "..." : stats.nonaktif}
+          </div>
+          <div className="mt-1 font-display text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Nonaktif</div>
+        </div>
+      </div>
+
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <label className="text-sm font-medium">Program:</label>
         <select
