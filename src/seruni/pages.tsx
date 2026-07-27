@@ -49,6 +49,8 @@ import {
   useWisataById,
   usePembangunanById,
   useBansosById,
+  usePenerimaBansos,
+  usePenerimaBansosStats,
   useAduanById,
   useIdmIndikatorById,
   useAutofillPenduduk,
@@ -58,6 +60,7 @@ import {
   PembangunanDetail,
   PotensiProduk,
   BantuanSosial,
+  PenerimaBansos,
   AduanWarga,
   IdmIndikator,
 } from "./lib/queries";
@@ -66,6 +69,8 @@ import { Seo } from "./lib/seo";
 import { FilterBar, FilterField, TextInput, SelectInput, OfflineBadge } from "./components/FilterBar";
 import { useOnlineStatus } from "./lib/useOnlineStatus";
 import { useSiteSettings } from "./lib/zeroHardcode";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 // -------------------------------------------------------------
 // Shared editorial helpers used across inner pages.
@@ -98,12 +103,9 @@ export function ProfilDesaPage() {
   const siteName = settings?.nama_resmi ?? "Desa Seruni";
   return (
     <EditorialLayout
-      eyebrow="Profil Desa"
-      judul="Sejarah, Visi, dan Misi"
-      deskripsi={`Kenali ${siteName} — dari sejarah pemekaran hingga arah pembangunan ke depan.`}
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Profil Desa" }]}
-    >
-      <Seo title="Profil Desa" description={`Sejarah, visi, dan misi ${siteName}, ${settings?.wilayah ?? ""}.`} path="/profil-desa" />
+        
+      >
+      
       <SectionWrap>
         <div className="grid lg:grid-cols-3 gap-10 lg:gap-14">
           <article className="lg:col-span-2">
@@ -141,12 +143,9 @@ export function StrukturPage() {
   const { data: strukturPamong } = usePamong();
   return (
     <EditorialLayout
-      eyebrow="Profil Desa"
-      judul="Struktur Organisasi Pemerintahan Desa"
-      deskripsi="Susunan perangkat desa periode 2024–2030 berdasarkan Peraturan Desa Nomor 03/2024."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Profil Desa", to: "/profil-desa" }, { label: "Struktur" }]}
-    >
-      <Seo title="Struktur Organisasi Pemerintahan Desa" description="Susunan perangkat Desa Seruni Mumbul periode 2024–2030." path="/profil-desa/struktur" />
+        
+      >
+      
       <SectionWrap>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-current/15">
           {strukturPamong.map((p, i) => (
@@ -183,12 +182,9 @@ export function WilayahPage() {
   const totalLuas = wilayahDusun.reduce((a, d) => a + d.luas_ha, 0);
   return (
     <EditorialLayout
-      eyebrow="Profil Desa"
-      judul="Wilayah & Topografi"
-      deskripsi={`Desa ${siteName} terbagi menjadi 6 dusun, dengan wilayah pesisir di sisi timur dan kaki bukit Rinjani di sisi barat.`}
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Profil Desa", to: "/profil-desa" }, { label: "Wilayah" }]}
-    >
-      <Seo title="Wilayah & Topografi" description="Data dusun, luas, KK, dan jiwa Desa Seruni Mumbul." path="/profil-desa/wilayah" />
+        
+      >
+      
       <SectionWrap>
         <div className="overflow-x-auto border border-current/15">
           <table className="w-full text-sm">
@@ -227,12 +223,9 @@ export function LembagaPage() {
   const { data: lembagaDesa } = useLembaga();
   return (
     <EditorialLayout
-      eyebrow="Profil Desa"
-      judul="Lembaga Kemasyarakatan Desa"
-      deskripsi="Enam lembaga aktif menjadi mitra pemerintah desa dalam pelayanan dan pemberdayaan warga."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Profil Desa", to: "/profil-desa" }, { label: "Lembaga" }]}
-    >
-      <Seo title="Lembaga Kemasyarakatan Desa" description="BPD, LPM, PKK, Karang Taruna, dan lembaga kemasyarakatan lainnya." path="/profil-desa/lembaga" />
+        
+      >
+      
       <SectionWrap>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-current/15">
           {lembagaDesa.map((l, i) => (
@@ -269,7 +262,7 @@ export function BeritaListPage() {
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      <Seo title="Berita Desa" description="Kabar terbaru pembangunan, kesehatan, ekonomi, dan sosial Desa Seruni Mumbul." path="/berita" />
+      
       <main className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-32 pb-16">
         <header className="mb-10 border-b-2 border-accent pb-4">
           <h1 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-widest">Berita Terkini</h1>
@@ -383,23 +376,7 @@ export function BeritaDetailPage() {
 
   return (
     <div className="bg-background text-foreground selection:bg-accent selection:text-accent-foreground pb-20">
-      <Seo
-        title={b.judul}
-        description={b.ringkasan}
-        path={`/berita/${b.slug}`}
-        type="article"
-        image={b.cover_url || undefined}
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "NewsArticle",
-          headline: b.judul,
-          datePublished: b.tanggal,
-          author: { "@type": "Person", name: b.penulis },
-          image: b.cover_url || undefined,
-          articleSection: b.kategori,
-          publisher: { "@type": "Organization", name: "Kantor Desa Seruni Mumbul" },
-        }}
-      />
+      
       
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-8 pb-12 lg:pt-12">
         {/* Breadcrumb */}
@@ -532,12 +509,9 @@ export function KalenderPage() {
   const { data: agendaMendatang } = useAgenda();
   return (
     <EditorialLayout
-      eyebrow="Informasi"
-      judul="Agenda & Kalender Desa"
-      deskripsi="Jadwal Musdes, Posyandu, gotong royong, dan sosialisasi program pemerintah desa."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Kalender" }]}
-    >
-      <Seo title="Agenda & Kalender Desa" description="Jadwal Musdes, Posyandu, gotong royong, dan kegiatan resmi desa." path="/kalender-desa" />
+        
+      >
+      
       <SectionWrap>
         <ul className="divide-y divide-current/15 border-y border-current/15">
           {agendaMendatang.map((a) => (
@@ -574,12 +548,9 @@ export function GaleriPage() {
   const { data: galeriDetail } = useGaleri();
   return (
     <EditorialLayout
-      eyebrow="Informasi"
-      judul="Galeri Foto & Video"
-      deskripsi="Dokumentasi kegiatan desa dalam satu tahun terakhir, dikurasi per album."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Galeri" }]}
-    >
-      <Seo title="Galeri Foto & Video" description="Dokumentasi kegiatan Desa Seruni Mumbul dalam satu tahun terakhir." path="/galeri" />
+        
+      >
+      
       <SectionWrap>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-current/15">
           {galeriDetail.map((g) => (
@@ -606,12 +577,9 @@ export function PengumumanPage() {
   const { data: pengumumanResmi } = usePengumuman();
   return (
     <EditorialLayout
-      eyebrow="Informasi"
-      judul="Pengumuman Resmi"
-      deskripsi="Pengumuman resmi bernomor register dari Kantor Desa Seruni Mumbul."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Pengumuman" }]}
-    >
-      <Seo title="Pengumuman Resmi" description="Pengumuman bernomor register dari Pemerintah Desa Seruni Mumbul." path="/pengumuman" />
+        
+      >
+      
       <SectionWrap>
         <ul className="divide-y divide-current/15 border-y border-current/15">
           {pengumumanResmi.map((p) => (
@@ -669,12 +637,9 @@ export function LayananPage() {
   ];
   return (
     <EditorialLayout
-      eyebrow="Layanan"
-      judul="Katalog Layanan Warga"
-      deskripsi="Ajukan permohonan online. Pantau status & unduh dokumen ber-QR verifikasi tanpa antre di kantor desa."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Layanan" }]}
-    >
-      <Seo title="Katalog Layanan Warga" description="Layanan surat, PBB, pengaduan, dan verifikasi dokumen Desa Seruni Mumbul." path="/layanan" />
+        
+      >
+      
       <SectionWrap>
         <div className="grid sm:grid-cols-2 gap-px bg-current/15">
           {catalog.map((c, i) => (
@@ -726,11 +691,8 @@ export function LayananSuratPage() {
   const { data: surat } = useSuratJenis();
   return (
     <EditorialLayout
-      eyebrow="Layanan"
-      judul="Ajukan Surat Online"
-      deskripsi={`${surat.length} jenis surat resmi desa, semua bernomor auto-generate dan dilengkapi QR verifikasi.`}
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Layanan", to: "/layanan" }, { label: "Surat" }]}
-    >
+        
+      >
       <SectionWrap>
         <div className="grid md:grid-cols-2 gap-px bg-current/15">
           {(surat || []).map((s) => (
@@ -789,12 +751,9 @@ export function LayananPBBPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Layanan"
-      judul="Cek Tagihan PBB"
-      deskripsi="Cek tagihan PBB berdasarkan Nomor Objek Pajak (NOP) dan tahun pajak. Data ditarik langsung dari basis data desa."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Layanan", to: "/layanan" }, { label: "PBB" }]}
-    >
-      <Seo title="Cek Tagihan PBB" description="Cek status tagihan Pajak Bumi dan Bangunan (PBB) berdasarkan NOP." path="/layanan/pbb" />
+        
+      >
+      
       <SectionWrap>
         <form className="max-w-2xl border border-current/20 p-6 sm:p-8 grid gap-5" onSubmit={cariPbb}>
           <div className="grid sm:grid-cols-[1fr_140px] gap-4">
@@ -925,11 +884,8 @@ export function ServiceCenterPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Service Center"
-      judul="Pengaduan Warga & Kontak Kantor Desa"
-      deskripsi="Sampaikan aduan atau pertanyaan. Tim Service Center memproses tiket 1×24 jam pada hari kerja."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Service Center" }]}
-    >
+        
+      >
       <SectionWrap>
         <div className="mb-8 flex gap-px bg-current/15 w-fit">
           {(["kirim", "lacak"] as const).map((m) => (
@@ -1197,12 +1153,9 @@ export function VerifikasiPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Layanan"
-      judul="Verifikasi Dokumen"
-      deskripsi="Cek keaslian surat desa dan tanda tangan elektronik."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Verifikasi" }]}
-    >
-      <Seo title="Verifikasi Dokumen Surat" description="Cek keaslian surat resmi Desa Seruni Mumbul dengan nomor & kode verifikasi." path="/verifikasi" />
+        
+      >
+      
       <SectionWrap>
         {/* Tab Switcher */}
         <div className="flex border-b border-current/20 mb-6">
@@ -1411,11 +1364,8 @@ export function StatistikHubPage() {
   ];
   return (
     <EditorialLayout
-      eyebrow="Data & Statistik"
-      judul="Data Terbuka Desa"
-      deskripsi="Semua data agregat desa, diperbarui dari sistem satu data."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik" }]}
-    >
+        
+      >
       <SectionWrap>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-current/15">
           {cards.map((c, i) => (
@@ -1440,11 +1390,8 @@ export function StatusIDMPage() {
   const { data: idmData } = useIdmData();
   return (
     <EditorialLayout
-      eyebrow="Data & Statistik"
-      judul="Status Indeks Desa Membangun"
-      deskripsi="Skor IDM dihitung dari 6 dimensi: kesehatan, pendidikan, modal sosial, permukiman, ekonomi, dan ekologi."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "IDM" }]}
-    >
+        
+      >
       <StatsBand
         kicker="Skor Agregat"
         tone="dark"
@@ -1481,12 +1428,9 @@ export function StatistikPendudukPage() {
   const { data: statistik } = useStatistikDesa();
   return (
     <EditorialLayout
-      eyebrow="Data & Statistik"
-      judul="Statistik Penduduk"
-      deskripsi={`Total ${(statistik?.jumlah_penduduk || 0).toLocaleString("id-ID")} jiwa dalam ${(statistik?.jumlah_kk || 0).toLocaleString("id-ID")} KK, tersebar di ${statistik?.jumlah_dusun || 0} dusun.`}
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Penduduk" }]}
-    >
-      <Seo title="Statistik Penduduk" description="Distribusi penduduk berdasarkan usia, mata pencaharian, dan pendidikan." path="/statistik/penduduk" />
+        
+      >
+      
       <StatsBand
         tone="dark"
         items={[
@@ -1526,12 +1470,9 @@ export function PembangunanPage() {
   const { data: pembangunanData } = usePembangunanData();
   return (
     <EditorialLayout
-      eyebrow="Data & Statistik"
-      judul="APBDes & Pembangunan"
-      deskripsi="Realisasi kegiatan pembangunan desa dan penyerapan anggaran APBDes 2026."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Pembangunan" }]}
-    >
-      <Seo title="APBDes & Pembangunan" description="Progres kegiatan pembangunan Desa Seruni Mumbul berjalan." path="/pembangunan" />
+        
+      >
+      
       <StatsBand
         tone="dark"
         items={[
@@ -1561,12 +1502,9 @@ export function PerencanaanPage() {
   const { data: usulanData } = useUsulanStats();
   return (
     <EditorialLayout
-      eyebrow="Data & Statistik"
-      judul="Perencanaan & Voting Usulan"
-      deskripsi={`${usulanData?.total_usulan ?? 0} usulan warga terkumpul, dengan ${(usulanData?.partisipasi_voting ?? 0).toLocaleString("id-ID")} suara pada periode Musrenbang 2027.`}
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Perencanaan" }]}
-    >
-      <Seo title="Perencanaan & Voting Usulan" description="RKPDes, usulan Musdes, dan prioritas pembangunan tahun berjalan." path="/perencanaan" />
+        
+      >
+      
       <StatsBand
         tone="dark"
         items={[
@@ -1619,12 +1557,9 @@ export function PotensiPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Potensi"
-      judul="Potensi Ekonomi, Pariwisata, dan BUMDes"
-      deskripsi="Sumber daya unggulan Desa Seruni Mumbul yang menjadi motor pertumbuhan warga."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Potensi" }]}
-    >
-      <Seo title="Potensi Desa" description="UMKM, BUMDes, koperasi, dan destinasi wisata Desa Seruni Mumbul." path="/potensi-desa" />
+        
+      >
+      
       <SectionWrap id="ekonomi">
         <EditorialTitle sectionKey="umkm-usaha-warga" kicker="UMKM" judul="Usaha Warga" />
         <OfflineBadge show={!online} />
@@ -1731,12 +1666,9 @@ export function MarketplacePage() {
 
   return (
     <EditorialLayout
-      eyebrow="Potensi"
-      judul="Marketplace Desa"
-      deskripsi="Produk UMKM warga Seruni Mumbul, dikelola BUMDes Bina Seruni Mandiri."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Marketplace" }]}
-    >
-      <Seo title="Marketplace Desa" description="Katalog produk UMKM Desa Seruni Mumbul." path="/marketplace" />
+        
+      >
+      
       <SectionWrap>
         <OfflineBadge show={!online} />
         <FilterBar onReset={reset} hasilCount={filtered.length} totalCount={produk.length}>
@@ -1815,12 +1747,9 @@ export function PetaPage() {
   ];
   return (
     <EditorialLayout
-      eyebrow="Peta Desa"
-      judul="Peta Interaktif Desa"
-      deskripsi="Sebaran wilayah, aset, layanan publik, zona rawan bencana, dan destinasi wisata."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Peta" }]}
-    >
-      <Seo title="Peta Interaktif Desa" description="Layer wilayah, dusun, dan destinasi wisata Desa Seruni Mumbul." path="/peta-desa" />
+        
+      >
+      
       <SectionWrap>
         <OfflineBadge show={!online} />
         <FilterBar hasilCount={wisataFiltered.length} totalCount={wisata.length} onReset={() => { setQ(""); setJenis(""); }}>
@@ -1894,12 +1823,9 @@ export function LanggananWaPage() {
   }
   return (
     <EditorialLayout
-      eyebrow="Notifikasi"
-      judul="Langganan Notifikasi WhatsApp"
-      deskripsi="Dapatkan pemberitahuan agenda, pengumuman, dan berita desa langsung ke WhatsApp Anda."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Langganan WA" }]}
-    >
-      <Seo title="Langganan Notifikasi WhatsApp" description="Daftar untuk menerima notifikasi resmi Desa Seruni Mumbul via WhatsApp." path="/langganan-wa" />
+        
+      >
+      
       <SectionWrap>
         {terkirim ? (
           <div className="max-w-lg border-l-2 border-accent pl-6 py-4">
@@ -1977,11 +1903,8 @@ export function KeuanganPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Transparansi"
-      judul={`Keuangan Desa — APBDes ${activeYear}`}
-      deskripsi="Rincian pendapatan, belanja, dan pembiayaan Desa Seruni Mumbul yang bersumber dari APBDes."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Keuangan" }]}
-    >
+        
+      >
       <SectionWrap>
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Tahun Anggaran</span>
@@ -2118,12 +2041,9 @@ export function BansosPage() {
   const { data: bansos } = useBantuanSosial();
   return (
     <EditorialLayout
-      eyebrow="Kesejahteraan"
-      judul="Bantuan Sosial"
-      deskripsi="Program bantuan sosial yang berjalan di Desa Seruni Mumbul."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Bansos" }]}
-    >
-      <Seo title="Bantuan Sosial" description="Program bantuan sosial desa." path="/bansos" />
+        
+      >
+      
       <SectionWrap>
         {(!bansos || bansos.length === 0) ? (
           <p className="text-muted-foreground py-8 text-center">Belum ada program bantuan sosial.</p>
@@ -2169,12 +2089,9 @@ export function StuntingPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Gizi & Kesehatan"
-      judul="Monitoring Stunting & Gizi"
-      deskripsi="Data hasil pengukuran balita dan intervensi gizi di posyandu."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Stunting" }]}
-    >
-      <Seo title="Monitoring Stunting" description="Data balita dan gizi Desa Seruni Mumbul." path="/stunting" />
+        
+      >
+      
       <StatsBand
         kicker="Agregat"
         tone="neutral"
@@ -2267,12 +2184,9 @@ export function BencanaPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Kebencanaan"
-      judul="Bencana & Mitigasi"
-      deskripsi="Riwayat kejadian bencana dan upaya mitigasi di Desa Seruni Mumbul."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Bencana" }]}
-    >
-      <Seo title="Bencana & Mitigasi" description="Kejadian bencana dan mitigasi desa." path="/bencana" />
+        
+      >
+      
       <StatsBand
         kicker="Rekap"
         tone="neutral"
@@ -2334,12 +2248,9 @@ export function PosyanduPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Kesehatan"
-      judul="Posyandu & Balita"
-      deskripsi="Data balita dan kegiatan posyandu di Desa Seruni Mumbul."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Posyandu" }]}
-    >
-      <Seo title="Posyandu" description="Data balita dan kegiatan posyandu." path="/posyandu" />
+        
+      >
+      
       <StatsBand
         kicker="Agregat"
         tone="neutral"
@@ -3448,22 +3359,77 @@ export function PembangunanDetailPage() {
 export function BansosDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data, loading: isLoading } = useBansosById(id);
+
+  const [search, setSearch] = useState("");
+  const [dusunFilter, setDusunFilter] = useState("");
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
+
+  const { data: penerima, loading: isPenerimaLoading, total } = usePenerimaBansos(id, {
+    search,
+    dusun: dusunFilter,
+    page,
+    pageSize,
+  });
+  const { stats } = usePenerimaBansosStats(id);
+
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
+
   const isActive = data.aktif === true || data.aktif === 1;
+
+  // Format nominal
+  const fmtNominal = (n: number | null | undefined) =>
+    n ? `Rp ${n.toLocaleString("id-ID")}` : "—";
+
+  // Chart data — agregasi per dusun
+  const chartData = (() => {
+    if (!penerima.length) return [];
+    const agg: Record<string, number> = {};
+    penerima.forEach((p) => {
+      const d = p.dusun || "Tidak diketahui";
+      agg[d] = (agg[d] || 0) + 1;
+    });
+    return Object.entries(agg)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  })();
+
+  // Unique dusun for filter dropdown
+  const dusunOptions = Array.from(
+    new Set(penerima.map((p) => p.dusun).filter(Boolean) as string[])
+  );
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const STATUS_LABELS: Record<string, string> = {
+    terdaftar: "Terdaftar",
+    diverifikasi: "Diverifikasi",
+    disebarkan: "Disalurkan",
+    dibatalkan: "Dibatalkan",
+    aktif: "Aktif",
+  };
+
+  const STATUS_COLORS: Record<string, string> = {
+    aktif: "bg-green-100 text-green-700",
+    diverifikasi: "bg-blue-100 text-blue-700",
+    disebarkan: "bg-purple-100 text-purple-700",
+    terdaftar: "bg-gray-100 text-gray-700",
+    dibatalkan: "bg-gray-100 text-gray-400",
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
         {/* Back link */}
         <Link to="/bansos" className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline mb-6">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clipRule="evenodd" /></svg>
           Kembali ke Bantuan Sosial
         </Link>
 
-        {/* Program card */}
-        <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm mt-2">
-          {/* Card header */}
+        {/* Program Header Card */}
+        <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm mb-6">
           <div className="px-6 pt-6 pb-4 border-b border-current/10">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">
@@ -3473,6 +3439,9 @@ export function BansosDetailPage() {
                 <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-semibold leading-snug text-foreground">
                   {data.nama}
                 </h1>
+                {data.sumber && (
+                  <p className="text-sm text-foreground/60">{data.sumber}</p>
+                )}
               </div>
               <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                 <span className={`w-2 h-2 rounded-full ${isActive ? "bg-green-500" : "bg-red-500"}`} />
@@ -3481,45 +3450,35 @@ export function BansosDetailPage() {
             </div>
           </div>
 
-          {/* Info grid */}
-          <div className="px-6 py-5 grid sm:grid-cols-2 gap-4">
-            {(data as BantuanSosial).sumber && (
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" /></svg>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Sumber</p>
-                  <p className="text-sm font-medium text-foreground">{(data as BantuanSosial).sumber}</p>
-                </div>
+          {/* Stats Row */}
+          <div className="px-6 py-5 grid grid-cols-3 gap-3">
+            <div className="bg-foreground/5 rounded-lg p-4 text-center">
+              <div className="font-display text-3xl font-bold text-accent tabular-nums">{stats.total}</div>
+              <div className="mt-1 font-display text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/50">Penerima</div>
+            </div>
+            <div className="bg-foreground/5 rounded-lg p-4 text-center">
+              <div className="font-display text-3xl font-bold text-accent tabular-nums">{data.kuota ?? "—"}</div>
+              <div className="mt-1 font-display text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/50">Kuota</div>
+            </div>
+            <div className="bg-foreground/5 rounded-lg p-4 text-center">
+              <div className="font-display text-lg font-bold text-accent tabular-nums">
+                {stats.total > 0 && data.kuota ? `${Math.round((stats.total / data.kuota) * 100)}%` : "—"}
               </div>
-            )}
-            {data.kuota != null && (
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Kuota</p>
-                  <p className="text-sm font-medium text-foreground">{data.kuota} orang</p>
-                </div>
-              </div>
-            )}
+              <div className="mt-1 font-display text-[10px] font-bold uppercase tracking-[0.2em] text-foreground/50">Terpenuhi</div>
+            </div>
           </div>
 
           {/* Period */}
           {(data.periode_mulai || data.periode_selesai) && (
             <div className="px-6 pb-5">
-              <div className="bg-foreground/5 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40 flex-shrink-0"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Periode</p>
-                    <p className="text-sm text-foreground/80">
-                      {data.periode_mulai ? formatTanggal(data.periode_mulai) : "—"}
-                      {data.periode_selesai ? ` — ${formatTanggal(data.periode_selesai)}` : " — selesai"}
-                    </p>
-                  </div>
+              <div className="bg-foreground/5 rounded-lg p-4 flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/40 flex-shrink-0"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" /></svg>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40 mb-1">Periode</p>
+                  <p className="text-sm text-foreground/80">
+                    {data.periode_mulai ? formatTanggal(data.periode_mulai) : "—"}
+                    {data.periode_selesai ? ` — ${formatTanggal(data.periode_selesai)}` : " — selesai"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -3534,20 +3493,141 @@ export function BansosDetailPage() {
               </div>
             </div>
           )}
+        </div>
 
-          {/* How to apply */}
-          <div className="px-6 pb-6">
-            <div className="bg-accent/5 border border-accent/15 rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-accent"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" /></svg>
-                <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-accent">Cara Mendaftar</h3>
+        {/* Chart: Sebaran per dusun */}
+        {chartData.length > 0 && (
+          <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm mb-6">
+            <div className="px-6 pt-5 pb-4 border-b border-current/10">
+              <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50">Sebaran Penerima per dusun</h3>
+            </div>
+            <div className="px-6 py-5">
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 24, top: 4, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="current" strokeOpacity={0.1} />
+                    <XAxis type="number" tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload?.length) return null;
+                        return (
+                          <div className="bg-background border border-border rounded-lg shadow-lg px-3 py-2 text-sm">
+                            <p className="font-medium">{label}</p>
+                            <p className="text-accent font-bold">{payload[0].value} penerima</p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Bar dataKey="count" fill="var(--accent)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <p className="text-sm text-foreground/60 leading-relaxed">
-                Hubungi kantor desa untuk informasi dan pendaftaran program {data.nama}. Kuota terbatas, pastikan memenuhi syarat yang berlaku.
-              </p>
             </div>
           </div>
+        )}
+
+        {/* Daftar Penerima */}
+        <div className="bg-background border border-current/15 rounded-xl overflow-hidden shadow-sm">
+          <div className="px-6 pt-5 pb-4 border-b border-current/10 flex flex-wrap items-center justify-between gap-3">
+            <h3 className="font-display text-sm font-semibold uppercase tracking-[0.1em] text-foreground/60">
+              Daftar Penerima
+              {total > 0 && <span className="ml-2 text-foreground/30">({total} total)</span>}
+            </h3>
+
+            {/* Search + Filter */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground/30 pointer-events-none"><path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" /></svg>
+                <input
+                  type="text"
+                  placeholder="Cari nama..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                  className="pl-9 pr-3 py-2 rounded-md border border-border bg-background text-sm w-44"
+                />
+              </div>
+              <select
+                value={dusunFilter}
+                onChange={(e) => { setDusunFilter(e.target.value); setPage(0); }}
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Semua dusun</option>
+                {dusunOptions.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-current/15 bg-foreground/[0.02]">
+                  <th className="py-3 px-4 text-left font-display text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/50">Nama</th>
+                  <th className="py-3 px-4 text-left font-display text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/50 hidden sm:table-cell">NIK</th>
+                  <th className="py-3 px-4 text-left font-display text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/50">dusun</th>
+                  <th className="py-3 px-4 text-right font-display text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/50 hidden sm:table-cell">Nominal</th>
+                  <th className="py-3 px-4 text-center font-display text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/50">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isPenerimaLoading ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-foreground/40 text-sm">Memuat...</td>
+                  </tr>
+                ) : penerima.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-foreground/40 text-sm">Belum ada data penerima.</td>
+                  </tr>
+                ) : (
+                  penerima.map((p) => (
+                    <tr key={p.id} className="border-b border-current/10 hover:bg-foreground/[0.02] transition-colors">
+                      <td className="py-3 px-4 font-medium text-foreground">{p.nama || "—"}</td>
+                      <td className="py-3 px-4 text-foreground/50 font-mono text-xs hidden sm:table-cell">
+                        {p.nik ? "████████" : "—"}
+                      </td>
+                      <td className="py-3 px-4 text-foreground/70">{p.dusun || "—"}</td>
+                      <td className="py-3 px-4 text-right font-medium tabular-nums text-foreground/80 hidden sm:table-cell">
+                        {fmtNominal(p.nominal)}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-700"}`}>
+                          {STATUS_LABELS[p.status] || p.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-current/10 flex items-center justify-between">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-sm disabled:opacity-40 hover:bg-foreground/[0.02] transition-colors"
+              >
+                ← Prev
+              </button>
+              <span className="text-sm text-foreground/50">
+                Halaman {page + 1} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-sm disabled:opacity-40 hover:bg-foreground/[0.02] transition-colors"
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
+
       </main>
     </div>
   );
@@ -3862,11 +3942,8 @@ export function IdmIndikatorDetailPage() {
 export function NotFoundPage() {
   return (
     <EditorialLayout
-      eyebrow="404"
-      judul="Halaman tidak ditemukan"
-      deskripsi="Halaman yang Anda cari tidak tersedia atau telah dipindahkan."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "404" }]}
-    >
+        
+      >
       <SectionWrap>
         <Link to="/" className={btnPrimary}>Kembali ke Beranda</Link>
       </SectionWrap>
