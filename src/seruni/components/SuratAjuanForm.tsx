@@ -434,7 +434,8 @@ export function SuratAjuanForm() {
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const p = await fetchPendudukByNik(nik);
+        if (!tenantId) throw new Error("Tenant ID missing");
+        const p = await fetchPendudukByNik(nik, tenantId);
         if (p) {
           const kewarganegaraan = await fetchKewarganegaraan((p as any).warga_negara_id);
           const alamat_lengkap = composeAlamat(
@@ -493,7 +494,7 @@ export function SuratAjuanForm() {
         setIsLoadingLookup(false);
       }
     }, 500);
-  }, [nik, dnaFields]);
+  }, [nik, tenantId, dnaFields]);
 
   function validateAll(): boolean {
     const errors: Record<string, string> = {};

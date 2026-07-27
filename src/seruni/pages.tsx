@@ -17,7 +17,7 @@ import {
   usePengumuman, useGaleri, usePotensiUmkm, usePotensiProduk, usePotensiWisata, useApbdes,
   useApbdesYears, useStatistikDesa, useIdmData, usePembangunanData, useUsulanStats,
   useBantuanSosial, useStuntingAgregat, usePosyanduAgregat, useBalita, useBencanaKejadian,
-  useSuratJenis, useLayananStatistik, useAduanKategori,
+  useSuratJenis, useLayananStatistik, useAduanKategori, useRefTopikLangganan,
   useAgendaById, useGaleriById, usePengumumanById, usePosyanduById, useStuntingById,
   useUmkmById, useProdukById, useWisataById, usePembangunanById, useBansosById,
   usePenerimaBansos, usePenerimaBansosStats, useAduanById, useIdmIndikatorById,
@@ -371,10 +371,10 @@ export function BeritaDetailPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 py-4 border-y border-current/15">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-lg">
-                    {(b.penulis || "Admin").charAt(0)}
+                    {(b.penulis || "").charAt(0)}
                   </div>
                   <div>
-                    <div className="font-bold text-sm">Oleh <span className="text-accent">{b.penulis || "Admin"}</span></div>
+                    <div className="font-bold text-sm">Oleh <span className="text-accent">{b.penulis || ""}</span></div>
                     <time className="text-xs opacity-60 tabular-nums">Diperbarui {formatTanggal(b.tanggal)}</time>
                   </div>
                 </div>
@@ -1584,9 +1584,9 @@ export function PotensiPage() {
           <div className="grid lg:grid-cols-[1fr_auto] gap-10 items-end border-l-2 border-accent pl-6 sm:pl-10">
             <div>
               <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">{bumdesUtama?.tipe === "koperasi" ? "Koperasi" : "BUMDes"}</div>
-              <h2 className="mt-3 font-display text-4xl sm:text-5xl lg:text-6xl font-bold italic tracking-tight leading-[1.05]">{bumdesUtama?.nama || "Badan Usaha Milik Desa"}</h2>
+              <h2 className="mt-3 font-display text-4xl sm:text-5xl lg:text-6xl font-bold italic tracking-tight leading-[1.05]">{bumdesUtama?.nama || ""}</h2>
               <p className="mt-6 max-w-2xl text-base leading-relaxed opacity-80">
-                {bumdesUtama?.deskripsi || "Belum ada informasi deskripsi BUMDes."}
+                {bumdesUtama?.deskripsi || ""}
               </p>
               {bumdes.length > 1 && (
                 <ul className="mt-8 grid sm:grid-cols-2 gap-px bg-white/15 border-t border-b border-white/20">
@@ -1755,13 +1755,23 @@ export function PetaPage() {
 // ============================ Utility pages ============================
 
 export function LanggananWaPage() {
-  const TOPIK = ["Agenda & Musdes", "Pengumuman Resmi", "Berita Desa", "Info Bencana", "Layanan & PBB"];
+  const { data: topikList } = useRefTopikLangganan();
   const { data: dusunList } = useDusun();
   const [nama, setNama] = useState("");
   const [nomor, setNomor] = useState("");
   const tenantId = useTenantId();
   const [dusun, setDusun] = useState("");
-  const [topik, setTopik] = useState<string[]>(TOPIK);
+  const [topik, setTopik] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (topikList && topikList.length > 0) {
+      setTopik(topikList.map(t => t.nama));
+    }
+  }, [topikList]);
+
+  function toggle(t: string) {
+    setTopik((cur) => cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]);
+  }
   const [loading, setLoading] = useState(false);
   const [terkirim, setTerkirim] = useState(false);
 
@@ -1822,9 +1832,9 @@ export function LanggananWaPage() {
             <fieldset className="text-sm">
               <legend className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent mb-3">Kategori Notifikasi</legend>
               <div className="grid sm:grid-cols-2 gap-2.5">
-                {TOPIK.map((k) => (
-                  <label key={k} className="flex items-center gap-2">
-                    <input type="checkbox" checked={topik.includes(k)} onChange={() => toggle(k)} className="accent-[var(--color-primer)]" /> <span>{k}</span>
+                {(topikList || []).map((k) => (
+                  <label key={k.nama} className="flex items-center gap-2">
+                    <input type="checkbox" checked={topik.includes(k.nama)} onChange={() => toggle(k.nama)} className="accent-[var(--color-primer)]" /> <span>{k.nama}</span>
                   </label>
                 ))}
               </div>
@@ -2683,10 +2693,10 @@ export function PosyanduDetailPage() {
         )}
 
         {/* Notes */}
-        {data.catatan && (
+        {data.keterangan && (
           <div className="mt-6 bg-accent/5 border border-accent/20 rounded-xl p-5">
             <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-accent mb-2">Catatan</h3>
-            <p className="text-sm text-foreground/70 leading-relaxed italic">{data.catatan}</p>
+            <p className="text-sm text-foreground/70 leading-relaxed italic">{data.keterangan}</p>
           </div>
         )}
       </main>
@@ -3214,7 +3224,7 @@ export function PembangunanDetailPage() {
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
   const progress = data.progress_persen ?? 0;
-  const title = data.nama_kegiatan || data.judul || "Kegiatan Pembangunan";
+  const title = data.nama_kegiatan || data.judul || "";
 
   const anggaranFmt = data.anggaran != null
     ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.anggaran)
@@ -3799,10 +3809,10 @@ export function PendudukDetailPage() {
           )}
 
           {/* Catatan */}
-          {data.catatan && (
+          {data.keterangan && (
             <div className="bg-background border border-current/15 rounded-xl p-5">
               <h3 className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-3">Catatan</h3>
-              <p className="text-sm text-foreground/70 leading-relaxed">{data.catatan}</p>
+              <p className="text-sm text-foreground/70 leading-relaxed">{data.keterangan}</p>
             </div>
           )}
         </div>
@@ -4320,7 +4330,7 @@ export function BidangTanahDetailPage() {
         {/* Header */}
         <div className="bg-gradient-to-br from-emerald-50/60 via-background to-emerald-50/30 border border-emerald-200/40 rounded-2xl overflow-hidden mb-6">
           <div className="px-6 py-6">
-            <p className="text-[10px] font-mono font-semibold text-emerald-600 uppercase tracking-wider mb-2">No. Persil #{data.nomor_persil || "—"}</p>
+            <p className="text-[10px] font-mono font-semibold text-emerald-600 uppercase tracking-wider mb-2">No. Persil #{data.no_sertifikat || "—"}</p>
             <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">Data Bidang Tanah</h1>
           </div>
         </div>
@@ -4329,18 +4339,18 @@ export function BidangTanahDetailPage() {
         <div className="grid sm:grid-cols-2 gap-4 mb-6">
           <InfoCard icon="map" label="Dusun" value={data.dusun || "—"} />
           <InfoCard icon="area" label="Luas" value={luas} />
-          {data.pemilik_nama && <InfoCard icon="user" label="Nama Pemilik" value={data.pemilik_nama} />}
-          {maskNik(data.pemilik_nik) && <InfoCard icon="card" label="NIK Pemilik" value={maskNik(data.pemilik_nik)} />}
-          {data.penggunaan && <InfoCard icon="activity" label="Penggunaan" value={data.penggunaan} />}
-          {data.status_hak && <InfoCard icon="shield" label="Status Hak" value={data.status_hak} />}
-          {data.nomor_sertifikat && <InfoCard icon="fileText" label="No. Sertifikat" value={data.nomor_sertifikat} />}
-          {data.tanggal_daftar && <InfoCard icon="calendar" label="Tanggal Daftar" value={formatTanggal(data.tanggal_daftar)} />}
+          {data.nama_pemegang && <InfoCard icon="user" label="Nama Pemilik" value={data.nama_pemegang} />}
+          {maskNik(data.nik_pemegang) && <InfoCard icon="card" label="NIK Pemilik" value={maskNik(data.nik_pemegang)} />}
+          {data.status && <InfoCard icon="shield" label="Status Hak" value={data.status} />}
+          {data.no_sertifikat && <InfoCard icon="fileText" label="No. Sertifikat" value={data.no_sertifikat} />}
+          {data.lokasi && <InfoCard icon="mapPin" label="Lokasi" value={data.lokasi} />}
+          {data.alamat_pemegang && <InfoCard icon="home" label="Alamat Pemilik" value={data.alamat_pemegang} />}
         </div>
 
-        {data.catatan && (
+        {data.keterangan && (
           <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
             <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Catatan</h3>
-            <p className="text-sm text-foreground/80 leading-relaxed">{data.catatan}</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{data.keterangan}</p>
           </div>
         )}
       </main>
@@ -4388,6 +4398,7 @@ export function InfrastrukturDetailPage() {
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          {data.lokasi && <InfoCard icon="mapPin" label="Lokasi" value={data.lokasi} />}
           {data.dusun && <InfoCard icon="map" label="Dusun" value={data.dusun} />}
           {data.tahun_bangun && <InfoCard icon="calendar" label="Tahun Bangun" value={String(data.tahun_bangun)} />}
           {data.tahun_perbaikan && <InfoCard icon="tool" label="Tahun Perbaikan" value={String(data.tahun_perbaikan)} />}
@@ -4688,8 +4699,8 @@ export function PbbDetailPage() {
           <div className="px-6 py-6 flex items-start justify-between gap-4">
             <div>
               <p className="text-[10px] font-mono font-semibold text-amber-600 uppercase tracking-wider mb-2">PBB — Tahun {data.tahun || "—"}</p>
-              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.nama_wp || "—"}</h1>
-              {data.NOP && <p className="text-xs text-foreground/40 mt-1 font-mono">NOP: {data.NOP}</p>}
+              <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">{data.wajib_pajak_nama || "—"}</h1>
+              {data.nop && <p className="text-xs text-foreground/40 mt-1 font-mono">NOP: {data.nop}</p>}
             </div>
             <span className={`inline-flex px-3 py-1.5 rounded-full text-xs font-bold shrink-0 ${lunasBadge}`}>{lunasLabel}</span>
           </div>
@@ -4699,26 +4710,26 @@ export function PbbDetailPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
           <div className="bg-background border border-current/15 rounded-xl p-4 text-center shadow-sm">
             <p className="text-xs text-foreground/50 uppercase tracking-wider">NJOP Tanah</p>
-            <p className="text-lg font-bold text-foreground mt-1">{fmtRupiah(data.NJOP_tanah)}</p>
+            <p className="text-lg font-bold text-foreground mt-1">{fmtRupiah(data.njop_bumi)}</p>
           </div>
           <div className="bg-background border border-current/15 rounded-xl p-4 text-center shadow-sm">
             <p className="text-xs text-foreground/50 uppercase tracking-wider">NJOP Bangunan</p>
-            <p className="text-lg font-bold text-foreground mt-1">{fmtRupiah(data.NJOP_bangunan)}</p>
+            <p className="text-lg font-bold text-foreground mt-1">{fmtRupiah(data.njop_bangunan)}</p>
           </div>
           <div className="bg-amber-50/60 border border-amber-200/40 rounded-xl p-4 text-center shadow-sm sm:col-span-1 col-span-2">
             <p className="text-xs text-amber-700 uppercase tracking-wider">PBB Terutang</p>
-            <p className="text-xl font-bold text-amber-700 mt-1">{fmtRupiah(data.PBB_terutang)}</p>
+            <p className="text-xl font-bold text-amber-700 mt-1">{fmtRupiah(data.pbb_terutang)}</p>
           </div>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4 mb-6">
-          {data.letak_objek && <InfoCard icon="mapPin" label="Letak Objek" value={data.letak_objek} />}
-          {data.alamat_wp && <InfoCard icon="home" label="Alamat WP" value={data.alamat_wp} />}
-          {data.luas_tanah != null && <InfoCard icon="area" label="Luas Tanah" value={`${data.luas_tanah} m²`} />}
+          {data.alamat_objek && <InfoCard icon="mapPin" label="Letak Objek" value={data.alamat_objek} />}
+          {data.wajib_pajak_alamat && <InfoCard icon="home" label="Alamat WP" value={data.wajib_pajak_alamat} />}
+          {data.luas_bumi_m2 != null && <InfoCard icon="area" label="Luas Tanah" value={`${data.luas_bumi_m2} m²`} />}
           {data.luas_bangunan != null && <InfoCard icon="box" label="Luas Bangunan" value={`${data.luas_bangunan} m²`} />}
           {data.kelas_tanah && <InfoCard icon="layers" label="Kelas Tanah" value={data.kelas_tanah} />}
           {data.kelas_bangunan && <InfoCard icon="building" label="Kelas Bangunan" value={data.kelas_bangunan} />}
-          {data.NJOP_total != null && <InfoCard icon="calculator" label="NJOP Total" value={fmtRupiah(data.NJOP_total)} />}
+          {data.njop_total != null && <InfoCard icon="calculator" label="NJOP Total" value={fmtRupiah(data.njop_total)} />}
         </div>
       </main>
     </div>
@@ -5009,21 +5020,21 @@ export function PertanahanPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-display font-bold text-base">{t.nomor_persil || "—"}</span>
-                      {t.status_hak && (
+                      <span className="font-display font-bold text-base">{t.no_sertifikat || "—"}</span>
+                      {t.status && (
                         <span className="text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-full bg-foreground/5 text-foreground/60">
-                          {t.status_hak}
+                          {t.status}
                         </span>
                       )}
                     </div>
-                    {t.pemilik_nama && <p className="text-sm text-foreground/60 mt-0.5 truncate">{t.pemilik_nama}</p>}
+                    {t.nama_pemegang && <p className="text-sm text-foreground/60 mt-0.5 truncate">{t.nama_pemegang}</p>}
                   </div>
                   <div className="text-right shrink-0">
                     {t.luas_m2 && <p className="font-display font-bold text-accent">{t.luas_m2.toLocaleString("id-ID")} m²</p>}
                     {t.dusun && <p className="text-[10px] text-foreground/40 mt-0.5">Dusun {t.dusun}</p>}
                   </div>
                 </div>
-                {t.penggunaan && <p className="mt-2 text-xs text-foreground/40">Penggunaan: {t.penggunaan}</p>}
+                {t.lokasi && <p className="mt-2 text-xs text-foreground/40">Lokasi: {t.lokasi}</p>}
               </Link>
             ))}
           </div>
@@ -5154,16 +5165,16 @@ export function PbbPage() {
                       <Link key={pbb.id} to={`/pbb/${pbb.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-foreground/[0.03] transition-colors">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-display font-semibold text-sm truncate">{pbb.nama_wp || "—"}</p>
+                            <p className="font-display font-semibold text-sm truncate">{pbb.wajib_pajak_nama || "—"}</p>
                             {pbb.status_bayar && <span className={`shrink-0 text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-full ${sClass}`}>{pbb.status_bayar}</span>}
                           </div>
-                          <p className="text-xs text-foreground/40 mt-0.5 truncate">{pbb.NOP || "—"}</p>
+                          <p className="text-xs text-foreground/40 mt-0.5 truncate">{pbb.nop || "—"}</p>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="font-display font-bold text-sm text-accent">
-                            {pbb.PBB_terutang ? `Rp ${pbb.PBB_terutang.toLocaleString("id-ID")}` : "—"}
+                            {pbb.pbb_terutang ? `Rp ${pbb.pbb_terutang.toLocaleString("id-ID")}` : "—"}
                           </p>
-                          {pbb.letak_objek && <p className="text-[10px] text-foreground/40 mt-0.5 max-w-[120px] text-right truncate">{pbb.letak_objek}</p>}
+                          {pbb.alamat_objek && <p className="text-[10px] text-foreground/40 mt-0.5 max-w-[120px] text-right truncate">{pbb.alamat_objek}</p>}
                         </div>
                         <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-foreground/20 shrink-0"><path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" /></svg>
                       </Link>

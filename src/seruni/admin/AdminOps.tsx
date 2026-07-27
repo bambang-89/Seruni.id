@@ -904,6 +904,14 @@ export function SuratTerbitAdmin() {
     await loadAjuanData(ajuan);
     const jenis = getJenis(ajuan.jenis_surat_id);
     setDraftAjuan(ajuan);
+
+    // Fetch penduduk_id to ensure preview works correctly
+    let penduduk_id = null;
+    if (ajuan.nik) {
+      const { data: p } = await supabase.from("penduduk").select("id").eq("nik", ajuan.nik).maybeSingle();
+      if (p) penduduk_id = p.id;
+    }
+
     setDraft({
       id: null,
       nomor_surat: "",
@@ -913,6 +921,8 @@ export function SuratTerbitAdmin() {
       pertaining: "",
       pemohon_nama: ajuan.nama,
       pemohon_nik: ajuan.nik,
+      penduduk_id: penduduk_id, // For preview relation
+      surat_ajuan_id: ajuan.id, // For notification edge function mapping
       tanggal_terbit: _today(),
       berlaku_sampai: "",
       status: "berlaku",
@@ -939,6 +949,7 @@ export function SuratTerbitAdmin() {
     if (draftDna && Object.keys(draftDna).length > 0) {
       await supabase.from("surat_terbit_data").insert({
         surat_terbit_id: terbit.id,
+        penduduk_id: row.penduduk_id || null,
         data_dna: draftDna,
         tenant_id: payload.tenant_id,
       }).catch(() => { /* ignore */ });

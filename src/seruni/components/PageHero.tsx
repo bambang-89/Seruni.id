@@ -15,8 +15,13 @@ export function PageHero({ route }: { route: string }) {
   const title = data?.title || (isHomepage ? "Desa Seruni Mumbul" : "Halaman");
   const subtitle = data?.subtitle || (isHomepage ? "Kecamatan Pringgabaya, Kabupaten Lombok Timur" : "");
 
-  const imageUrl = data?.image_path ? supabase.storage.from('seruni-media').getPublicUrl(data.image_path).data.publicUrl : null;
-  const videoUrl = (isHomepage && data?.video_path) ? supabase.storage.from('seruni-media').getPublicUrl(data.video_path).data.publicUrl : null;
+  const imageUrl = data?.image_path 
+    ? (data.image_path.startsWith('http') ? data.image_path : supabase.storage.from('seruni-media').getPublicUrl(data.image_path).data.publicUrl) 
+    : null;
+    
+  const videoUrl = (isHomepage && data?.video_path) 
+    ? (data.video_path.startsWith('http') ? data.video_path : supabase.storage.from('seruni-media').getPublicUrl(data.video_path).data.publicUrl) 
+    : null;
 
   return (
     <div className={`relative w-full ${heightClass} overflow-hidden flex items-center justify-center bg-[#0F0E0E]`}>

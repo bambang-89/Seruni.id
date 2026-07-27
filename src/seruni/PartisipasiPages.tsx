@@ -71,7 +71,7 @@ export function RPJMDesPage() {
                 <Link
                   key={b.id}
                   to={`/rpjmdes-bidang/${b.id}`}
-                  className={`text-left border p-5 transition-colors ${bidangFilter === b.id ? "border-accent bg-accent/10" : "border-current/20 hover:border-accent"}`}
+                  className={`text-left border border-current/20 hover:border-accent p-5 transition-colors`}
                 >
                   <div className="font-display text-[10px] uppercase tracking-widest opacity-60">{b.kode}</div>
                   <div className="font-display font-semibold text-lg mt-1">{b.nama}</div>

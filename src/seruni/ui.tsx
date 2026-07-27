@@ -161,7 +161,7 @@ export function PageHeader({
   crumbs: { label: string; to?: string }[];
   image?: string;
 }) {
-  const bg = image ? supabase.storage.from('seruni-media').getPublicUrl(image).data.publicUrl : undefined;
+  const bg = image ? (image.startsWith('http') ? image : supabase.storage.from('seruni-media').getPublicUrl(image).data.publicUrl) : undefined;
   return (
     <ToneProvider tone="dark" label="PageHeader">
     {/* PageHeader hero background dengan tinggi 50vh */}

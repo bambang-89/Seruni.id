@@ -97,15 +97,13 @@ export type IdentitasDesa = {
   provinsi: string | null;
   kode_pos: string | null;
   logo_url: string | null;
-  logo_favicon_url: string | null;
-  foto_profil_url: string | null;
-  foto_panorama_url: string | null;
+  slogan: string | null;
   video_url: string | null;
   tahun_bentuk: number | null;
   luas_wilayah: number | null;
   koordinat_lat: number | null;
   koordinat_lng: number | null;
-  slogan: string | null;
+  zoom_level: number | null;
 };
 
 export type DokumenUpload = {
@@ -1282,6 +1280,20 @@ export function useAduanKategori() {
   return { data, loading };
 }
 
+export function useRefTopikLangganan() {
+  const [data, setData] = useState<RefOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    ((supabase as any).from("ref_topik_langganan") as any).select("*").eq("aktif", true).order("urutan")
+      .then(({ data: r, error }) => {
+        if (error) console.error("useRefTopikLangganan error:", error);
+        setData((r || []) as RefOption[]);
+        setLoading(false);
+      });
+  }, []);
+  return { data, loading };
+}
+
 export function useKategoriUsulan() {
   const [data, setData] = useState<RefOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1441,16 +1453,23 @@ export function useBalitaById(id?: string) {
 // Bidang Tanah
 export type BidangTanahDetail = {
   id: string;
-  nomor_persil: string | null;
-  pemilik_nama: string | null;
-  pemilik_nik: string | null;
-  dusun: string | null;
+  no_sertifikat: string | null;
+  jenis_sertifikat: string | null;
+  nama_pemegang: string | null;
+  nik_pemegang: string | null;
+  alamat_pemegang: string | null;
   luas_m2: number | null;
-  penggunaan: string | null;
-  status_hak: string | null;
-  nomor_sertifikat: string | null;
-  tanggal_daftar: string | null;
-  catatan: string | null;
+  lokasi: string | null;
+  dusun: string | null;
+  rt: string | null;
+  rw: string | null;
+  koordinat_lat: number | null;
+  koordinat_lng: number | null;
+  dokumen_url: string | null;
+  gambar_url: string | null;
+  gambar_lampiran: string[] | null;
+  status: string | null;
+  keterangan: string | null;
 };
 export function useBidangTanahById(id?: string) {
   const [data, setData] = useState<BidangTanahDetail | null>(null);
@@ -1459,7 +1478,16 @@ export function useBidangTanahById(id?: string) {
     if (!id) { setData(null); setLoading(false); return; }
     supabase.from("bidang_tanah").select("*").eq("id", id).maybeSingle()
       .then(({ data: r }) => {
-        setData((r ? { ...r, luas_m2: Number((r as Record<string, unknown>)['luas_m2'] ?? 0) } : null) as unknown as BidangTanahDetail | null);
+        if (r) {
+          const rec = r as Record<string, unknown>;
+          setData({
+            ...r,
+            luas_m2: Number(rec['luas_m2'] ?? 0),
+            koordinat_lat: Number(rec['koordinat_lat'] ?? 0),
+            koordinat_lng: Number(rec['koordinat_lng'] ?? 0),
+            gambar_lampiran: (rec['gambar_lampiran'] as string[] | null) ?? null,
+          } as unknown as BidangTanahDetail);
+        } else { setData(null); }
         setLoading(false);
       });
   }, [id]);
@@ -1471,7 +1499,12 @@ export type InfrastrukturDetail = {
   id: string;
   nama: string | null;
   jenis: string | null;
+  lokasi: string | null;
   dusun: string | null;
+  rt: string | null;
+  rw: string | null;
+  koordinat_lat: number | null;
+  koordinat_lng: number | null;
   kondisi: string | null;
   tahun_bangun: number | null;
   tahun_perbaikan: number | null;
@@ -1485,7 +1518,17 @@ export function useInfrastrukturById(id?: string) {
   useEffect(() => {
     if (!id) { setData(null); setLoading(false); return; }
     supabase.from("infrastruktur").select("*").eq("id", id).maybeSingle()
-      .then(({ data: r }) => { setData((r as unknown as InfrastrukturDetail) || null); setLoading(false); });
+      .then(({ data: r }) => {
+        if (r) {
+          const rec = r as Record<string, unknown>;
+          setData({
+            ...r,
+            koordinat_lat: Number(rec['koordinat_lat'] ?? 0) || null,
+            koordinat_lng: Number(rec['koordinat_lng'] ?? 0) || null,
+          } as unknown as InfrastrukturDetail);
+        } else { setData(null); }
+        setLoading(false);
+      });
   }, [id]);
   return { data, loading };
 }
@@ -1574,19 +1617,23 @@ export function useVotingTopikById(id?: string) {
 export type PbbTagihanDetail = {
   id: string;
   tahun: number | null;
-  NOP: string | null;
-  nama_wp: string | null;
-  alamat_wp: string | null;
-  letak_objek: string | null;
-  luas_tanah: number | null;
-  luas_bangunan: number | null;
-  kelas_tanah: string | null;
-  kelas_bangunan: string | null;
-  NJOP_tanah: number | null;
-  NJOP_bangunan: number | null;
-  NJOP_total: number | null;
-  PBB_terutang: number | null;
+  nop: string | null;
+  wajib_pajak_nama: string | null;
+  wajib_pajak_nik: string | null;
+  wajib_pajak_alamat: string | null;
+  alamat_objek: string | null;
+  dusun: string | null;
+  luas_bumi_m2: number | null;
+  luas_bangunan_m2: number | null;
+  njop_bumi: number | null;
+  njop_bangunan: number | null;
+  njop_total: number | null;
+  pbb_terutang: number | null;
+  jatuh_tempo: string | null;
   status_bayar: string | null;
+  tanggal_bayar: string | null;
+  metode_bayar: string | null;
+  keterangan: string | null;
 };
 export function usePbbTagihanById(id?: string) {
   const [data, setData] = useState<PbbTagihanDetail | null>(null);
@@ -1600,12 +1647,12 @@ export function usePbbTagihanById(id?: string) {
           setData({
             ...r,
             tahun: rec.tahun as number | null,
-            luas_tanah: Number(rec.luas_tanah ?? 0),
-            luas_bangunan: Number(rec.luas_bangunan ?? 0),
-            NJOP_tanah: Number(rec.NJOP_tanah ?? 0),
-            NJOP_bangunan: Number(rec.NJOP_bangunan ?? 0),
-            NJOP_total: Number(rec.NJOP_total ?? 0),
-            PBB_terutang: Number(rec.PBB_terutang ?? 0),
+            luas_bumi_m2: Number(rec.luas_bumi_m2 ?? 0),
+            luas_bangunan_m2: Number(rec.luas_bangunan_m2 ?? 0),
+            njop_bumi: Number(rec.njop_bumi ?? 0),
+            njop_bangunan: Number(rec.njop_bangunan ?? 0),
+            njop_total: Number((rec.njop_bumi ?? 0)) + Number((rec.njop_bangunan ?? 0)),
+            pbb_terutang: Number(rec.pbb_terutang ?? 0),
           } as unknown as PbbTagihanDetail);
         } else { setData(null); }
         setLoading(false);
@@ -1807,7 +1854,6 @@ export type PembangunanDetail = {
   lokasi: string | null;
   volume: string | null;
   anggaran: number;
-  realized: number;
   sumber_dana: string | null;
   sumber?: string | null;
   status: string;
@@ -1957,7 +2003,14 @@ export function useInfrastrukturList() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     supabase.from("infrastruktur").select("*").order("nama")
-      .then(({ data: r }) => { setData((r as unknown as InfrastrukturDetail[]) || []); setLoading(false); });
+      .then(({ data: r }) => {
+        setData((r || []).map((row: Record<string, unknown>) => ({
+          ...row,
+          koordinat_lat: Number(row['koordinat_lat'] ?? 0) || null,
+          koordinat_lng: Number(row['koordinat_lng'] ?? 0) || null,
+        })) as unknown as InfrastrukturDetail[]);
+        setLoading(false);
+      });
   }, []);
   return { data, loading };
 }
@@ -1966,11 +2019,14 @@ export function useBidangTanahList() {
   const [data, setData] = useState<BidangTanahDetail[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    supabase.from("bidang_tanah").select("*").order("nomor_persil")
+    supabase.from("bidang_tanah").select("*").order("no_sertifikat")
       .then(({ data: r }) => {
         setData((r || []).map((row: Record<string, unknown>) => ({
           ...row,
           luas_m2: Number(row['luas_m2'] ?? 0),
+          koordinat_lat: Number(row['koordinat_lat'] ?? 0),
+          koordinat_lng: Number(row['koordinat_lng'] ?? 0),
+          gambar_lampiran: (row['gambar_lampiran'] as string[] | null) ?? null,
         })) as unknown as BidangTanahDetail[]);
         setLoading(false);
       });
@@ -1982,16 +2038,17 @@ export function usePbbTagihanList() {
   const [data, setData] = useState<PbbTagihanDetail[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    supabase.from("pbb_tagihan").select("*").order("tahun", { ascending: false }).order("nama_wp")
+    supabase.from("pbb_tagihan").select("*").order("tahun", { ascending: false }).order("wajib_pajak_nama")
       .then(({ data: r }) => {
         setData((r || []).map((row: Record<string, unknown>) => ({
           ...row,
-          luas_tanah: Number(row['luas_tanah'] ?? 0),
-          luas_bangunan: Number(row['luas_bangunan'] ?? 0),
-          NJOP_tanah: Number(row['NJOP_tanah'] ?? 0),
-          NJOP_bangunan: Number(row['NJOP_bangunan'] ?? 0),
-          NJOP_total: Number(row['NJOP_total'] ?? 0),
-          PBB_terutang: Number(row['PBB_terutang'] ?? 0),
+          tahun: row.tahun as number | null,
+          luas_bumi_m2: Number(row['luas_bumi_m2'] ?? 0),
+          luas_bangunan_m2: Number(row['luas_bangunan_m2'] ?? 0),
+          njop_bumi: Number(row['njop_bumi'] ?? 0),
+          njop_bangunan: Number(row['njop_bangunan'] ?? 0),
+          njop_total: Number(row['njop_bumi'] ?? 0) + Number(row['njop_bangunan'] ?? 0),
+          pbb_terutang: Number(row['pbb_terutang'] ?? 0),
         })) as unknown as PbbTagihanDetail[]);
         setLoading(false);
       });

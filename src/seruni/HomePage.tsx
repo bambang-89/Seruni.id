@@ -62,7 +62,7 @@ function S1() {
   return (
     <EditorialSplit
       kicker="Bagian Satu — Tentang"
-      judul={profilDesa?.visi || "Profil Singkat Desa"}
+      judul={profilDesa?.visi || ""}
       image={imageUrl}
       imageAlt="Potret Desa"
       tone="paper"
@@ -71,10 +71,10 @@ function S1() {
       sectionKey="home-tentang"
     >
       <p>
-        {profilDesa?.sejarah?.[0] || "Selamat datang di website resmi. Website ini adalah portal informasi dan layanan publik."}
+        {profilDesa?.sejarah?.[0] || ""}
       </p>
       <p>
-        {profilDesa?.sejarah?.[1] || "Akses layanan pemerintahan desa, data statistik, dan potensi unggulan dengan transparan dan mudah."}
+        {profilDesa?.sejarah?.[1] || ""}
       </p>
     </EditorialSplit>
   );
@@ -92,10 +92,10 @@ function StatistikBand() {
       tone="navy"
       sectionKey="home-statistik"
       items={[
-        { nilai: `${statistik.luas_wilayah_km2}`, label: "Luas Wilayah (km²)" },
-        { nilai: statistik.jumlah_dusun.toString(), label: "Jumlah Dusun" },
-        { nilai: statistik.jumlah_penduduk.toLocaleString("id-ID"), label: "Jumlah Penduduk", highlight: true },
-        { nilai: statistik.jumlah_kk.toLocaleString("id-ID"), label: "Jumlah Kepala Keluarga" },
+        { nilai: `${statistik?.luas_wilayah_km2 ?? 0}`, label: "Luas Wilayah (km²)" },
+        { nilai: (statistik?.jumlah_dusun ?? 0).toString(), label: "Jumlah Dusun" },
+        { nilai: (statistik?.jumlah_penduduk ?? 0).toLocaleString("id-ID"), label: "Jumlah Penduduk", highlight: true },
+        { nilai: (statistik?.jumlah_kk ?? 0).toLocaleString("id-ID"), label: "Jumlah Kepala Keluarga" },
       ]}
     />
   );
@@ -111,7 +111,7 @@ function S2() {
     <Band id="idm" tone="neutral">
       <EditorialTitle
         kicker="Bagian Dua — Indeks Desa Membangun"
-        judul={`Status ${idmData.status}, skor ${idmData.skor_total.toFixed(4)}.`}
+        judul={`Status ${idmData?.status ?? ""}, skor ${idmData?.skor_total.toFixed(4) ?? 0}.`}
         href="/status-idm"
         sectionKey="home-idm"
       />
@@ -121,10 +121,10 @@ function S2() {
             Skor Komposit
           </p>
           <p className="mt-4 font-display text-6xl sm:text-7xl font-bold italic tracking-tight tabular-nums text-primary">
-            {idmData.skor_total.toFixed(4)}
+            {idmData?.skor_total.toFixed(4) ?? 0}
           </p>
           <p className="mt-6 font-display text-xs font-bold uppercase tracking-[0.22em]">
-            <span className="text-accent">■</span> Status · {idmData.status}
+            <span className="text-accent">■</span> Status · {idmData?.status ?? ""}
           </p>
           <p className="mt-6 text-sm leading-relaxed opacity-75">
             Diagregasi dari enam dimensi ketahanan desa dan dimutakhirkan pada
@@ -132,7 +132,7 @@ function S2() {
           </p>
         </div>
         <ul className="divide-y divide-[#0F0E0E]/15 border-y border-[#0F0E0E]/20">
-          {idmData.dimensi.map((d, i) => (
+          {(idmData?.dimensi ?? []).map((d, i) => (
             <li key={d.nama} className="py-5 grid grid-cols-[auto_1fr_auto] items-center gap-6">
               <span className="font-display text-xs font-light opacity-40 tabular-nums w-8">
                 {String(i + 1).padStart(2, "0")}
@@ -175,7 +175,7 @@ function S3() {
       <div className="grid lg:grid-cols-[3fr_2fr] gap-10 lg:gap-16 items-start">
         <NumberedList
           tone="dark"
-          items={agendaData.map((a) => ({
+          items={(agendaData ?? []).map((a) => ({
             kategori: a.jenis,
             judul: a.judul,
             meta: `${formatTanggal(a.tanggal)} · ${a.lokasi}`,
@@ -273,7 +273,7 @@ function S5() {
   };
   const getLayanan = (kode: string) => prefixMap[kode.split("_")[0]] ?? "surat";
 
-  const dynamicData = suratList.slice(0, 4).map((s) => ({
+  const dynamicData = (suratList ?? []).slice(0, 4).map((s) => ({
     kode: s.kode_surat,
     nama: s.nama,
     jumlah_bulan: statMap.get(getLayanan(s.kode_surat)) ?? 0,
@@ -364,8 +364,8 @@ function S6() {
       sectionKey="home-umkm"
     >
       <div className="grid sm:grid-cols-2 gap-10">
-        <Kolom judul="Terlaris" items={produkData.slice(0, 5).map((p) => ({ nama: p.nama, harga: p.harga ? `Rp ${Number(p.harga).toLocaleString('id-ID')}` : '—', penjual: p.penjual_nama ?? '—', emoji: '' }))} />
-        <Kolom judul="Terbaru" items={produkData.slice(0, 5).map((p) => ({ nama: p.nama, harga: p.harga ? `Rp ${Number(p.harga).toLocaleString('id-ID')}` : '—', penjual: p.penjual_nama ?? '—', emoji: '' }))} />
+        <Kolom judul="Terlaris" items={(produkData ?? []).slice(0, 5).map((p) => ({ nama: p.nama, harga: p.harga ? `Rp ${Number(p.harga).toLocaleString('id-ID')}` : '—', penjual: p.penjual_nama ?? '—', emoji: '' }))} />
+        <Kolom judul="Terbaru" items={(produkData ?? []).slice(0, 5).map((p) => ({ nama: p.nama, harga: p.harga ? `Rp ${Number(p.harga).toLocaleString('id-ID')}` : '—', penjual: p.penjual_nama ?? '—', emoji: '' }))} />
       </div>
     </EditorialSplit>
   );
@@ -388,9 +388,9 @@ function S7() {
       />
       <div className="grid lg:grid-cols-3 gap-px bg-white/10 mb-14">
         {[
-          { l: "Progres Fisik Rata-Rata", v: `${pembangunanData.progres_fisik_avg}`, suffix: "%" },
-          { l: "Anggaran Terserap", v: `${pembangunanData.anggaran_terserap_pct}`, suffix: "%" },
-          { l: "Aset Baru Terbentuk", v: pembangunanData.aset_baru.toString(), suffix: "" },
+          { l: "Progres Fisik Rata-Rata", v: `${pembangunanData?.progres_fisik_avg ?? 0}`, suffix: "%" },
+          { l: "Anggaran Terserap", v: `${pembangunanData?.anggaran_terserap_pct ?? 0}`, suffix: "%" },
+          { l: "Aset Baru Terbentuk", v: (pembangunanData?.aset_baru ?? 0).toString(), suffix: "" },
         ].map((k) => (
           <div key={k.l} className="bg-[#0F0E0E] p-8 sm:p-10">
             <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
@@ -408,7 +408,7 @@ function S7() {
           Kegiatan Aktif
         </p>
         <ul className="divide-y divide-white/15 border-y border-white/20">
-          {pembangunanData.kegiatan_aktif.map((k, i) => (
+          {(pembangunanData?.kegiatan_aktif ?? []).map((k, i) => (
             <li key={k.nama} className="py-6 grid grid-cols-[auto_1fr_auto] gap-6 items-center">
               <span className="font-display text-xs font-light opacity-40 tabular-nums w-8">
                 {String(i + 1).padStart(2, "0")}
@@ -437,7 +437,7 @@ function S7() {
 
 function S8() {
   const { data: usulanData } = useUsulanStats();
-  const max = Math.max(...(usulanData.top10 || []).map((u) => u.suara));
+  const max = Math.max(...(usulanData?.top10 ?? []).map((u) => u.suara));
   return (
     <Band id="perencanaan" tone="neutral">
       <EditorialTitle
@@ -447,15 +447,15 @@ function S8() {
         sectionKey="home-perencanaan"
       />
       <p className="font-display text-sm sm:text-base opacity-75 mb-10 max-w-3xl">
-        <span className="tabular-nums font-semibold text-primary">{usulanData.total_usulan}</span>{" "}
+        <span className="tabular-nums font-semibold text-primary">{usulanData?.total_usulan ?? 0}</span>{" "}
         usulan masuk ·{" "}
         <span className="tabular-nums font-semibold text-primary">
-          {usulanData.partisipasi_voting.toLocaleString("id-ID")}
+          {(usulanData?.partisipasi_voting ?? 0).toLocaleString("id-ID")}
         </span>{" "}
         suara terkumpul dari warga desa.
       </p>
       <ol className="divide-y divide-[#0F0E0E]/15 border-y border-[#0F0E0E]/25">
-        {usulanData.top10.map((u, i) => (
+        {(usulanData?.top10 ?? []).map((u, i) => (
           <li key={u.judul} className="py-5 grid grid-cols-[auto_1fr_auto] gap-6 items-center">
             <span className="font-display text-2xl sm:text-3xl font-light italic opacity-30 tabular-nums w-12">
               {String(i + 1).padStart(2, "0")}
@@ -484,8 +484,8 @@ function S8() {
 function S9() {
   const { data: wisataData } = usePotensiWisata();
   const override = useSectionTitle("/", "home-wisata");
-  const finalKicker = override?.kicker || "Bagian Sembilan — Potensi Desa";
-  const finalJudul = override?.judul || "Di antara laut, sawah, dan warisan tangan.";
+  const finalKicker = override?.kicker || "";
+  const finalJudul = override?.judul || "";
 
   const sektorData = [
     { nama: "Perikanan Tangkap", nilai: "Rp 4,2 M/thn" },
@@ -569,8 +569,8 @@ function QuoteKades() {
   
   return (
     <QuoteBand
-      quote={profilDesa?.visi || "Pemerintahan desa yang baik tidak diukur dari kemegahan kantor, melainkan dari cepatnya warga mendapatkan haknya."}
-      nama={profilDesa?.kepala_desa_nama || "Kepala Desa"}
+      quote={profilDesa?.visi || ""}
+      nama={profilDesa?.kepala_desa_nama || ""}
       jabatan="Kepala Desa"
       image={profilDesa?.kepala_desa_foto ? supabase.storage.from('seruni-media').getPublicUrl(profilDesa.kepala_desa_foto).data.publicUrl : ""}
       imageAlt="Potret Kepala Desa"
