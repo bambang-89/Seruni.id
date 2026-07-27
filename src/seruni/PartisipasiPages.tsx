@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { EditorialLayout, EditorialCard, EditorialProgress, SectionWrap, formatTanggal } from "./ui";
@@ -28,10 +29,8 @@ const rupiah = (n: number) => "Rp " + n.toLocaleString("id-ID");
 // =========================== RPJMDes ===========================
 export function RPJMDesPage() {
   const { periode, bidang, program, loading } = useRpjmdesAktif();
-  const [bidangFilter, setBidangFilter] = useState<string>("");
 
   const totalAnggaran = program.reduce((s, p) => s + (p.anggaran_indikatif || 0), 0);
-  const filteredProg = bidangFilter ? program.filter((p) => p.bidang_id === bidangFilter) : program;
 
   return (
     <EditorialLayout
@@ -69,23 +68,20 @@ export function RPJMDesPage() {
             <EditorialTitle sectionKey="partisipasi-prioritas" kicker="Bidang" judul="Prioritas Pembangunan" />
             <div className="grid md:grid-cols-2 gap-4 mb-8">
               {bidang.map((b) => (
-                <button
+                <Link
                   key={b.id}
-                  onClick={() => setBidangFilter(bidangFilter === b.id ? "" : b.id)}
+                  to={`/rpjmdes-bidang/${b.id}`}
                   className={`text-left border p-5 transition-colors ${bidangFilter === b.id ? "border-accent bg-accent/10" : "border-current/20 hover:border-accent"}`}
                 >
                   <div className="font-display text-[10px] uppercase tracking-widest opacity-60">{b.kode}</div>
                   <div className="font-display font-semibold text-lg mt-1">{b.nama}</div>
                   {b.deskripsi && <p className="text-sm opacity-75 mt-2">{b.deskripsi}</p>}
-                </button>
+                </Link>
               ))}
             </div>
           </SectionWrap>
           <SectionWrap>
-            <div className="flex items-baseline justify-between mb-4">
-              <EditorialTitle sectionKey="partisipasi-program" kicker="Program" judul={bidangFilter ? "Program Bidang" : "Semua Program"} />
-              {bidangFilter && <button onClick={() => setBidangFilter("")} className="text-xs underline opacity-70">Reset filter</button>}
-            </div>
+            <EditorialTitle sectionKey="partisipasi-program" kicker="Program" judul="Semua Program" />
             <div className="overflow-x-auto border border-current/15">
               <table className="w-full text-sm">
                 <thead className="bg-current/5">
@@ -98,16 +94,16 @@ export function RPJMDesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProg.map((p) => (
-                    <tr key={p.id} className="border-t border-current/10">
-                      <td className="px-4 py-3 font-medium">{p.nama}</td>
+                  {program.map((p) => (
+                    <tr key={p.id} className="border-t border-current/10 hover:bg-accent/5 transition-colors">
+                      <td className="px-4 py-3 font-medium"><Link to={`/rpjmdes-program/${p.id}`} className="hover:text-accent transition-colors">{p.nama}</Link></td>
                       <td className="px-4 py-3 opacity-80">{[p.indikator, p.target].filter(Boolean).join(" — ")}</td>
                       <td className="px-4 py-3 opacity-80">{p.sumber_dana || "—"}</td>
                       <td className="px-4 py-3 opacity-80 whitespace-nowrap">{p.tahun_mulai || "—"}{p.tahun_selesai ? `–${p.tahun_selesai}` : ""}</td>
                       <td className="px-4 py-3 text-right tabular-nums">{rupiah(p.anggaran_indikatif)}</td>
                     </tr>
                   ))}
-                  {!filteredProg.length && (
+                  {!program.length && (
                     <tr><td colSpan={5} className="px-4 py-6 text-center opacity-60">Belum ada program.</td></tr>
                   )}
                 </tbody>
@@ -178,6 +174,7 @@ export function RKPDesPage() {
           <ul className="space-y-6">
             {filtered.map((k) => (
               <li key={k.id} className="border-b border-current/15 pb-6">
+                <Link to={`/rkpdes-kegiatan/${k.id}`} className="block hover:text-accent transition-colors">
                 <div className="flex flex-wrap items-baseline justify-between gap-3 mb-2">
                   <div>
                     <div className="font-display font-semibold text-lg">{k.nama}</div>
@@ -191,6 +188,7 @@ export function RKPDesPage() {
                   </div>
                 </div>
                 <EditorialProgress label="Progres realisasi" value={k.progress_pct} max={100} suffix="%" />
+                </Link>
               </li>
             ))}
             {!filtered.length && <li className="opacity-60">Tidak ada kegiatan yang cocok dengan filter.</li>}
@@ -333,7 +331,7 @@ function UsulanCard({ u, onVoted }: { u: UsulanWarga; onVoted: () => void }) {
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <div className="text-[10px] uppercase tracking-widest opacity-60">{u.kategori} · {u.dusun || "—"} · {u.nomor_tiket}</div>
-          <div className="font-display font-semibold text-lg mt-1">{u.judul}</div>
+          <Link to={`/usulan/${u.id}`} className="font-display font-semibold text-lg mt-1 hover:text-accent transition-colors block">{u.judul}</Link>
         </div>
         <div className="text-right">
           <div className="font-display text-3xl tabular-nums">{u.vote_count}</div>
@@ -512,6 +510,9 @@ function VotingCard({ topik, onVoted }: { topik: VotingTopik; onVoted: () => voi
           <div className="font-display text-2xl tabular-nums">{total.toLocaleString("id-ID")}</div>
           <div className="text-[10px] uppercase tracking-widest opacity-60">suara total</div>
         </div>
+      </div>
+      <div className="mt-3 flex gap-3">
+        <Link to={`/voting/${topik.id}`} className={btnSec}>Lihat Detail</Link>
       </div>
       {topik.deskripsi && <p className="text-sm opacity-85 mt-2">{topik.deskripsi}</p>}
       {hasil && pemenang && (
