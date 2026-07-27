@@ -70,7 +70,6 @@ import { FilterBar, FilterField, TextInput, SelectInput, OfflineBadge } from "./
 import { useOnlineStatus } from "./lib/useOnlineStatus";
 import { useSiteSettings } from "./lib/zeroHardcode";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 // -------------------------------------------------------------
 // Shared editorial helpers used across inner pages.
@@ -3371,6 +3370,8 @@ export function BansosDetailPage() {
     page,
     pageSize,
   });
+  // Separate fetch for chart aggregation — all recipients without pagination
+  const { data: allPenerima } = usePenerimaBansos(id, { pageSize: 10000 });
   const { stats } = usePenerimaBansosStats(id);
 
   if (isLoading) return <LoadingState />;
@@ -3382,11 +3383,11 @@ export function BansosDetailPage() {
   const fmtNominal = (n: number | null | undefined) =>
     n ? `Rp ${n.toLocaleString("id-ID")}` : "—";
 
-  // Chart data — agregasi per dusun
+  // Chart data — aggregate from ALL recipients (not paginated page)
   const chartData = (() => {
-    if (!penerima.length) return [];
+    if (!allPenerima?.length) return [];
     const agg: Record<string, number> = {};
-    penerima.forEach((p) => {
+    allPenerima.forEach((p) => {
       const d = p.dusun || "Tidak diketahui";
       agg[d] = (agg[d] || 0) + 1;
     });
