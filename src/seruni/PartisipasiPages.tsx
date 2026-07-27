@@ -35,12 +35,9 @@ export function RPJMDesPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Perencanaan Desa"
-      judul="RPJMDes Desa"
-      deskripsi="Rencana Pembangunan Jangka Menengah Desa: visi, misi, bidang, dan program lintas tahun."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Perencanaan" }, { label: "RPJMDes" }]}
-    >
-      <Seo title="RPJMDes" description="Visi, misi, dan program pembangunan jangka menengah desa." path="/perencanaan/rpjmdes" />
+        
+      >
+      
       {loading ? (
         <SectionWrap><p className="opacity-60">Memuat…</p></SectionWrap>
       ) : !periode ? (
@@ -140,12 +137,9 @@ export function RKPDesPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Perencanaan Desa"
-      judul="RKPDes Tahunan"
-      deskripsi="Rencana Kerja Pemerintah Desa: kegiatan, anggaran, dan progres realisasi per tahun."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Perencanaan" }, { label: "RKPDes" }]}
-    >
-      <Seo title="RKPDes" description="Kegiatan, anggaran, dan realisasi RKPDes." path="/perencanaan/rkpdes" />
+        
+      >
+      
       <StatsBand
         tone="dark"
         items={[
@@ -418,12 +412,9 @@ export function UsulanPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Partisipasi Warga"
-      judul="Usulan Warga"
-      deskripsi="Ajukan usulan pembangunan, pantau statusnya, dan dukung usulan warga lain."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Partisipasi" }, { label: "Usulan" }]}
-    >
-      <Seo title="Usulan Warga" description="Ajukan & dukung usulan pembangunan warga desa." path="/partisipasi/usulan" />
+        
+      >
+      
       <StatsBand
         tone="dark"
         items={[
@@ -578,12 +569,9 @@ export function VotingPage() {
   const ditutup = rows.filter((t) => t.status !== "aktif");
   return (
     <EditorialLayout
-      eyebrow="Partisipasi Warga"
-      judul="Voting Resmi"
-      deskripsi="Ambil bagian dalam voting resmi desa untuk pengambilan keputusan bersama."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Partisipasi" }, { label: "Voting" }]}
-    >
-      <Seo title="Voting Resmi" description="Voting resmi warga desa." path="/partisipasi/voting" />
+        
+      >
+      
       <StatsBand
         tone="dark"
         items={[
@@ -643,12 +631,9 @@ export function RekapPage() {
 
   return (
     <EditorialLayout
-      eyebrow="Perencanaan Desa"
-      judul="Rekap RPJMDes & RKPDes"
-      deskripsi="Rekap otomatis progres implementasi RPJMDes dari kegiatan RKPDes per tahun."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Perencanaan" }, { label: "Rekap" }]}
-    >
-      <Seo title="Rekap RPJMDes & RKPDes" description="Rekap implementasi RPJMDes dan RKPDes desa." path="/perencanaan/rekap" />
+        
+      >
+      
       {loadingRp ? (
         <SectionWrap><p className="opacity-60">Memuat…</p></SectionWrap>
       ) : !periode ? (

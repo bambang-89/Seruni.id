@@ -165,7 +165,7 @@ export function PageHeader({
   return (
     <ToneProvider tone="dark" label="PageHeader">
     {/* PageHeader hero background dengan tinggi 50vh */}
-    <section className="relative isolate overflow-hidden bg-[#0F0E0E] text-white border-b border-white/10 min-h-[50vh] flex items-end">
+    <section className="relative isolate overflow-hidden bg-[#0F0E0E] text-white border-b border-white/10 h-[50vh] flex items-end">
       {bg ? (
         <img
           src={bg}
@@ -179,7 +179,7 @@ export function PageHeader({
         <div className="absolute inset-0 bg-accent/20" />
       )}
       {/* Dark scrim so hero copy is always legible over any image */}
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/85" />
+      <div aria-hidden className="absolute inset-0 bg-black/60" />
       <div aria-hidden className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/90 to-transparent" />
       {/* Padding top 120px-140px untuk memberikan ruang bagi fixed navbar */}
       <div className="relative w-full mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 pt-32 sm:pt-40 pb-16 sm:pb-24">
@@ -217,8 +217,8 @@ export function EditorialLayout({
   route,
   children,
 }: {
-  eyebrow: string;
-  judul: string;
+  eyebrow?: string;
+  judul?: string;
   deskripsi?: string;
   crumbs: { label: string; to?: string }[];
   heroImage?: string;
@@ -233,9 +233,14 @@ export function EditorialLayout({
   
   return (
     <>
+      <Seo 
+        title={heroConfig?.title?.trim() || cfg?.judul?.trim() || judul || ""} 
+        description={heroConfig?.subtitle?.trim() || (cfg?.deskripsi ?? deskripsi)} 
+        path={effectiveRoute} 
+      />
       <PageHeader
-        eyebrow={cfg?.eyebrow?.trim() || eyebrow}
-        judul={heroConfig?.title?.trim() || cfg?.judul?.trim() || judul}
+        eyebrow={cfg?.eyebrow?.trim() || eyebrow || ""}
+        judul={heroConfig?.title?.trim() || cfg?.judul?.trim() || judul || ""}
         deskripsi={heroConfig?.subtitle?.trim() || (cfg?.deskripsi ?? deskripsi)}
         crumbs={crumbs}
         image={heroConfig?.image_path || cfg?.hero_image_url || heroImage}

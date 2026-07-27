@@ -49,8 +49,8 @@ export function EditorialTitle({
   sectionKey,
   route,
 }: {
-  kicker: string;
-  judul: string;
+  kicker?: string;
+  judul?: string;
   href?: string;
   hrefLabel?: string;
   align?: "left" | "between";
@@ -60,10 +60,10 @@ export function EditorialTitle({
 }) {
   const loc = useLocation();
   const effectiveRoute = route ?? loc.pathname;
-  const override = useSectionTitle(effectiveRoute, sectionKey || "");
   
-  const finalKicker = sectionKey && override?.kicker ? override.kicker : kicker;
-  const finalJudul = sectionKey && override?.judul ? override.judul : judul;
+  const override = useSectionTitle(effectiveRoute, sectionKey ?? "");
+  const finalKicker = sectionKey && override?.kicker ? override.kicker : kicker ?? "";
+  const finalJudul = sectionKey && override?.judul ? override.judul : judul ?? "";
 
   const kickerCls = invert ? "text-accent" : "text-accent";
   const lineCls = invert ? "bg-white/20" : "bg-current/20";

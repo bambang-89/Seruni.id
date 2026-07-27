@@ -28,12 +28,9 @@ export function StatistikPendudukLivePage() {
   const maxDusun = Math.max(1, ...perDusun.map((r) => Number(r.jumlah_penduduk)));
   return (
     <EditorialLayout
-      eyebrow="Data & Statistik"
-      judul="Statistik Penduduk"
-      deskripsi="Agregat data warga desa yang dihitung langsung dari registri penduduk."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Penduduk" }]}
-    >
-      <Seo title="Statistik Penduduk" description="Distribusi penduduk per dusun & jenis kelamin." path="/statistik/penduduk" />
+        
+      >
+      
       <StatsBand
         tone="dark"
         items={[
@@ -84,12 +81,9 @@ export function IDMLivePage() {
   const status = skorTotal >= 0.815 ? "Mandiri" : skorTotal >= 0.707 ? "Maju" : skorTotal >= 0.599 ? "Berkembang" : skorTotal >= 0.491 ? "Tertinggal" : "Sangat Tertinggal";
   return (
     <EditorialLayout
-      eyebrow="Data & Statistik"
-      judul="Status IDM"
-      deskripsi="Indeks Desa Membangun dihitung dari tiga dimensi: sosial, ekonomi, dan ekologi."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "IDM" }]}
-    >
-      <Seo title="Status IDM" description="Skor & rincian IDM per dimensi." path="/status-idm" />
+        
+      >
+      
       <StatsBand
         tone="dark"
         items={[
@@ -135,12 +129,9 @@ export function AnalisisPage() {
   }, []);
   return (
     <EditorialLayout
-      eyebrow="Data & Statistik"
-      judul="Analisis Desa"
-      deskripsi="Ringkasan hasil analisis lintas indikator desa berdasarkan data terkini."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Statistik", to: "/statistik" }, { label: "Analisis" }]}
-    >
-      <Seo title="Analisis Desa" description="Snapshot indikator lintas kategori." path="/analisis" />
+        
+      >
+      
       <SectionWrap>
         {!rows.length && <p className="text-sm opacity-70">Belum ada analisis yang dipublikasikan.</p>}
         <div className="grid md:grid-cols-2 gap-px bg-current/15">
@@ -204,12 +195,9 @@ export function SuplesiPage() {
   };
   return (
     <EditorialLayout
-      eyebrow="Layanan Warga"
-      judul="Suplesi Data"
-      deskripsi="Ajukan pembetulan atau pemutakhiran data kependudukan Anda. Petugas akan memverifikasi dan menindaklanjuti."
-      crumbs={[{ label: "Beranda", to: "/" }, { label: "Layanan", to: "/layanan" }, { label: "Suplesi Data" }]}
-    >
-      <Seo title="Suplesi Data" description="Pembetulan & pemutakhiran data warga." path="/layanan/suplesi" />
+        
+      >
+      
       <SectionWrap>
         <div className="grid md:grid-cols-2 gap-10">
           <div>

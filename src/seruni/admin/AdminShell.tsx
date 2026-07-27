@@ -174,18 +174,18 @@ export default function AdminShell() {
 
   return (
     <div className="h-screen flex bg-secondary text-foreground overflow-hidden">
-      <aside className="w-64 shrink-0 bg-primary text-primary-foreground flex flex-col">
-        <div className="px-5 py-5 border-b border-white/10">
+      <aside className="w-64 shrink-0 bg-primary text-primary-foreground flex flex-col h-full border-r border-white/10">
+        <div className="px-5 py-5 border-b border-white/10 shrink-0">
           <div className="font-display text-xs uppercase tracking-widest text-accent">Admin Portal</div>
           <div className="font-display font-semibold leading-tight mt-1">{siteName}</div>
         </div>
-        <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar-dark">
+        <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-4 custom-scrollbar-dark">
           {navGroups.map((g, i) => (
-            <div key={g.title} className={i !== 0 ? "pt-4" : ""}>
-              <div className="px-3 text-[10px] uppercase tracking-widest text-white/40 font-bold mb-2 flex items-center">
+            <div key={g.title} className={i !== 0 ? "mt-6" : ""}>
+              <div className="px-3 text-[11px] uppercase tracking-[0.2em] text-accent/90 font-bold mb-3 pb-2 border-b border-white/5 flex items-center">
                 {g.title}
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {g.items.map((n) => (
                   <NavLink
                     key={n.to}
@@ -206,7 +206,7 @@ export default function AdminShell() {
             </div>
           ))}
         </nav>
-        <div className="p-4 border-t border-white/10 space-y-3 bg-primary">
+        <div className="p-4 border-t border-white/10 space-y-3 bg-primary shrink-0">
           <Link to="/" className="block text-xs text-primary-foreground/70 hover:text-accent">
             ← Lihat portal publik
           </Link>
