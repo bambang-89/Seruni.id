@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { SectionWrap, formatTanggal } from "./ui";
 import { Seo } from "./lib/seo";
+import { useSectionTitle } from "./lib/pageConfig";
 import { useSiteSettings } from "./lib/zeroHardcode";
 import {
   useStatistikDesa,
@@ -67,6 +68,7 @@ function S1() {
       tone="paper"
       href="/profil-desa"
       hrefLabel="Kenali Desa"
+      sectionKey="home-tentang"
     >
       <p>
         {profilDesa?.sejarah?.[0] || "Selamat datang di website resmi. Website ini adalah portal informasi dan layanan publik."}
@@ -88,6 +90,7 @@ function StatistikBand() {
     <StatsBand
       kicker="Angka Desa · Diperbarui Rutin"
       tone="navy"
+      sectionKey="home-statistik"
       items={[
         { nilai: `${statistik.luas_wilayah_km2}`, label: "Luas Wilayah (km²)" },
         { nilai: statistik.jumlah_dusun.toString(), label: "Jumlah Dusun" },
@@ -110,6 +113,7 @@ function S2() {
         kicker="Bagian Dua — Indeks Desa Membangun"
         judul={`Status ${idmData.status}, skor ${idmData.skor_total.toFixed(4)}.`}
         href="/status-idm"
+        sectionKey="home-idm"
       />
       <div className="grid lg:grid-cols-[1fr_2fr] gap-10 lg:gap-16 items-start">
         <div className="border-t border-b border-[#0F0E0E]/20 py-8">
@@ -166,6 +170,7 @@ function S3() {
         judul="Yang akan berlangsung di desa."
         href="/kalender-desa"
         invert
+        sectionKey="home-agenda"
       />
       <div className="grid lg:grid-cols-[3fr_2fr] gap-10 lg:gap-16 items-start">
         <NumberedList
@@ -211,6 +216,7 @@ function S4() {
         judul="Kabar terbaru dari lapangan."
         href="/berita"
         align="between"
+        sectionKey="home-berita"
       />
       <div className="grid lg:grid-cols-[3fr_2fr] gap-10 lg:gap-16 items-start">
         {utama && (
@@ -287,6 +293,7 @@ function S5() {
         judul="Ajukan permohonan tanpa antre di kantor desa."
         href="/layanan"
         invert
+        sectionKey="home-layanan"
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10">
         {layananData.map((l, i) => (
@@ -354,6 +361,7 @@ function S6() {
       reverse
       href="/marketplace"
       hrefLabel="Jelajahi Marketplace"
+      sectionKey="home-umkm"
     >
       <div className="grid sm:grid-cols-2 gap-10">
         <Kolom judul="Terlaris" items={produkData.slice(0, 5).map((p) => ({ nama: p.nama, harga: p.harga ? `Rp ${Number(p.harga).toLocaleString('id-ID')}` : '—', penjual: p.penjual_nama ?? '—', emoji: '' }))} />
@@ -376,6 +384,7 @@ function S7() {
         judul="Realisasi kerja tahun berjalan."
         href="/pembangunan"
         invert
+        sectionKey="home-pembangunan"
       />
       <div className="grid lg:grid-cols-3 gap-px bg-white/10 mb-14">
         {[
@@ -435,6 +444,7 @@ function S8() {
         kicker="Bagian Delapan — Perencanaan"
         judul="Sepuluh usulan warga dengan dukungan tertinggi."
         href="/perencanaan"
+        sectionKey="home-perencanaan"
       />
       <p className="font-display text-sm sm:text-base opacity-75 mb-10 max-w-3xl">
         <span className="tabular-nums font-semibold text-primary">{usulanData.total_usulan}</span>{" "}
@@ -473,6 +483,10 @@ function S8() {
 
 function S9() {
   const { data: wisataData } = usePotensiWisata();
+  const override = useSectionTitle("/", "home-wisata");
+  const finalKicker = override?.kicker || "Bagian Sembilan — Potensi Desa";
+  const finalJudul = override?.judul || "Di antara laut, sawah, dan warisan tangan.";
+
   const sektorData = [
     { nama: "Perikanan Tangkap", nilai: "Rp 4,2 M/thn" },
     { nama: "Pertanian Padi & Palawija", nilai: "Rp 3,1 M/thn" },
@@ -492,10 +506,10 @@ function S9() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#0F0E0E] via-[#0F0E0E]/40 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 pb-10 sm:pb-14">
             <p className="font-display text-[11px] font-bold uppercase tracking-[0.28em] text-accent mb-4">
-              Bagian Sembilan — Potensi Desa
+              {finalKicker}
             </p>
             <h2 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold italic tracking-tight max-w-4xl leading-[1.02]">
-              Di antara laut, sawah, dan warisan tangan.
+              {finalJudul}
             </h2>
           </div>
         </div>
@@ -577,6 +591,7 @@ function S10() {
         judul="Wajah desa dalam gambar."
         href="/galeri"
         align="between"
+        sectionKey="home-galeri"
       />
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-current/10">
         {galeriData.map((g, i) => (
@@ -627,6 +642,7 @@ function S11() {
         kicker="Bagian Sebelas — Service Center"
         judul="Sampaikan aduan. Kami tindak lanjuti."
         href="/service-center"
+        sectionKey="home-aduan"
       />
       <div className="grid lg:grid-cols-[2fr_3fr] gap-10 lg:gap-16">
         <div className="border-t border-[#0F0E0E]/25 pt-8">
@@ -761,6 +777,7 @@ function S12() {
         judul="Sebaran dan profil wilayah, satu pandangan."
         href="/peta-desa"
         invert
+        sectionKey="home-peta"
       />
       <div className="grid lg:grid-cols-[1fr_2fr] gap-px bg-white/10">
         <aside className="bg-[#0F0E0E] p-8 sm:p-10">

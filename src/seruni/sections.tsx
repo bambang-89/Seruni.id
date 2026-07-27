@@ -116,6 +116,8 @@ export function EditorialSplit({
   tone = "neutral",
   href,
   hrefLabel = "Baca",
+  sectionKey,
+  route,
 }: {
   kicker: string;
   judul: string;
@@ -126,7 +128,15 @@ export function EditorialSplit({
   tone?: BandTone;
   href?: string;
   hrefLabel?: string;
+  sectionKey?: string;
+  route?: string;
 }) {
+  const loc = useLocation();
+  const effectiveRoute = route ?? loc.pathname;
+  const override = useSectionTitle(effectiveRoute, sectionKey || "");
+  const finalKicker = sectionKey && override?.kicker ? override.kicker : kicker;
+  const finalJudul = sectionKey && override?.judul ? override.judul : judul;
+
   return (
     <Band tone={tone}>
       <div className={`grid lg:grid-cols-2 gap-10 lg:gap-16 items-start ${reverse ? "lg:[&>*:first-child]:order-2" : ""}`}>
@@ -140,10 +150,10 @@ export function EditorialSplit({
         </div>
         <div className="lg:pt-6">
           <p className="font-display text-[11px] font-bold uppercase tracking-[0.28em] text-accent mb-4">
-            {kicker}
+            {finalKicker}
           </p>
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05]">
-            {judul}
+            {finalJudul}
           </h2>
           <div className="mt-8 space-y-5 text-base sm:text-lg leading-relaxed opacity-90">{children}</div>
           {href && (
@@ -168,16 +178,25 @@ export function StatsBand({
   kicker,
   items,
   tone = "navy",
+  sectionKey,
+  route,
 }: {
   kicker?: string;
   items: { nilai: string; label: string; highlight?: boolean }[];
   tone?: BandTone;
+  sectionKey?: string;
+  route?: string;
 }) {
+  const loc = useLocation();
+  const effectiveRoute = route ?? loc.pathname;
+  const override = useSectionTitle(effectiveRoute, sectionKey || "");
+  const finalKicker = sectionKey && override?.kicker ? override.kicker : kicker;
+
   return (
     <Band tone={tone} className="border-y border-white/5">
-      {kicker && (
+      {finalKicker && (
         <p className="font-display text-[11px] font-bold uppercase tracking-[0.28em] text-accent mb-10">
-          {kicker}
+          {finalKicker}
         </p>
       )}
       {/* Hairline grid using gap+background — safe on every breakpoint, no overlap. */}
