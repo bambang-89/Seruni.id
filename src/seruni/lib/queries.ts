@@ -331,7 +331,7 @@ export function useHeroSlider() {
   const [data, setData] = useState<HeroSlider[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase.from("hero_slider") as any)
+    ((supabase as any).from("hero_slider") as any)
       .select("*")
       .eq("aktif", true)
       .order("urutan")
@@ -349,7 +349,7 @@ export function useIdentitasDesa() {
   const [data, setData] = useState<IdentitasDesa | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase.from("identitas_desa") as any)
+    ((supabase as any).from("identitas_desa") as any)
       .select("*")
       .eq("singleton", true)
       .maybeSingle()
@@ -376,7 +376,7 @@ export function useDokumenUpload(
       return;
     }
 
-    let query = (supabase.from("dokumen_upload") as any)
+    let query = ((supabase as any).from("dokumen_upload") as any)
       .select("*")
       .eq("entity_type", entityType)
       .eq("entity_id", entityId);
@@ -919,6 +919,10 @@ export type PembangunanData = {
   totalAnggaran: number;
   totalRealisasi: number;
   dataKegiatan: Array<{ nama: string; progres: number }>;
+  progres_fisik_avg: number;
+  anggaran_terserap_pct: number;
+  aset_baru: number;
+  kegiatan_aktif: Array<{ nama: string; progres: number }>;
 };
 
 export function usePembangunanData() {
@@ -926,6 +930,10 @@ export function usePembangunanData() {
     totalAnggaran: 0,
     totalRealisasi: 0,
     dataKegiatan: [],
+    progres_fisik_avg: 0,
+    anggaran_terserap_pct: 0,
+    aset_baru: 0,
+    kegiatan_aktif: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -938,14 +946,20 @@ export function usePembangunanData() {
         if (r && r.length > 0) {
           const totalAnggaran = r.reduce((sum: number, k: any) => sum + Number(k.anggaran || 0), 0);
           const totalRealisasi = r.reduce((sum: number, k: any) => sum + Number(k.realisasi || 0), 0);
+          const progresAvg = totalAnggaran > 0 ? Math.round((totalRealisasi / totalAnggaran) * 100) : 0;
+          const dk = r.map((k: any) => ({
+            nama: k.nama_kegiatan,
+            progres: Number(k.anggaran) > 0 ? Math.round((Number(k.realisasi || 0) / Number(k.anggaran)) * 100) : 0,
+          }));
 
           setData({
             totalAnggaran,
             totalRealisasi,
-            dataKegiatan: r.map((k: any) => ({
-              nama: k.nama_kegiatan,
-              progres: Number(k.anggaran) > 0 ? Math.round((Number(k.realisasi || 0) / Number(k.anggaran)) * 100) : 0,
-            })),
+            dataKegiatan: dk,
+            progres_fisik_avg: progresAvg,
+            anggaran_terserap_pct: progresAvg,
+            aset_baru: 0,
+            kegiatan_aktif: dk,
           });
         }
         setLoading(false);
@@ -1019,15 +1033,78 @@ export function useBantuanSosial() {
   return { data, loading };
 }
 
-export function usePenerimaBansos(bansosId?: string) {
+export interface PenerimaBansosOptions {
+  search?: string;
+  dusun?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export function usePenerimaBansos(bansosId?: string, opts: PenerimaBansosOptions = {}) {
+  const { search = "", dusun = "", status = "", page = 0, pageSize = 20 } = opts;
   const [data, setData] = useState<PenerimaBansos[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!bansosId) { setData([]); setLoading(false); return; }
-    supabase.from("penerima_bansos").select("*").eq("bansos_id", bansosId).order("nama")
-      .then(({ data: r }) => { setData(((r as unknown) || []) as PenerimaBansos[]); setLoading(false); });
+    if (!bansosId) { setData([]); setTotal(0); setLoading(false); return; }
+    let q = supabase
+      .from("penerima_bansos")
+      .select("*", { count: "exact" })
+      .eq("bansos_id", bansosId)
+      .order("nama");
+
+    if (search) {
+      q = q.or(`nama.ilike.%${search}%,nik.ilike.%${search}%`);
+    }
+    if (dusun) {
+      q = q.eq("dusun", dusun);
+    }
+    if (status) {
+      q = q.eq("status", status);
+    }
+
+    q = q.range(page * pageSize, (page + 1) * pageSize - 1);
+
+    q.then(({ data: r, count }) => {
+      setData((r as unknown as PenerimaBansos[]) || []);
+      setTotal(count || 0);
+      setLoading(false);
+    });
+  }, [bansosId, search, dusun, status, page, pageSize]);
+
+  return { data, loading, total };
+}
+
+export function usePenerimaBansosStats(bansosId?: string) {
+  const [stats, setStats] = useState({ total: 0, aktif: 0, nonaktif: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!bansosId) { setStats({ total: 0, aktif: 0, nonaktif: 0 }); setLoading(false); return; }
+    supabase
+      .from("penerima_bansos")
+      .select("status", { count: "exact", head: true })
+      .eq("bansos_id", bansosId)
+      .then(({ count: totalCount }: any) => {
+        supabase
+          .from("penerima_bansos")
+          .select("status", { count: "exact", head: true })
+          .eq("bansos_id", bansosId)
+          .neq("status", "dibatalkan")
+          .then(({ count: aktifCount }: any) => {
+            setStats({
+              total: totalCount || 0,
+              aktif: aktifCount || 0,
+              nonaktif: (totalCount || 0) - (aktifCount || 0),
+            });
+            setLoading(false);
+          });
+      });
   }, [bansosId]);
-  return { data, loading };
+
+  return { stats, loading };
 }
 
 // ===================== Stunting & Posyandu =====================
@@ -1077,7 +1154,7 @@ export function useBalita(dusun?: string) {
   const [data, setData] = useState<Balita[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    let q = (supabase.from("balita") as any).select("*").order("nama");
+    let q = ((supabase as any).from("balita") as any).select("*").order("nama");
     if (dusun) q = q.eq("dusun", dusun);
     q.then(({ data: r }) => { setData(((r as unknown) || []) as Balita[]); setLoading(false); });
   }, [dusun]);
@@ -1097,7 +1174,7 @@ export function useBencanaKejadian(status?: string) {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let q = supabase.from("bencana_kejadian").select("*").order("tanggal", { ascending: false });
-    if (status) q = q.eq("status", status);
+    if (status) q = q.eq("status", status as any);
     q.then(({ data: r }) => { setData(((r as unknown) || []) as BencanaKejadian[]); setLoading(false); });
   }, [status]);
   return { data, loading };
@@ -1136,7 +1213,7 @@ export function useLayananStatistik(jenis?: string) {
   const [data, setData] = useState<LayananStat[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    let q = (supabase.from("layanan_statistik") as any).select("*");
+    let q = ((supabase as any).from("layanan_statistik") as any).select("*");
     if (jenis) q = q.eq("jenis_layanan", jenis);
     q.then(({ data }) => {
       setData((data || []) as LayananStat[]);
@@ -1159,7 +1236,7 @@ export function useAduanKategori() {
   const [data, setData] = useState<RefOption[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase.from("ref_kategori_aduan") as any).select("*").eq("aktif", true).order("urutan")
+    ((supabase as any).from("ref_kategori_aduan") as any).select("*").eq("aktif", true).order("urutan")
       .then(({ data, error }) => {
         if (error) console.error("useAduanKategori error:", error);
         setData((data || []) as RefOption[]);
@@ -1173,7 +1250,7 @@ export function useKategoriUsulan() {
   const [data, setData] = useState<RefOption[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase.from("ref_kategori_usulan") as any).select("*").eq("aktif", true).order("urutan")
+    ((supabase as any).from("ref_kategori_usulan") as any).select("*").eq("aktif", true).order("urutan")
       .then(({ data, error }) => {
         if (error) console.error("useKategoriUsulan error:", error);
         setData((data || []) as RefOption[]);
@@ -1187,7 +1264,7 @@ export function useTipeUmkm() {
   const [data, setData] = useState<RefOption[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase.from("ref_tipe_umkm") as any).select("*").eq("aktif", true).order("urutan")
+    ((supabase as any).from("ref_tipe_umkm") as any).select("*").eq("aktif", true).order("urutan")
       .then(({ data, error }) => {
         if (error) console.error("useTipeUmkm error:", error);
         setData((data || []) as RefOption[]);
@@ -1201,7 +1278,7 @@ export function useJenisWisata() {
   const [data, setData] = useState<RefOption[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase.from("ref_jenis_wisata") as any).select("*").eq("aktif", true).order("urutan")
+    ((supabase as any).from("ref_jenis_wisata") as any).select("*").eq("aktif", true).order("urutan")
       .then(({ data, error }) => {
         if (error) console.error("useJenisWisata error:", error);
         setData((data || []) as RefOption[]);
@@ -1215,7 +1292,7 @@ export function useSumberDana() {
   const [data, setData] = useState<RefOption[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase.from("ref_sumber_dana") as any).select("*").eq("aktif", true).order("urutan")
+    ((supabase as any).from("ref_sumber_dana") as any).select("*").eq("aktif", true).order("urutan")
       .then(({ data, error }) => {
         if (error) console.error("useSumberDana error:", error);
         setData((data || []) as RefOption[]);
@@ -1256,7 +1333,7 @@ export function useSuratDNAFields(jenisSuratId: string | null) {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!jenisSuratId) { setData([]); setLoading(false); return; }
-    (supabase.from("surat_jenis_dna") as any)
+    ((supabase as any).from("surat_jenis_dna") as any)
       .select("*")
       .eq("jenis_surat_id", jenisSuratId)
       .order("urutan")
@@ -1290,7 +1367,7 @@ export function useSuratAjuanList() {
   const [data, setData] = useState<SuratAjuanRow[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    (supabase.from("surat_ajuan") as any)
+    ((supabase as any).from("surat_ajuan") as any)
       .select("*")
       .order("created_at", { ascending: false })
       .then(({ data }) => { setData((data || []) as SuratAjuanRow[]); setLoading(false); });
@@ -1561,7 +1638,7 @@ export function usePageHeroConfig(route: string) {
   const [data, setData] = useState<PageHeroConfig | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!tenantId) return;
+    
     let mounted = true;
     async function load() {
       const { data: rows } = await (supabase.from('page_hero_config') as any)
