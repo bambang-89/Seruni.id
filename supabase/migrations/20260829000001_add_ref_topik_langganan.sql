@@ -12,11 +12,17 @@ CREATE TABLE IF NOT EXISTS public.ref_topik_langganan (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TRIGGER set_ref_topik_langganan_updated
-  BEFORE UPDATE ON public.ref_topik_langganan
-  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'set_ref_topik_langganan_updated' AND tgrelid = 'public.ref_topik_langganan'::regclass) THEN
+    CREATE TRIGGER set_ref_topik_langganan_updated
+      BEFORE UPDATE ON public.ref_topik_langganan
+      FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+  END IF;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
-CREATE INDEX idx_ref_topik_langganan_tenant ON public.ref_topik_langganan(tenant_id, aktif, urutan);
+CREATE INDEX IF NOT EXISTS idx_ref_topik_langganan_tenant ON public.ref_topik_langganan(tenant_id, aktif, urutan);
 
 GRANT SELECT ON public.ref_topik_langganan TO anon, authenticated;
 GRANT ALL ON public.ref_topik_langganan TO service_role;

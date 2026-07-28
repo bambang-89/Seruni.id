@@ -22,38 +22,60 @@ CREATE TABLE IF NOT EXISTS page_hero_config (
 CREATE INDEX IF NOT EXISTS idx_page_hero_config_tenant ON page_hero_config(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_page_hero_config_route ON page_hero_config(page_route);
 
--- Trigger updated_at
+-- Trigger updated_at (use set_updated_at which already exists)
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'page_hero_config_updated' AND tgrelid = 'public.page_hero_config'::regclass) THEN
         CREATE TRIGGER page_hero_config_updated
         BEFORE UPDATE ON page_hero_config
         FOR EACH ROW
-        EXECUTE FUNCTION update_updated_at_column();
+        EXECUTE FUNCTION public.set_updated_at();
     END IF;
 END $$;
 
 -- Enable RLS
 ALTER TABLE page_hero_config ENABLE ROW LEVEL SECURITY;
 
--- Policy: Admin can do anything
-CREATE POLICY "Admin dapat mengelola page_hero_config"
-    ON page_hero_config
-    FOR ALL
-    USING (
-        auth.uid() IN (SELECT id FROM users WHERE tenant_id = page_hero_config.tenant_id AND peran = 'admin')
-    );
-
--- Policy: Public (anon/authenticated) can read active configs
-CREATE POLICY "Publik dapat melihat page_hero_config"
-    ON page_hero_config
-    FOR SELECT
-    USING (is_active = true);
-
--- Add to replication publication if not exists (for realtime/sync)
+-- Policy: Admin can do anything (use has_role(UUID,TEXT) which will be created by 20260830000000)
+-- For now, use inline logic with user_peran table
 DO $$
 BEGIN
-    -- Only if we need to sync it to clients (optional, but good for CMS)
+  CREATE POLICY "Admin dapat mengelola page_hero_config" ON public.page_hero_config
+    FOR ALL
+    USING (
+      EXISTS (
+        SELECT 1 FROM public.user_peran
+        WHERE user_id = auth.uid()
+          AND peran = 'admin'
+          AND tenant_id = page_hero_config.tenant_id
+      )
+    )
+    WITH CHECK (
+      EXISTS (
+        SELECT 1 FROM public.user_peran
+        WHERE user_id = auth.uid()
+          AND peran = 'admin'
+          AND tenant_id = page_hero_config.tenant_id
+      )
+    );
+EXCEPTION WHEN OTHERS THEN
+  -- Policy may already exist from a previous run attempt
+  RAISE NOTICE 'Policy creation skipped: %', SQLERRM;
+END $$;
+
+-- Policy: Public (anon/authenticated) can read active configs
+DO $$
+BEGIN
+  CREATE POLICY "Publik dapat melihat page_hero_config" ON public.page_hero_config
+    FOR SELECT
+    USING (is_active = true);
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Policy creation skipped: %', SQLERRM;
+END $$;
+
+-- Add to replication publication if not exists
+DO $$
+BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE page_hero_config;
 EXCEPTION
     WHEN duplicate_object THEN null;
