@@ -608,7 +608,7 @@ export function SuratAjuanForm() {
           </p>
           <div className="flex gap-3 pt-2">
             <button
-              onClick={() => navigate("/service-center")}
+              onClick={() => navigate(`/service-center?lacak=${submitted.nomor_tiket}`)}
               className={btnPrimary}
             >
               Lacak Status

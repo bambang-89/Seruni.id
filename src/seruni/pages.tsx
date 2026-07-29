@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "./lib/tenant";
@@ -1039,7 +1039,11 @@ export function LayananPBBPage() {
 
 export function ServiceCenterPage() {
   const { data: settings } = useSiteSettings();
-  const [mode, setMode] = useState<"kirim" | "lacak">("kirim");
+  const [searchParams] = useSearchParams();
+  const initialLacak = searchParams.get("lacak");
+  const [mode, setMode] = useState<"kirim" | "lacak" | "lacak-surat">(
+    initialLacak ? "lacak-surat" : "kirim"
+  );
   const [kategori, setKategori] = useState<string>("");
   const { data: kategoriList } = useAduanKategori();
   const { data: dusunList } = useDusun();
@@ -1065,6 +1069,9 @@ export function ServiceCenterPage() {
   const [lacakNo, setLacakNo] = useState("");
   const [lacakHasil, setLacakHasil] = useState<LacakHasil | null>(null);
   const [lacakLoading, setLacakLoading] = useState(false);
+  const [lacakSuratNo, setLacakSuratNo] = useState(initialLacak || "");
+  const [lacakSuratHasil, setLacakSuratHasil] = useState<Record<string, any> | null>(null);
+  const [lacakSuratLoading, setLacakSuratLoading] = useState(false);
 
   useAutofillPenduduk(nik, settings?.tenant_id || "", (d) => {
     if (d) {
@@ -1112,18 +1119,40 @@ export function ServiceCenterPage() {
     setLacakHasil(row);
   }
 
+  async function lacakSurat(e: React.FormEvent) {
+    e.preventDefault();
+    if (!lacakSuratNo.trim()) return;
+    setLacakSuratLoading(true);
+    setLacakSuratHasil(null);
+    try {
+      const res = await fetch(`${window.location.origin}/api/lacak-surat?ticket=${encodeURIComponent(lacakSuratNo.trim())}`, {
+        headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ""}`, "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        toast.error(data.error || "Gagal melacak surat");
+      } else {
+        setLacakSuratHasil(data);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal melacak surat");
+    } finally {
+      setLacakSuratLoading(false);
+    }
+  }
+
   return (
     <StandaloneLayout>
       <SectionWrap>
         <div className="mb-8 flex gap-px bg-current/15 w-fit">
-          {(["kirim", "lacak"] as const).map((m) => (
+          {(["kirim", "lacak", "lacak-surat"] as const).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => setMode(m)}
               className={`px-6 py-3 font-display text-[11px] font-bold uppercase tracking-[0.28em] bg-background transition-colors ${mode === m ? "text-accent border-b-2 border-accent" : "opacity-60 hover:opacity-100"}`}
             >
-              {m === "kirim" ? "Kirim Aduan" : "Lacak Tiket"}
+              {m === "kirim" ? "Kirim Aduan" : m === "lacak" ? "Lacak Aduan" : "Lacak Surat"}
             </button>
           ))}
         </div>
@@ -1183,7 +1212,7 @@ export function ServiceCenterPage() {
               </label>
               <button disabled={loading} type="submit" className={`${btnPrimary} justify-self-start disabled:opacity-50`}>{loading ? "Mengirim…" : "Kirim Aduan"}</button>
             </form>
-          ) : (
+          ) : mode === "lacak" ? (
             <div className="grid gap-6">
               <form className="grid gap-5 border border-current/20 p-6 sm:p-8" onSubmit={lacak}>
                 <label className="block text-sm">
@@ -1209,6 +1238,54 @@ export function ServiceCenterPage() {
                     <div className="mt-6 pt-6 border-t border-current/15">
                       <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Tanggapan Admin</div>
                       <p className="mt-2 text-sm leading-relaxed">{lacakHasil.tanggapan}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-6">
+              <form className="grid gap-5 border border-current/20 p-6 sm:p-8" onSubmit={lacakSurat}>
+                <label className="block text-sm">
+                  <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Nomor Tiket Surat</span>
+                  <input required value={lacakSuratNo} onChange={(e) => setLacakSuratNo(e.target.value.toUpperCase())} autoComplete="off" placeholder="SRT-202607-XXXX" className={`${inputCls} font-mono`} />
+                </label>
+                <button disabled={lacakSuratLoading} type="submit" className={`${btnPrimary} justify-self-start disabled:opacity-50`}>{lacakSuratLoading ? "Mencari…" : "Cek Status"}</button>
+              </form>
+              {lacakSuratHasil?.error && (
+                <div className="border-l-2 border-red-400 pl-6 py-4 text-sm opacity-75">{lacakSuratHasil.error}</div>
+              )}
+              {lacakSuratHasil?.ditemukan && (
+                <div className="border border-accent p-6 sm:p-8">
+                  <div className="flex items-center gap-3">
+                    <span className={`inline-block w-3 h-3 rounded-full bg-status-${lacakSuratHasil.status_color || "gray"}`} />
+                    <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Status: {lacakSuratHasil.status_label || lacakSuratHasil.status}</div>
+                  </div>
+                  <div className="mt-2 font-display text-2xl font-semibold italic">{lacakSuratHasil.jenis_surat}</div>
+                  <dl className="mt-6 pt-6 border-t border-current/15 text-sm grid sm:grid-cols-2 gap-y-3 gap-x-6">
+                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Tiket</dt><dd className="font-mono mt-0.5">{lacakSuratHasil.nomor_tiket}</dd></div>
+                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Nama</dt><dd className="mt-0.5">{lacakSuratHasil.nama}</dd></div>
+                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">NIK</dt><dd className="font-mono mt-0.5 text-xs">{lacakSuratHasil.nik_masked}</dd></div>
+                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Kontak</dt><dd className="font-mono mt-0.5 text-xs">{lacakSuratHasil.kontak}</dd></div>
+                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Diajukan</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(lacakSuratHasil.tanggal_ajuan || "")}</dd></div>
+                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Diperbarui</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(lacakSuratHasil.tanggal_update || "")}</dd></div>
+                    {lacakSuratHasil.keperluan && (
+                      <div className="col-span-2"><dt className="opacity-60 text-xs uppercase tracking-wider">Keperluan</dt><dd className="mt-0.5 leading-relaxed">{lacakSuratHasil.keperluan}</dd></div>
+                    )}
+                  </dl>
+                  {lacakSuratHasil.surat_terbit && (
+                    <div className="mt-6 pt-6 border-t border-current/15">
+                      <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Surat Telah Diterbitkan</div>
+                      <dl className="mt-3 text-sm grid sm:grid-cols-2 gap-y-3 gap-x-6">
+                        <div><dt className="opacity-60 text-xs uppercase tracking-wider">Nomor Surat</dt><dd className="font-mono mt-0.5">{lacakSuratHasil.surat_terbit.nomor_surat}</dd></div>
+                        <div><dt className="opacity-60 text-xs uppercase tracking-wider">Tanggal</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(lacakSuratHasil.surat_terbit.tanggal_diterbitkan || "")}</dd></div>
+                      </dl>
+                      {lacakSuratHasil.surat_terbit.qr_url && (
+                        <div className="mt-4">
+                          <img src={lacakSuratHasil.surat_terbit.qr_url} alt="QR Code" className="h-24 w-24 border border-current/20" />
+                          <p className="mt-2 text-xs opacity-60">Pindai QR code untuk verifikasi keaslian surat.</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
