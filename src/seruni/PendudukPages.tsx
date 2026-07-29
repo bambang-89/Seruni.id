@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -9,6 +10,12 @@ import { useAutofillPenduduk } from "./lib/queries";
 import { uploadFile } from "./lib/upload";
 import { useTenantId } from "./lib/tenant";
 
+const raw = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+);
+const ACTIVE_TENANT = "d532ae95-0ad9-42bb-a6e8-5c840447c90e";
+
 const inp = "w-full border border-current/25 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent";
 const btn = "bg-accent text-primary px-5 py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-60";
 
@@ -19,8 +26,8 @@ export function StatistikPendudukLivePage() {
   useEffect(() => {
     (async () => {
       const [a, d] = await Promise.all([
-        (supabase as any).from("penduduk_statistik").select("*").maybeSingle(),
-        (supabase as any).from("penduduk_per_dusun").select("*"),
+        raw.from("penduduk_statistik").select("*").eq("tenant_id", ACTIVE_TENANT).maybeSingle(),
+        raw.from("penduduk_per_dusun").select("*").eq("tenant_id", ACTIVE_TENANT),
       ]);
       setAgg(a.data); setPerDusun(d.data || []);
     })();
