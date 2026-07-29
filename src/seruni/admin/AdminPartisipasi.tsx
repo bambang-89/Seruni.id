@@ -35,14 +35,15 @@ export function RpjmdesPeriodeAdmin() {
 }
 
 // -------- RPJMDes Bidang --------
-function useSelectOptions(table: string, labelKey: string, valueKey = "id", filter?: (r: any) => boolean) {
+function useSelectOptions(table: string, labelKey: string, valueKey = "id", filter?: (r: Record<string, unknown>) => boolean) {
   const [opts, setOpts] = useState<{ value: string; label: string }[]>([]);
   useEffect(() => {
-    (supabase.from(table as any) as any).select("*").then(({ data }: any) => {
-      const rows = (data || []).filter((r: any) => (filter ? filter(r) : true));
-      setOpts(rows.map((r: any) => ({ value: r[valueKey], label: r[labelKey] })));
+    supabase.from(table as any).select("*").then(({ data }) => {
+      const rows = (data || []) as unknown as Record<string, unknown>[];
+      const filtered = filter ? rows.filter(filter) : rows;
+      setOpts(filtered.map(r => ({ value: String(r[valueKey]), label: String(r[labelKey]) })));
     });
-  }, [table]);
+  }, [table, filter, labelKey, valueKey]);
   return opts;
 }
 
