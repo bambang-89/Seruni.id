@@ -560,6 +560,7 @@ export function useEventLog(filter: { entitas?: string; event?: string; sejak?: 
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
   const reload = () => setReloadKey((k) => k + 1);
+  const tenantId = useTenantId();
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -570,6 +571,7 @@ export function useEventLog(filter: { entitas?: string; event?: string; sejak?: 
         .order("created_at", { ascending: false })
         .limit(filter.limit ?? 200);
       if (filter.entitas) q = q.eq("entitas", filter.entitas);
+      if (tenantId) q = q.eq("tenant_id", tenantId);
       if (filter.event) q = q.ilike("event_name", `%${filter.event}%`);
       if (filter.sejak) q = q.gte("created_at", filter.sejak);
       const { data } = await q;
@@ -595,7 +597,7 @@ export function useEventLog(filter: { entitas?: string; event?: string; sejak?: 
     return () => {
       cancelled = true;
     };
-  }, [filter.entitas, filter.event, filter.sejak, filter.limit, reloadKey]);
+  }, [filter.entitas, filter.event, filter.sejak, filter.limit, reloadKey, tenantId]);
   return { rows, loading, reload };
 }
 
@@ -631,24 +633,27 @@ export type WaBroadcastTarget = {
 export function useBroadcasts(reloadKey = 0) {
   const [rows, setRows] = useState<WaBroadcast[]>([]);
   const [loading, setLoading] = useState(true);
+  const tenantId = useTenantId();
   useEffect(() => {
     setLoading(true);
-    supabase
+    let q = supabase
       .from("wa_broadcast")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(100)
-      .then(({ data }) => {
+      .limit(100);
+      if (tenantId) q = q.eq("tenant_id", tenantId);
+      q.then(({ data }) => {
         setRows(((data as unknown) || []) as WaBroadcast[]);
         setLoading(false);
       });
-  }, [reloadKey]);
+  }, [reloadKey, tenantId]);
   return { rows, loading };
 }
 
 export function useBroadcastTargets(broadcastId: string | null, reloadKey = 0) {
   const [rows, setRows] = useState<WaBroadcastTarget[]>([]);
   const [loading, setLoading] = useState(true);
+  const tenantId = useTenantId();
   useEffect(() => {
     if (!broadcastId) {
       setRows([]);
@@ -656,16 +661,16 @@ export function useBroadcastTargets(broadcastId: string | null, reloadKey = 0) {
       return;
     }
     setLoading(true);
-    supabase
+    let q = supabase
       .from("wa_broadcast_target")
       .select("*")
-      .eq("broadcast_id", broadcastId)
-      .order("created_at")
-      .then(({ data }) => {
+      .eq("broadcast_id", broadcastId);
+      if (tenantId) q = q.eq("tenant_id", tenantId);
+      q.then(({ data }) => {
         setRows(((data as unknown) || []) as WaBroadcastTarget[]);
         setLoading(false);
       });
-  }, [broadcastId, reloadKey]);
+  }, [broadcastId, reloadKey, tenantId]);
   return { rows, loading };
 }
 
