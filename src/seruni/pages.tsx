@@ -1073,6 +1073,13 @@ export function ServiceCenterPage() {
   const [lacakSuratHasil, setLacakSuratHasil] = useState<Record<string, any> | null>(null);
   const [lacakSuratLoading, setLacakSuratLoading] = useState(false);
 
+  // Auto-fetch lacak-surat when navigated with ?lacak= param
+  useEffect(() => {
+    if (lacakSuratNo && lacakSuratNo.trim()) {
+      doLacakSurat(lacakSuratNo);
+    }
+  }, []);
+
   useAutofillPenduduk(nik, settings?.tenant_id || "", (d) => {
     if (d) {
       setNama(d.nama);
@@ -1119,26 +1126,29 @@ export function ServiceCenterPage() {
     setLacakHasil(row);
   }
 
-  async function lacakSurat(e: React.FormEvent) {
-    e.preventDefault();
-    if (!lacakSuratNo.trim()) return;
+  async function doLacakSurat(ticket: string) {
+    if (!ticket.trim()) return;
     setLacakSuratLoading(true);
     setLacakSuratHasil(null);
     try {
-      const res = await fetch(`${window.location.origin}/api/lacak-surat?ticket=${encodeURIComponent(lacakSuratNo.trim())}`, {
-        headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ""}`, "Content-Type": "application/json" },
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        toast.error(data.error || "Gagal melacak surat");
-      } else {
-        setLacakSuratHasil(data);
+      const { data, error } = await supabase.rpc("lacak_surat", { _nomor_tiket: ticket.trim() });
+      if (error) return toast.error(error.message);
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row || !row.ditemukan) {
+        setLacakSuratHasil({ ditemukan: false });
+        return;
       }
+      setLacakSuratHasil(row);
     } catch (err: any) {
       toast.error(err?.message || "Gagal melacak surat");
     } finally {
       setLacakSuratLoading(false);
     }
+  }
+
+  function lacakSurat(e: React.FormEvent) {
+    e.preventDefault();
+    doLacakSurat(lacakSuratNo);
   }
 
   return (
@@ -1255,6 +1265,11 @@ export function ServiceCenterPage() {
               {lacakSuratHasil?.error && (
                 <div className="border-l-2 border-red-400 pl-6 py-4 text-sm opacity-75">{lacakSuratHasil.error}</div>
               )}
+              {!lacakSuratHasil?.ditemukan && !lacakSuratHasil?.error && lacakSuratNo && (
+                <div className="border border-current/20 p-6 text-sm opacity-75">
+                  Tiket <strong>{lacakSuratNo}</strong> tidak ditemukan. Pastikan nomor tiket benar.
+                </div>
+              )}
               {lacakSuratHasil?.ditemukan && (
                 <div className="border border-accent p-6 sm:p-8">
                   <div className="flex items-center gap-3">
@@ -1273,16 +1288,16 @@ export function ServiceCenterPage() {
                       <div className="col-span-2"><dt className="opacity-60 text-xs uppercase tracking-wider">Keperluan</dt><dd className="mt-0.5 leading-relaxed">{lacakSuratHasil.keperluan}</dd></div>
                     )}
                   </dl>
-                  {lacakSuratHasil.surat_terbit && (
+                  {lacakSuratHasil.surat_terbit_nomor && (
                     <div className="mt-6 pt-6 border-t border-current/15">
                       <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Surat Telah Diterbitkan</div>
                       <dl className="mt-3 text-sm grid sm:grid-cols-2 gap-y-3 gap-x-6">
-                        <div><dt className="opacity-60 text-xs uppercase tracking-wider">Nomor Surat</dt><dd className="font-mono mt-0.5">{lacakSuratHasil.surat_terbit.nomor_surat}</dd></div>
-                        <div><dt className="opacity-60 text-xs uppercase tracking-wider">Tanggal</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(lacakSuratHasil.surat_terbit.tanggal_diterbitkan || "")}</dd></div>
+                        <div><dt className="opacity-60 text-xs uppercase tracking-wider">Nomor Surat</dt><dd className="font-mono mt-0.5">{lacakSuratHasil.surat_terbit_nomor}</dd></div>
+                        <div><dt className="opacity-60 text-xs uppercase tracking-wider">Tanggal</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(lacakSuratHasil.surat_terbit_tanggal || "")}</dd></div>
                       </dl>
-                      {lacakSuratHasil.surat_terbit.qr_url && (
+                      {lacakSuratHasil.surat_terbit_qr_url && (
                         <div className="mt-4">
-                          <img src={lacakSuratHasil.surat_terbit.qr_url} alt="QR Code" className="h-24 w-24 border border-current/20" />
+                          <img src={lacakSuratHasil.surat_terbit_qr_url} alt="QR Code" className="h-24 w-24 border border-current/20" />
                           <p className="mt-2 text-xs opacity-60">Pindai QR code untuk verifikasi keaslian surat.</p>
                         </div>
                       )}
