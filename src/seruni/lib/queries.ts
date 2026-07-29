@@ -808,7 +808,8 @@ export type StatistikDesa = {
 };
 
 export function useStatistikDesa() {
-  const tenantId = useTenantId(); // Tenant context for future aggregation queries
+  const tenantId = useTenantId();
+  const ACTIVE_TENANT = "d532ae95-0ad9-42bb-a6e8-5c840447c90e";
   const [data, setData] = useState<StatistikDesa>({
     jumlah_penduduk: 0,
     jumlah_kk: 0,
@@ -823,54 +824,68 @@ export function useStatistikDesa() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Hitung dari wilayah_dusun
+    const effectiveTenant = tenantId && tenantId !== "00000000-0000-0000-0000-000000000001"
+      ? tenantId
+      : ACTIVE_TENANT;
+
+    // raw client bypasses RLS; add tenant_id filter for correctness
     Promise.all([
-      supabase.from("wilayah_dusun").select("kk, jiwa, luas_ha"),
-      supabase.from("dashboard_agregat").select("metrik_key, metrik_value").eq("kategori", "penduduk"),
-    ]).then(([dusunRes, aggRes]) => {
-      if (dusunRes.data && dusunRes.data.length > 0) {
-        const dusun = dusunRes.data;
-        const totalKk = dusun.reduce((sum, d) => sum + (d.kk || 0), 0);
-        const totalJiwa = dusun.reduce((sum, d) => sum + (d.jiwa || 0), 0);
-        const totalLuas = dusun.reduce((sum, d) => sum + Number(d.luas_ha || 0), 0);
+      raw.from("wilayah_dusun").select("kk, jiwa, luas_ha").eq("tenant_id", effectiveTenant),
+      raw.from("penduduk").select("jenis_kelamin, umur, pekerjaan, pendidikan").eq("tenant_id", effectiveTenant).eq("status", "hidup"),
+    ]).then(([dusunRes, pendudukRes]) => {
+      const penduduk = pendudukRes.data || [];
+      const dusun = dusunRes.data || [];
 
-        let lakiLaki = 0;
-        let perempuan = 0;
-        let per_umur = [];
-        let per_pekerjaan = [];
-        let per_pendidikan = [];
+      let lakiLaki = 0;
+      let perempuan = 0;
+      const UMUR_BUCKETS = [
+        { max: 5, label: "0-5" },
+        { max: 12, label: "6-12" },
+        { max: 18, label: "13-18" },
+        { max: 25, label: "19-25" },
+        { max: 35, label: "26-35" },
+        { max: 45, label: "36-45" },
+        { max: 55, label: "46-55" },
+        { max: 65, label: "56-65" },
+        { max: Infinity, label: ">65" },
+      ];
+      const umurCounts: Record<string, number> = {};
+      const pekerjaanCounts: Record<string, number> = {};
+      const pendidikanCounts: Record<string, number> = {};
 
-        if (aggRes.data) {
-          aggRes.data.forEach((row) => {
-            if (row.metrik_key === 'laki_laki') lakiLaki = Number(row.metrik_value);
-            if (row.metrik_key === 'perempuan') perempuan = Number(row.metrik_value);
-            if (row.metrik_key === 'per_umur') {
-              try { per_umur = typeof row.metrik_value === 'string' ? JSON.parse(row.metrik_value) : row.metrik_value; } catch (e) { /* ignore */ }
-            }
-            if (row.metrik_key === 'per_pekerjaan') {
-              try { per_pekerjaan = typeof row.metrik_value === 'string' ? JSON.parse(row.metrik_value) : row.metrik_value; } catch (e) { /* ignore */ }
-            }
-            if (row.metrik_key === 'per_pendidikan') {
-              try { per_pendidikan = typeof row.metrik_value === 'string' ? JSON.parse(row.metrik_value) : row.metrik_value; } catch (e) { /* ignore */ }
-            }
-          });
+      for (const p of penduduk) {
+        const jk = String(p.jenis_kelamin || "").toUpperCase();
+        if (jk === "L" || jk === "LAKI-LAKI" || jk === "MALE" || jk === "1") lakiLaki++;
+        else if (jk === "P" || jk === "PEREMPUAN" || jk === "FEMALE" || jk === "2") perempuan++;
+
+        const umr = Number(p.umur) || 0;
+        for (const b of UMUR_BUCKETS) {
+          if (umr <= b.max) { umurCounts[b.label] = (umurCounts[b.label] || 0) + 1; break; }
         }
-
-        setData({
-          jumlah_penduduk: totalJiwa || 0,
-          jumlah_kk: totalKk || 0,
-          jumlah_dusun: dusun.length || 0,
-          luas_wilayah_km2: Number((totalLuas / 100).toFixed(2)) || 0,
-          laki_laki: lakiLaki || 0,
-          perempuan: perempuan || 0,
-          per_umur: Array.isArray(per_umur) ? per_umur : [],
-          per_pekerjaan: Array.isArray(per_pekerjaan) ? per_pekerjaan : [],
-          per_pendidikan: Array.isArray(per_pendidikan) ? per_pendidikan : [],
-        });
+        const pk = String(p.pekerjaan || "-").trim();
+        if (pk && pk !== "-") pekerjaanCounts[pk] = (pekerjaanCounts[pk] || 0) + 1;
+        const pd = String(p.pendidikan || "-").trim();
+        if (pd && pd !== "-") pendidikanCounts[pd] = (pendidikanCounts[pd] || 0) + 1;
       }
+
+      const totalKk = dusun.reduce((sum, d) => sum + (d.kk || 0), 0);
+      const totalJiwa = dusun.reduce((sum, d) => sum + (d.jiwa || 0), 0);
+      const totalLuas = dusun.reduce((sum, d) => sum + Number(d.luas_ha || 0), 0);
+
+      setData({
+        jumlah_penduduk: totalJiwa || penduduk.length,
+        jumlah_kk: totalKk,
+        jumlah_dusun: dusun.length,
+        luas_wilayah_km2: Number((totalLuas / 100).toFixed(2)),
+        laki_laki: lakiLaki,
+        perempuan: perempuan,
+        per_umur: Object.entries(umurCounts).map(([label, nilai]) => ({ label, nilai })).sort((a, b) => a.label.localeCompare(b.label)),
+        per_pekerjaan: Object.entries(pekerjaanCounts).map(([label, nilai]) => ({ label, nilai })).sort((a, b) => b.nilai - a.nilai).slice(0, 15),
+        per_pendidikan: Object.entries(pendidikanCounts).map(([label, nilai]) => ({ label, nilai })).sort((a, b) => b.nilai - a.nilai).slice(0, 10),
+      });
       setLoading(false);
     });
-  }, []);
+  }, [tenantId]);
 
   return { data, loading };
 }
