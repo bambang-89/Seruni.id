@@ -40,6 +40,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405, origin);
 
   const body = await req.json().catch(() => ({}));
+  const tenant_id = clean(body.tenant_id, 36);
   const nama = clean(body.nama, 120);
   const kontak = clean(body.kontak, 20);
   const kategori = clean(body.kategori, 40).toLowerCase();
@@ -48,6 +49,9 @@ Deno.serve(async (req) => {
   const lokasi = clean(body.lokasi, 200);
   const lampiran_url = clean(body.lampiran_url, 500);
 
+  if (!tenant_id) return json({ error: "tenant_id wajib" }, 400, origin);
+
+  // Validate tenant_id from body (prevents cross-tenant data leaks)
   if (nama.length < 2) return json({ error: "Nama minimal 2 karakter" }, 400, origin);
   if (judul.length < 5) return json({ error: "Judul minimal 5 karakter" }, 400, origin);
   if (isi.length < 10) return json({ error: "Deskripsi terlalu pendek" }, 400, origin);
@@ -62,13 +66,13 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Get tenant_id
+  // Validate tenant exists (prevents cross-tenant injection)
   const { data: tenant } = await supabase
     .from("tenants")
     .select("id")
-    .limit(1)
+    .eq("id", tenant_id)
     .maybeSingle();
-  if (!tenant) return json({ error: "Konfigurasi tenant tidak ditemukan" }, 500, origin);
+  if (!tenant) return json({ error: "Tenant tidak valid" }, 400, origin);
 
   // Rate limit: satu perangkat maksimal 5 aduan per hari
   const fp = await voterHash("aduan-submit", req);
@@ -78,7 +82,8 @@ Deno.serve(async (req) => {
     .select("id")
     .eq("event_name", "aduan_warga.dibuat")
     .gte("created_at", since)
-    .eq("payload->>fp", fp);
+    .eq("payload->>fp", fp)
+    .eq("tenant_id", tenant_id);
   if ((recent?.length ?? 0) >= 5) {
     return json({ error: "Batas aduan harian tercapai. Coba lagi besok." }, 429, origin);
   }
@@ -89,6 +94,7 @@ Deno.serve(async (req) => {
   const { data: last } = await supabase
     .from("aduan_warga")
     .select("nomor_tiket")
+    .eq("tenant_id", tenant_id)
     .like("nomor_tiket", `${prefix}%`)
     .order("nomor_tiket", { ascending: false })
     .limit(1);
@@ -101,7 +107,7 @@ Deno.serve(async (req) => {
   const { data: ins, error } = await supabase
     .from("aduan_warga")
     .insert({
-      tenant_id: tenant.id,
+      tenant_id: tenant_id,
       nomor_tiket,
       kategori: normalizedKategori,
       judul,
@@ -123,6 +129,7 @@ Deno.serve(async (req) => {
     event_name: "aduan_warga.dibuat",
     entitas: "aduan_warga",
     entitas_id: ins.id,
+    tenant_id: tenant_id,
     payload: { fp, kategori: normalizedKategori, nomor_tiket },
   });
 

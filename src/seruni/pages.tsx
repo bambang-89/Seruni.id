@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -657,32 +657,291 @@ export function LayananPage() {
   );
 }
 
+// ─── Layanan Surat ───────────────────────────────────────────────────────────
+/**
+ * Derive a human-readable category from a surat kode.
+ * Groups codes like "S.Ket.", "S.Peng.", "S.Dom.", etc.
+ */
+function deriveSuratKategori(kode: string): string {
+  const k = (kode || "").toLowerCase().trim();
+  if (k.includes("ket"))   return "Keterangan";
+  if (k.includes("peng"))  return "Pengantar";
+  if (k.includes("dom"))   return "Domisili";
+  if (k.includes("kel"))   return "Kelahiran & Kematian";
+  if (k.includes("mat"))   return "Kelahiran & Kematian";
+  if (k.includes("nik"))   return "Kependudukan";
+  if (k.includes("kk"))    return "Kependudukan";
+  if (k.includes("pind"))  return "Kependudukan";
+  if (k.includes("usah"))  return "Usaha & Ekonomi";
+  if (k.includes("umkm"))  return "Usaha & Ekonomi";
+  if (k.includes("tani"))  return "Usaha & Ekonomi";
+  if (k.includes("izin"))  return "Perizinan";
+  if (k.includes("waris")) return "Kewarisan";
+  if (k.includes("car"))   return "Kewarisan";
+  if (k.includes("bant"))  return "Sosial & Bantuan";
+  if (k.includes("dtks"))  return "Sosial & Bantuan";
+  if (k.includes("pkl"))   return "Sosial & Bantuan";
+  if (k.includes("rmh"))   return "Perumahan";
+  if (k.includes("tam"))   return "Perumahan";
+  return "Lainnya";
+}
+
+const KATEGORI_ORDER = [
+  "Keterangan", "Pengantar", "Domisili", "Kependudukan",
+  "Kelahiran & Kematian", "Usaha & Ekonomi", "Perizinan",
+  "Kewarisan", "Sosial & Bantuan", "Perumahan", "Lainnya",
+];
+
+const KATEGORI_ICON: Record<string, string> = {
+  "Keterangan":          "📋",
+  "Pengantar":           "📨",
+  "Domisili":            "🏠",
+  "Kependudukan":        "👤",
+  "Kelahiran & Kematian":"🌱",
+  "Usaha & Ekonomi":     "💼",
+  "Perizinan":           "✅",
+  "Kewarisan":           "⚖️",
+  "Sosial & Bantuan":    "🤝",
+  "Perumahan":           "🏡",
+  "Lainnya":             "📄",
+};
+
 export function LayananSuratPage() {
-  const { data: surat } = useSuratJenis();
+  const { data: surat, loading } = useSuratJenis();
+  const [search, setSearch] = useState("");
+  const [activeKategori, setActiveKategori] = useState<string>("Semua");
+
+  // Augment each item with kategori
+  const augmented = (surat || []).map((s) => ({
+    ...s,
+    kategori: deriveSuratKategori(s.kode_surat),
+  }));
+
+  // All available categories (preserving order)
+  const availableKats = KATEGORI_ORDER.filter((k) =>
+    augmented.some((s) => s.kategori === k)
+  );
+  const allKats = ["Semua", ...availableKats];
+
+  // Filtered by search + kategori
+  const filtered = augmented.filter((s) => {
+    const q = search.trim().toLowerCase();
+    const matchSearch =
+      !q ||
+      s.nama.toLowerCase().includes(q) ||
+      s.kode_surat.toLowerCase().includes(q);
+    const matchKat =
+      activeKategori === "Semua" || s.kategori === activeKategori;
+    return matchSearch && matchKat;
+  });
+
+  // Group filtered items
+  const groups: Record<string, typeof filtered> = {};
+  if (activeKategori === "Semua") {
+    for (const s of filtered) {
+      if (!groups[s.kategori]) groups[s.kategori] = [];
+      groups[s.kategori].push(s);
+    }
+  } else {
+    groups[activeKategori] = filtered;
+  }
+  const groupKeys =
+    activeKategori === "Semua"
+      ? KATEGORI_ORDER.filter((k) => groups[k]?.length)
+      : [activeKategori];
+
+  const btnPrimaryLocal =
+    "inline-flex items-center gap-2 border border-accent bg-accent/10 text-accent px-5 py-2.5 font-display text-[10px] font-bold uppercase tracking-[0.28em] hover:bg-accent hover:text-primary transition-colors";
+
   return (
-    <EditorialLayout
-        
-      >
-      <SectionWrap>
-        <div className="grid md:grid-cols-2 gap-px bg-current/15">
-          {(surat || []).map((s) => (
-            <div key={s.id} className="bg-background p-6 sm:p-8 flex flex-col gap-4">
-              <div className="flex items-start justify-between gap-4">
-                <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Kode {s.kode_surat}</span>
-                <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] opacity-70">SLA 1–5 hari kerja</span>
-              </div>
-              <h3 className="font-display text-xl font-semibold leading-snug">{s.nama}</h3>
-              <Link to={`/layanan/surat/${s.id}`} className={`${btnPrimary} justify-center mt-auto`}>
-                Ajukan Sekarang
-              </Link>
-            </div>
-          ))}
+    <StandaloneLayout>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+
+        {/* ── Header ── */}
+        <div className="mb-8">
+          <p className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent mb-2">
+            Layanan Administrasi
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold leading-tight mb-3">
+            Ajukan Surat Online
+          </h1>
+          <p className="text-sm opacity-70 max-w-xl">
+            Pilih jenis surat yang Anda butuhkan. Proses verifikasi 1–5 hari kerja,
+            ditandatangani elektronik (TTE), dan dapat diverifikasi via QR.
+          </p>
         </div>
-        <p className="mt-6 text-xs opacity-60">Login warga & pengajuan lengkap tersedia pada Phase 6 (Sistem Layanan Mandiri).</p>
-      </SectionWrap>
-    </EditorialLayout>
+
+        {/* ── Search ── */}
+        <div className="relative mb-6">
+          <svg
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 opacity-40 pointer-events-none"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari nama atau kode surat…"
+            className="w-full pl-10 pr-4 py-3 border border-current/20 bg-transparent text-sm focus:outline-none focus:border-accent placeholder:opacity-40"
+            autoComplete="off"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-70 text-lg leading-none"
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        {/* ── Kategori Tabs ── */}
+        <div className="flex flex-wrap gap-2 mb-8">
+          {allKats.map((kat) => {
+            const count =
+              kat === "Semua"
+                ? augmented.length
+                : augmented.filter((s) => s.kategori === kat).length;
+            const isActive = activeKategori === kat;
+            return (
+              <button
+                key={kat}
+                onClick={() => setActiveKategori(kat)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-display font-bold uppercase tracking-[0.2em] border transition-colors ${
+                  isActive
+                    ? "border-accent bg-accent text-primary"
+                    : "border-current/20 hover:border-accent hover:text-accent"
+                }`}
+              >
+                {kat !== "Semua" && (
+                  <span className="text-sm leading-none">
+                    {KATEGORI_ICON[kat] || "📄"}
+                  </span>
+                )}
+                {kat}
+                <span
+                  className={`ml-1 rounded-full px-1.5 py-0.5 text-[9px] font-mono ${
+                    isActive ? "bg-white/20" : "bg-current/10"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Content ── */}
+        {loading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-current/10">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-background p-6 h-40 animate-pulse">
+                <div className="h-3 bg-current/10 w-1/3 mb-3 rounded" />
+                <div className="h-5 bg-current/10 w-2/3 mb-2 rounded" />
+                <div className="h-3 bg-current/10 w-1/2 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-20 border border-current/10">
+            <div className="text-5xl mb-4">🔍</div>
+            <p className="font-display text-lg font-semibold mb-2">
+              Tidak ditemukan
+            </p>
+            <p className="text-sm opacity-60">
+              Tidak ada jenis surat yang cocok dengan pencarian "
+              <span className="font-medium">{search}</span>".
+            </p>
+            <button
+              onClick={() => { setSearch(""); setActiveKategori("Semua"); }}
+              className="mt-4 text-accent text-sm underline underline-offset-2"
+            >
+              Reset pencarian
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-10">
+            {groupKeys.map((kat) => (
+              <div key={kat}>
+                {/* Group header (only visible in "Semua" view) */}
+                {activeKategori === "Semua" && (
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-xl">{KATEGORI_ICON[kat] || "📄"}</span>
+                    <h2 className="font-display text-sm font-bold uppercase tracking-[0.22em]">
+                      {kat}
+                    </h2>
+                    <span className="text-xs opacity-40 font-mono">
+                      ({groups[kat]?.length})
+                    </span>
+                    <div className="flex-1 h-px bg-current/10" />
+                  </div>
+                )}
+
+                {/* Cards grid */}
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-current/10">
+                  {(groups[kat] || []).map((s) => (
+                    <div
+                      key={s.id}
+                      className="bg-background p-6 flex flex-col gap-4 hover:bg-accent/5 transition-colors group"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent">
+                          {s.kode_surat}
+                        </span>
+                        <span className="font-display text-[9px] font-bold uppercase tracking-[0.18em] opacity-40 text-right">
+                          SLA 1–5 hari
+                        </span>
+                      </div>
+                      <h3 className="font-display text-lg font-semibold leading-snug flex-1">
+                        {search
+                          ? highlightMatch(s.nama, search)
+                          : s.nama}
+                      </h3>
+                      <Link
+                        to={`/layanan/surat/${s.id}`}
+                        className={`${btnPrimaryLocal} justify-center mt-auto group-hover:bg-accent group-hover:text-primary`}
+                      >
+                        Ajukan Sekarang →
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Footer note ── */}
+        {!loading && (
+          <p className="mt-10 text-xs opacity-50 text-center">
+            Menampilkan {filtered.length} dari {augmented.length} jenis surat tersedia.
+            {" "}Butuh bantuan? Hubungi kantor desa.
+          </p>
+        )}
+      </div>
+    </StandaloneLayout>
   );
 }
+
+/** Highlight matching text segment */
+function highlightMatch(text: string, query: string): React.ReactNode {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-accent/30 text-inherit rounded-sm px-0.5">
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 
 interface PbbTagihan {
   tahun: number | string;
@@ -807,9 +1066,11 @@ export function ServiceCenterPage() {
   const [lacakHasil, setLacakHasil] = useState<LacakHasil | null>(null);
   const [lacakLoading, setLacakLoading] = useState(false);
 
-  useAutofillPenduduk(nik, (d) => {
-    setNama(d.nama);
-    if (d.nomor_hp) setKontak(d.nomor_hp);
+  useAutofillPenduduk(nik, settings?.tenant_id || "", (d) => {
+    if (d) {
+      setNama(d.nama);
+      if (d.nomor_hp) setKontak(d.nomor_hp);
+    }
   });
 
   async function submitAduan(e: React.FormEvent) {
@@ -823,6 +1084,7 @@ export function ServiceCenterPage() {
     // Call edge function submit-aduan
     const { data, error } = await supabase.functions.invoke("submit-aduan", {
       body: {
+        tenant_id: settings?.tenant_id,
         nama: nama.trim(),
         kontak: kontak.trim(),
         kategori: kategori || "lainnya",
@@ -851,9 +1113,7 @@ export function ServiceCenterPage() {
   }
 
   return (
-    <EditorialLayout
-        
-      >
+    <StandaloneLayout>
       <SectionWrap>
         <div className="mb-8 flex gap-px bg-current/15 w-fit">
           {(["kirim", "lacak"] as const).map((m) => (
@@ -940,10 +1200,10 @@ export function ServiceCenterPage() {
                   <div className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Status: {lacakHasil.status}</div>
                   <div className="mt-2 font-display text-2xl font-semibold italic">{lacakHasil.judul}</div>
                   <dl className="mt-6 pt-6 border-t border-current/15 text-sm grid sm:grid-cols-2 gap-y-3 gap-x-6">
-                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Tiket</dt><dd className="font-mono mt-0.5">{lacakHasil.nomor_tiket}</dd></div>
-                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Kategori</dt><dd className="mt-0.5">{lacakHasil.kategori}</dd></div>
-                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Diajukan</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(lacakHasil.created_at)}</dd></div>
-                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Diperbarui</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(lacakHasil.updated_at)}</dd></div>
+                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Tiket</dt><dd className="font-mono mt-0.5">{lacakHasil.nomor_tiket || ""}</dd></div>
+                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Kategori</dt><dd className="mt-0.5">{lacakHasil.kategori || ""}</dd></div>
+                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Diajukan</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(lacakHasil.created_at || "")}</dd></div>
+                    <div><dt className="opacity-60 text-xs uppercase tracking-wider">Diperbarui</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(lacakHasil.updated_at || "")}</dd></div>
                   </dl>
                   {lacakHasil.tanggapan && (
                     <div className="mt-6 pt-6 border-t border-current/15">
@@ -970,7 +1230,7 @@ export function ServiceCenterPage() {
           </aside>
         </div>
       </SectionWrap>
-    </EditorialLayout>
+    </StandaloneLayout>
   );
 }
 
@@ -1172,13 +1432,13 @@ export function VerifikasiPage() {
                 </div>
                 <div className="mt-3 font-display text-2xl font-semibold italic">{hasil.perihal}</div>
                 <dl className="mt-6 pt-6 border-t border-current/15 text-sm grid sm:grid-cols-2 gap-y-3 gap-x-6">
-                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Nomor</dt><dd className="font-mono mt-0.5">{hasil.nomor_surat}</dd></div>
-                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Jenis</dt><dd className="mt-0.5">{hasil.jenis_nama}</dd></div>
-                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Atas Nama</dt><dd className="mt-0.5">{hasil.pemohon_nama}</dd></div>
-                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Tanggal Terbit</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(hasil.tanggal_terbit)}</dd></div>
-                  {hasil.berlaku_sampai && <div><dt className="opacity-60 text-xs uppercase tracking-wider">Berlaku Sampai</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(hasil.berlaku_sampai)}</dd></div>}
-                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Status</dt><dd className="mt-0.5">{hasil.status}</dd></div>
-                  {hasil.penandatangan && <div className="sm:col-span-2"><dt className="opacity-60 text-xs uppercase tracking-wider">Ditandatangani</dt><dd className="mt-0.5">{hasil.penandatangan}</dd></div>}
+                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Nomor</dt><dd className="font-mono mt-0.5">{hasil.nomor_surat || ""}</dd></div>
+                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Jenis</dt><dd className="mt-0.5">{hasil.jenis_nama || ""}</dd></div>
+                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Atas Nama</dt><dd className="mt-0.5">{hasil.pemohon_nama || ""}</dd></div>
+                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Tanggal Terbit</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(hasil.tanggal_terbit || "")}</dd></div>
+                  {hasil.berlaku_sampai && <div><dt className="opacity-60 text-xs uppercase tracking-wider">Berlaku Sampai</dt><dd className="mt-0.5 tabular-nums">{formatTanggal(hasil.berlaku_sampai || "")}</dd></div>}
+                  <div><dt className="opacity-60 text-xs uppercase tracking-wider">Status</dt><dd className="mt-0.5">{hasil.status || ""}</dd></div>
+                  {hasil.penandatangan && <div className="sm:col-span-2"><dt className="opacity-60 text-xs uppercase tracking-wider">Ditandatangani</dt><dd className="mt-0.5">{hasil.penandatangan || ""}</dd></div>}
                 </dl>
               </div>
             )}
@@ -1212,9 +1472,9 @@ export function VerifikasiPage() {
             {tteHasil && !tteHasil.notfound && (
               <div className="mt-8 max-w-xl space-y-4">
                 {/* Status Badge */}
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${formatTteStatus(tteHasil.status).color}`}>
-                  <span>{formatTteStatus(tteHasil.status).icon}</span>
-                  <span className="font-semibold">{formatTteStatus(tteHasil.status).label}</span>
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${formatTteStatus(tteHasil.status || "").color}`}>
+                  <span>{formatTteStatus(tteHasil.status || "").icon}</span>
+                  <span className="font-semibold">{formatTteStatus(tteHasil.status || "").label}</span>
                 </div>
 
                 {/* Profil Pejabat (jika ada data pamong) */}
@@ -1260,7 +1520,7 @@ export function VerifikasiPage() {
                   <dl className="grid sm:grid-cols-2 gap-4 text-sm">
                     <div><dt className="opacity-60 text-xs">Jenis Surat</dt><dd className="font-semibold mt-0.5">{tteHasil.surat?.jenis || '-'}</dd></div>
                     <div><dt className="opacity-60 text-xs">Nomor Surat</dt><dd className="font-mono mt-0.5">{tteHasil.surat?.nomor_surat || '-'}</dd></div>
-                    <div><dt className="opacity-60 text-xs">Tanggal Terbit</dt><dd className="mt-0.5">{tteHasil.surat ? formatTanggal(tteHasil.surat.tanggal_terbit) : '-'}</dd></div>
+                    <div><dt className="opacity-60 text-xs">Tanggal Terbit</dt><dd className="mt-0.5">{tteHasil.surat ? formatTanggal(tteHasil.surat.tanggal_terbit || "") : '-'}</dd></div>
                     <div><dt className="opacity-60 text-xs">ID Dokumen</dt><dd className="font-mono text-xs mt-0.5">{tteHasil.id}</dd></div>
                     {tteHasil.surat?.keperluan && (
                       <div className="sm:col-span-2"><dt className="opacity-60 text-xs">Keperluan</dt><dd className="mt-0.5">{tteHasil.surat.keperluan}</dd></div>
@@ -1276,8 +1536,8 @@ export function VerifikasiPage() {
                   <dl className="grid sm:grid-cols-2 gap-4 text-sm">
                     <div><dt className="opacity-60 text-xs">Ditandatangani oleh</dt><dd className="font-semibold mt-0.5">{tteHasil.signed_by}</dd></div>
                     <div><dt className="opacity-60 text-xs">Jabatan</dt><dd className="mt-0.5">{tteHasil.signer_role || '-'}</dd></div>
-                    <div><dt className="opacity-60 text-xs">Tipe TTE</dt><dd className="mt-0.5">{formatTipe(tteHasil.tipe)}</dd></div>
-                    <div><dt className="opacity-60 text-xs">Waktu Tanda Tangan</dt><dd className="mt-0.5">{formatTanggal(tteHasil.signed_at)}</dd></div>
+                    <div><dt className="opacity-60 text-xs">Tipe TTE</dt><dd className="mt-0.5">{formatTipe(tteHasil.tipe || "")}</dd></div>
+                    <div><dt className="opacity-60 text-xs">Waktu Tanda Tangan</dt><dd className="mt-0.5">{formatTanggal(tteHasil.signed_at || "")}</dd></div>
                   </dl>
 
                   {/* QR Code Verification */}
@@ -1766,9 +2026,6 @@ export function LanggananWaPage() {
     }
   }, [topikList]);
 
-  function toggle(t: string) {
-    setTopik((cur) => cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]);
-  }
   const [loading, setLoading] = useState(false);
   const [terkirim, setTerkirim] = useState(false);
 
@@ -2687,13 +2944,7 @@ export function PosyanduDetailPage() {
           </div>
         )}
 
-        {/* Notes */}
-        {data.keterangan && (
-          <div className="mt-6 bg-accent/5 border border-accent/20 rounded-xl p-5">
-            <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-accent mb-2">Catatan</h3>
-            <p className="text-sm text-foreground/70 leading-relaxed italic">{data.keterangan}</p>
-          </div>
-        )}
+
       </main>
     </div>
   );
@@ -3118,7 +3369,7 @@ export function WisataDetailPage() {
         {(data as any).foto_url && (
           <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-8">
             {}
-            <img src={data.foto_url} alt={data.nama} className="w-full aspect-video object-cover" />
+            <img src={data.foto_url || undefined} alt={data.nama} className="w-full aspect-video object-cover" />
           </div>
         )}
 
@@ -3342,8 +3593,8 @@ export function PembangunanDetailPage() {
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground/40">Durasi</p>
                 <p className="text-sm font-medium text-foreground">
-                  {(data as PembangunanDetail).tanggal_mulai ? formatTanggal((data as PembangunanDetail).tanggal_mulai) : "—"}
-                  {(data as PembangunanDetail).tanggal_selesai ? ` — ${formatTanggal((data as PembangunanDetail).tanggal_selesai)}` : ""}
+                  {(data as PembangunanDetail).tanggal_mulai ? formatTanggal((data as PembangunanDetail).tanggal_mulai || "") : "—"}
+                  {(data as PembangunanDetail).tanggal_selesai ? ` — ${formatTanggal((data as PembangunanDetail).tanggal_selesai || "")}` : ""}
                 </p>
               </div>
             </div>
@@ -3357,7 +3608,7 @@ export function PembangunanDetailPage() {
               <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Dokumentasi</h3>
               <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm">
                 {}
-                <img src={(data as PembangunanDetail).foto_url} alt={`Dokumentasi ${title}`} className="w-full aspect-video object-cover" />
+                <img src={(data as PembangunanDetail).foto_url || undefined} alt={`Dokumentasi ${title}`} className="w-full aspect-video object-cover" />
               </div>
             </div>
           </div>
@@ -3659,7 +3910,7 @@ export function BansosDetailPage() {
 export function PendudukDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data, loading: isLoading } = usePendudukById(id);
-  const { data: keluarga } = useKeluargaById(data?.keluarga_id);
+  const { data: keluarga } = useKeluargaById(data?.keluarga_id || undefined);
   const navigate = useNavigate();
 
   if (isLoading) return <LoadingState />;
@@ -3679,7 +3930,7 @@ export function PendudukDetailPage() {
   }[data.status_hidup || ""] || "bg-gray-100 text-gray-700";
 
   const maskNik = (nik: string | null) =>
-    nik ? `${nik.slice(0, 6)}${"*".repeat(nik.length - 8)}${nik.slice(-2)}` : "—";
+    nik ? `${nik.slice(0, 6)}XXXXXX${nik.slice(-4)}` : "";
 
   const fmtTtl = `${data.tempat_lahir || ""}${data.tanggal_lahir ? `, ${formatTanggal(data.tanggal_lahir)}` : ""}`;
 
@@ -3804,10 +4055,10 @@ export function PendudukDetailPage() {
           )}
 
           {/* Catatan */}
-          {data.keterangan && (
+          {(data as any).keterangan && (
             <div className="bg-background border border-current/15 rounded-xl p-5">
               <h3 className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-accent mb-3">Catatan</h3>
-              <p className="text-sm text-foreground/70 leading-relaxed">{data.keterangan}</p>
+              <p className="text-sm text-foreground/70 leading-relaxed">{(data as any).keterangan}</p>
             </div>
           )}
         </div>
@@ -3821,6 +4072,7 @@ export function PendudukDetailPage() {
 
 export function KeluargaDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { data, loading: isLoading } = useKeluargaById(id);
   const [anggota, setAnggota] = useState<any[]>([]);
   const [loadingAnggota, setLoadingAnggota] = useState(false);
@@ -4061,7 +4313,7 @@ export function AduanDetailPage() {
             <div className="bg-background border border-current/15 rounded-xl p-5 shadow-sm">
               <h3 className="font-display text-xs font-semibold uppercase tracking-[0.1em] text-foreground/50 mb-3">Lampiran</h3>
               {}
-              <img src={(data as AduanWarga).lampiran_url} alt="Lampiran pengaduan" className="max-w-full rounded border border-current/15 max-h-72 object-contain" />
+              <img src={(data as AduanWarga).lampiran_url || undefined} alt="Lampiran pengaduan" className="max-w-full rounded border border-current/15 max-h-72 object-contain" />
             </div>
           </div>
         )}
@@ -4255,7 +4507,7 @@ export function BalitaDetailPage() {
   const alamat = [data.alamat, data.dusun ? `Dusun ${data.dusun}` : null, data.rt || data.rw ? `RT ${data.rt || "?"}/RW ${data.rw || "?"}` : null].filter(Boolean).join(", ") || "—";
 
   const maskNik = (nik: string | null | undefined) =>
-    nik ? `${nik.slice(0, 6)}${"*".repeat(nik.length - 8)}${nik.slice(-2)}` : null;
+    nik ? nik.slice(0, 6) + "XXXXXX" + nik.slice(-4) : "";
 
   return (
     <div className="min-h-screen bg-background">
@@ -4284,7 +4536,7 @@ export function BalitaDetailPage() {
         {/* Info Grid */}
         <div className="grid sm:grid-cols-2 gap-4 mb-6">
           <InfoCard icon="calendar" label="Tanggal Lahir" value={ttl} />
-          {maskNik(data.nik_anak) && <InfoCard icon="card" label="NIK Anak" value={maskNik(data.nik_anak)} />}
+          {maskNik(data.nik_anak || "") && <InfoCard icon="card" label="NIK Anak" value={maskNik(data.nik_anak || "")} />}
           {data.nama_ortu && <InfoCard icon="user" label="Orang Tua / Wali" value={data.nama_ortu} />}
           {data.dusun && <InfoCard icon="map" label="Dusun" value={data.dusun} />}
           {(data.rt || data.rw) && <InfoCard icon="mapPin" label="RT / RW" value={`${data.rt || "?"} / ${data.rw || "?"}`} />}
@@ -4335,7 +4587,7 @@ export function BidangTanahDetailPage() {
           <InfoCard icon="map" label="Dusun" value={data.dusun || "—"} />
           <InfoCard icon="area" label="Luas" value={luas} />
           {data.nama_pemegang && <InfoCard icon="user" label="Nama Pemilik" value={data.nama_pemegang} />}
-          {maskNik(data.nik_pemegang) && <InfoCard icon="card" label="NIK Pemilik" value={maskNik(data.nik_pemegang)} />}
+          {maskNik(data.nik_pemegang || "") && <InfoCard icon="card" label="NIK Pemilik" value={maskNik(data.nik_pemegang || "") || ""} />}
           {data.status && <InfoCard icon="shield" label="Status Hak" value={data.status} />}
           {data.no_sertifikat && <InfoCard icon="fileText" label="No. Sertifikat" value={data.no_sertifikat} />}
           {data.lokasi && <InfoCard icon="mapPin" label="Lokasi" value={data.lokasi} />}
@@ -4538,7 +4790,7 @@ export function UsulanWargaDetailPage() {
           </div>
           <div className="px-6 pb-5 flex flex-wrap gap-3">
             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${statusCfg.bg} ${statusCfg.text}`}>
-              {statusCfg.dot && <span className="w-2 h-2 rounded-full bg-current" />}
+              {('dot' in statusCfg && (statusCfg as any).dot) && <span className="w-2 h-2 rounded-full bg-current" />}
               {statusLabel[data.status || ""] || data.status || "—"}
             </span>
             {data.kategori && <span className="inline-flex px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">{data.kategori}</span>}
@@ -4597,11 +4849,11 @@ export function UsulanWargaDetailPage() {
 export function VotingTopikDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data, loading: isLoading } = useVotingTopikById(id);
-  const opsi = useVotingOpsi(id);
+  const opsi = useVotingOpsi(id || null);
   if (isLoading) return <LoadingState />;
   if (!data) return <NotFoundState />;
 
-  const totalSuara = opsi.rows.reduce((sum, o) => sum + (o.jumlah_suara || 0), 0);
+  const totalSuara = opsi.reduce((sum: number, o: any) => sum + (o.jumlah_suara || 0), 0);
 
   const statusColor: Record<string, { bg: string; text: string }> = {
     aktif: { bg: "bg-green-100", text: "text-green-700" },
@@ -4642,7 +4894,7 @@ export function VotingTopikDetailPage() {
 
         {/* Opsi chart */}
         <div className="space-y-3">
-          {opsi.rows.map((o) => {
+          {opsi.map((o: any) => {
             const pct = totalSuara > 0 ? Math.round(((o.jumlah_suara || 0) / totalSuara) * 100) : 0;
             return (
               <div key={o.id} className="bg-background border border-current/15 rounded-xl p-4 shadow-sm">
@@ -4721,9 +4973,9 @@ export function PbbDetailPage() {
           {data.alamat_objek && <InfoCard icon="mapPin" label="Letak Objek" value={data.alamat_objek} />}
           {data.wajib_pajak_alamat && <InfoCard icon="home" label="Alamat WP" value={data.wajib_pajak_alamat} />}
           {data.luas_bumi_m2 != null && <InfoCard icon="area" label="Luas Tanah" value={`${data.luas_bumi_m2} m²`} />}
-          {data.luas_bangunan != null && <InfoCard icon="box" label="Luas Bangunan" value={`${data.luas_bangunan} m²`} />}
-          {data.kelas_tanah && <InfoCard icon="layers" label="Kelas Tanah" value={data.kelas_tanah} />}
-          {data.kelas_bangunan && <InfoCard icon="building" label="Kelas Bangunan" value={data.kelas_bangunan} />}
+          {(data as any).luas_bangunan != null && <InfoCard icon="box" label="Luas Bangunan" value={`${(data as any).luas_bangunan} m²`} />}
+          {(data as any).kelas_tanah && <InfoCard icon="layers" label="Kelas Tanah" value={(data as any).kelas_tanah} />}
+          {(data as any).kelas_bangunan && <InfoCard icon="building" label="Kelas Bangunan" value={(data as any).kelas_bangunan} />}
           {data.njop_total != null && <InfoCard icon="calculator" label="NJOP Total" value={fmtRupiah(data.njop_total)} />}
         </div>
       </main>
