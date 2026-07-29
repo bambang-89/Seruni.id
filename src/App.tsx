@@ -247,12 +247,15 @@ export default function App() {
             <Route path="balita" element={<BalitaAdmin />} />
             <Route path="wa-chatbot" element={<WaChatbotAdmin />} />
             <Route path="event-log" element={<EventLogAdmin />} />
+            <Route path="site" element={<Navigate to="/admin/site/pages" replace />} />
             <Route path="site/pages" element={<PageConfigAdmin />} />
             <Route path="site/nav" element={<NavAdmin />} />
             <Route path="site/footer" element={<FooterAdmin />} />
             <Route path="site/draft-queue" element={<DraftQueueAdmin />} />
             <Route path="site/version-history" element={<VersionHistoryAdmin />} />
             <Route path="site/hero" element={<HeroAdmin />} />
+            <Route path="workflow" element={<Navigate to="/admin/site/drafts" replace />} />
+            <Route path="partisipasi" element={<Navigate to="/admin/usulan" replace />} />
             <Route path="rpjmdes-periode" element={<RpjmdesPeriodeAdmin />} />
             <Route path="rpjmdes-bidang" element={<RpjmdesBidangAdmin />} />
             <Route path="rpjmdes-program" element={<RpjmdesProgramAdmin />} />
