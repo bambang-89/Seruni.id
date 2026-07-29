@@ -23,6 +23,13 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const FONNTE_WEBHOOK_SECRET = Deno.env.get("FONNTE_WEBHOOK_SECRET");
+const ALLOWED_ORIGINS = [
+  "https://seruni-id.vercel.app",
+  "https://www.seruni.id",
+  "https://seruni.id",
+];
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -276,7 +283,7 @@ async function handleLacakSurat(
       id, nomor_surat, jenis, status, tanggal_terbit,
       penduduk:penduduk_id (nama, nik)
     `)
-    .or(`nomor_surat.ilike.%${searchTerm}%,penduduk.nik.ilike.%${searchTerm}%`)
+    .or(`nomor_surat.ilike.%${searchTerm.replace(/[%_]/g, '\\$&')}%,penduduk.nik.ilike.%${searchTerm.replace(/[%_]/g, '\\$&')}%`)
     .eq("tenant_id", session.tenant_id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -362,7 +369,7 @@ async function handleLacakPBB(
     .select(`
       id, nop, tahun, tagihan:pbb_terutang, jatuh_tempo, status_pembayaran:status_bayar
     `)
-    .or(`nop.ilike.%${searchTerm}%,wajib_pajak_nik.ilike.%${searchTerm}%`)
+    .or(`nop.ilike.%${searchTerm.replace(/[%_]/g, '\\$&')}%,wajib_pajak_nik.ilike.%${searchTerm.replace(/[%_]/g, '\\$&')}%)`)
     .eq("tenant_id", session.tenant_id)
     .order("tahun", { ascending: false })
     .limit(1)
@@ -863,6 +870,33 @@ async function sendFonnte(token: string, nomor: string, message: string) {
   }
 }
 
+// ============================================================
+// WEBHOOK SIGNATURE VERIFICATION
+// ============================================================
+
+async function verifyFonnteSignature(
+  signature: string,
+  secret: string,
+  req: Request,
+): Promise<boolean> {
+  try {
+    const body = await req.clone().text();
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const bodyData = encoder.encode(body);
+    const combined = new Uint8Array(keyData.length + bodyData.length);
+    combined.set(keyData, 0);
+    combined.set(bodyData, keyData.length);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", combined);
+    const expected = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+    return signature === expected || signature === `sha256=${expected}`;
+  } catch {
+    return false;
+  }
+}
+
 function normalizeNomor(v: string): string {
   return String(v).replace(/[^0-9]/g, "").replace(/^0/, "62");
 }
@@ -874,6 +908,19 @@ function normalizeNomor(v: string): string {
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
+  }
+
+  // Fonnte webhook requires signature verification
+  // Fail-closed: reject if secret not configured in production
+  if (req.method === "POST") {
+    if (!FONNTE_WEBHOOK_SECRET) {
+      console.error("wa-chatbot: FONNTE_WEBHOOK_SECRET not configured — rejecting request");
+      return json({ error: "Webhook not configured" }, 500);
+    }
+    const sig = req.headers.get("x-fonnte-signature") || "";
+    if (!sig || !await verifyFonnteSignature(sig, FONNTE_WEBHOOK_SECRET, req)) {
+      return json({ error: "Unauthorized" }, 401);
+    }
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

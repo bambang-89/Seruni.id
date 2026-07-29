@@ -244,7 +244,7 @@ async function runIdmScorer(sb: ReturnType<typeof createClient>, tenantId: strin
   for (const indicator of indicators) {
     const result = await computeIndikator(sb, tenantId, indicator, precomputed, bulanIni, tahunIni);
     if (result) {
-      scores.push({ dimensi_no: indicator.dimensi_no, skor: result.skor });
+      allScores.push({ dimensi_no: indicator.dimensi_no, skor: result.skor });
       allScores.push({
         tenant_id: tenantId,
         indikator_kode: indicator.indikator_no,

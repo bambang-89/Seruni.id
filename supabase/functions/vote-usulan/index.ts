@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
   // Check usulan exists and is votable
   const { data: usulan, error: uErr } = await supabase
-    .from("usulan_warga").select("id,status,vote_count").eq("id", usulan_id).maybeSingle();
+    .from("usulan_warga").select("id,status,vote_count,tenant_id").eq("id", usulan_id).maybeSingle();
 
   if (uErr) return json({ error: "Terjadi kesalahan sistem" }, 500, origin);
   if (!usulan) return json({ error: "Usulan tidak ditemukan" }, 404, origin);
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
   // Cast vote with improved voter hash
   const voterHashValue = await voterHash("usulan-vote-v2", req, `${usulan_id}`);
   const { error } = await supabase.from("usulan_vote").insert({
-    usulan_id, voter_hash: voterHashValue, dusun: dusun ? String(dusun).slice(0, 80) : null,
+    usulan_id, voter_hash: voterHashValue, tenant_id:usulan.tenant_id, dusun: dusun ? String(dusun).slice(0, 80) : null,
   });
 
   if (error) {
