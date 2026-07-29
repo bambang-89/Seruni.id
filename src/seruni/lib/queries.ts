@@ -2088,7 +2088,8 @@ export function usePageHeroConfig(route: string) {
       const { data: rows } = await raw.from('page_hero_config')
         .select('*')
         .eq('page_route', route)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('tenant_id', tenantId || undefined);
       const row = rows?.find((r) => r.tenant_id === tenantId) || rows?.find((r) => !r.tenant_id) || null;
       if (mounted) {
         setData(row as PageHeroConfig | null);
