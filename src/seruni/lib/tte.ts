@@ -8,6 +8,7 @@
  */
 
 import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
 
 // TTE Types
 export type TTETipe = 'sederhana' | 'bsre' | 'esign';
@@ -219,24 +220,20 @@ export interface QRCodeConfig {
 
 /**
  * Generate QR code for document verification
- * Uses a simple approach - in production, use a proper QR library
  */
 export async function generateVerificationQR(
   documentId: string,
   documentHash: string,
   verificationUrl: string
 ): Promise<string> {
-  // QR data contains verification URL and document hash
   const qrData = `${verificationUrl}?id=${documentId}&hash=${documentHash}`;
 
-  // Use an external QR code API (for production, use local library)
-  // This creates a data URL for the QR code image
-  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
-
   try {
-    const response = await fetch(qrApiUrl);
-    const blob = await response.blob();
-    return await blobToBase64(blob);
+    return await QRCode.toDataURL(qrData, {
+      errorCorrectionLevel: 'M',
+      margin: 2,
+      width: 200,
+    });
   } catch (err) {
     console.error('QR generation failed:', err);
     return '';

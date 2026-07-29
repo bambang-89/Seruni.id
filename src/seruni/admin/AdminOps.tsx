@@ -3,7 +3,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TableCrud, type Column } from "./AdminPages";
 import { StandaloneFormOverlay } from "../ui";
+import { useConfirm, usePrompt } from "../ui/ConfirmDialog";
 import { useBroadcasts, useBroadcastTargets, useEventLog, usePenerimaBansosStats } from "../lib/queries";
+import { useTenant } from "../lib/tenant";
 import { SuratPreview, SuratPreviewModal } from "../components/SuratPreview";
 
 const WORKFLOW = [
@@ -509,6 +511,8 @@ export function JenisSuratAdmin() {
   const [draft, setDraft] = useState<any | null>(null);
   const [dnaFields, setDnaFields] = useState<any[]>([]);
   const [loadingDna, setLoadingDna] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const confirm = useConfirm();
 
   const load = () => {
     setLoading(true);
@@ -522,7 +526,7 @@ export function JenisSuratAdmin() {
 
   const loadDnaFields = async (jenisId: string) => {
     setLoadingDna(true);
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("surat_jenis_dna")
       .select("*")
       .eq("jenis_surat_id", jenisId)
@@ -543,44 +547,49 @@ export function JenisSuratAdmin() {
 
   const save = async () => {
     if (!draft) return;
-    const { id, created_at, updated_at, ...payload } = draft;
-    let result: any;
+    setSaving(true);
+    try {
+      const { id, created_at, updated_at, ...payload } = draft;
+      let result: any;
 
-    if (id) {
-      result = await supabase.from("surat_jenis").update(payload).eq("id", id);
-    } else {
-      result = await supabase.from("surat_jenis").insert(payload);
-      if (result.data) {
-        // Insert DNA fields with new jenis_surat_id
-        const newId = result.data[0]?.id || result.data?.id;
-        if (newId && dnaFields.length > 0) {
-          const tenant_id = rows[0]?.tenant_id || "00000000-0000-0000-0000-000000000000";
-          await supabase.from("surat_jenis_dna").insert(
-            dnaFields.map((f: any) => ({
-              ...f,
-              id: undefined,
-              jenis_surat_id: newId,
-              tenant_id,
-            }))
-          );
+      if (id) {
+        result = await (supabase as any).from("surat_jenis").update(payload).eq("id", id);
+      } else {
+        result = await (supabase as any).from("surat_jenis").insert(payload);
+        if (result.data) {
+          // Insert DNA fields with new jenis_surat_id
+          const newId = result.data[0]?.id || result.data?.id;
+          if (newId && dnaFields.length > 0) {
+            const tenant_id = rows[0]?.tenant_id || "00000000-0000-0000-0000-000000000000";
+            await (supabase as any).from("surat_jenis_dna").insert(
+              dnaFields.map((f: any) => ({
+                ...f,
+                id: undefined,
+                jenis_surat_id: newId,
+                tenant_id,
+              }))
+            );
+          }
         }
       }
-    }
 
-    if (result.error) {
-      toast.error(result.error.message);
-    } else {
-      toast.success("Tersimpan.");
-      setDraft(null);
-      setDnaFields([]);
-      load();
+      if (result.error) {
+        toast.error(result.error.message);
+      } else {
+        toast.success("Tersimpan.");
+        setDraft(null);
+        setDnaFields([]);
+        load();
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
   const del = async (id: string) => {
-    if (!confirm("Hapus jenis surat ini beserta DNA fields-nya?")) return;
+    if (!(await confirm({ title: "Hapus jenis surat ini beserta DNA fields-nya?" }))) return;
     // Delete DNA fields first
-    await supabase.from("surat_jenis_dna").delete().eq("jenis_surat_id", id);
+    await (supabase as any).from("surat_jenis_dna").delete().eq("jenis_surat_id", id);
     const { error } = await supabase.from("surat_jenis").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
@@ -595,9 +604,15 @@ export function JenisSuratAdmin() {
     let result: any;
 
     if (id) {
-      result = await supabase.from("surat_jenis_dna").update(payload).eq("id", id);
+      result = await (supabase as any).from("surat_jenis_dna").update(payload).eq("id", id);
     } else {
-      result = await supabase.from("surat_jenis_dna").insert({ ...payload, tenant_id: draft?.tenant_id || "00000000-0000-0000-0000-000000000000" });
+      // INSERT: include jenis_surat_id and kode_surat
+      const insertPayload = {
+        ...payload,
+        jenis_surat_id: draft?.id || null,
+        tenant_id: draft?.tenant_id || null,
+      };
+      result = await (supabase as any).from("surat_jenis_dna").insert(insertPayload);
     }
 
     if (result.error) {
@@ -609,8 +624,8 @@ export function JenisSuratAdmin() {
   };
 
   const deleteDnaField = async (id: string) => {
-    if (!confirm("Hapus field DNA ini?")) return;
-    const { error } = await supabase.from("surat_jenis_dna").delete().eq("id", id);
+    if (!(await confirm({ title: "Hapus field DNA ini?" }))) return;
+    const { error } = await (supabase as any).from("surat_jenis_dna").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
     } else {
@@ -620,6 +635,7 @@ export function JenisSuratAdmin() {
   };
 
   const addDnaField = () => {
+    const kode = draft?.kode_surat || "";
     setDnaFields([...dnaFields, {
       field_name: "",
       label: "",
@@ -628,6 +644,7 @@ export function JenisSuratAdmin() {
       wajib: false,
       grup: "Umum",
       urutan: dnaFields.length + 1,
+      kode_surat: kode,
     }]);
   };
 
@@ -855,6 +872,7 @@ export function SuratTerbitAdmin() {
   const [draftDna, setDraftDna] = useState<any | null>(null);
   const [draftDnaFields, setDraftDnaFields] = useState<any[]>([]);
   const [ajuanList, setAjuanList] = useState<any[]>([]);
+  const confirm = useConfirm();
   const [jenisSurat, setJenisSurat] = useState<any[]>([]);
   const [pamongList, setPamongList] = useState<any[]>([]);
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -870,7 +888,7 @@ export function SuratTerbitAdmin() {
 
   useEffect(() => {
     load();
-    supabase.from("surat_ajuan").select("id, nomor_tiket, nik, nama, jenis_surat_id, keperluan, status").eq("status", "diproses").then(({ data }) => {
+    (supabase as any).from("surat_ajuan").select("id, nomor_tiket, nik, nama, jenis_surat_id, keperluan, status").eq("status", "diproses").then(({ data }: any) => {
       setAjuanList(data || []);
     });
     supabase.from("surat_jenis").select("id, kode_surat, nama").eq("aktif", true).order("urutan").then(({ data }) => {
@@ -882,11 +900,11 @@ export function SuratTerbitAdmin() {
   }, []);
 
   const loadAjuanData = async (ajuan: any) => {
-    const { data: dnaRows } = await supabase
+    const { data: dnaRows } = await (supabase as any)
       .from("surat_ajuan_data").select("*").eq("surat_ajuan_id", ajuan.id).maybeSingle();
-    setDraftDna(dnaRows?.data_dna || {});
+    setDraftDna((dnaRows as any)?.data_dna || {});
     if (ajuan.jenis_surat_id) {
-      const { data: fields } = await supabase
+      const { data: fields } = await (supabase as any)
         .from("surat_jenis_dna").select("*").eq("jenis_surat_id", ajuan.jenis_surat_id).order("urutan");
       setDraftDnaFields(fields || []);
     } else {
@@ -943,17 +961,17 @@ export function SuratTerbitAdmin() {
 
     // Copy DNA data to surat_terbit_data
     if (draftDna && Object.keys(draftDna).length > 0) {
-      await supabase.from("surat_terbit_data").insert({
+      await (supabase as any).from("surat_terbit_data").insert({
         surat_terbit_id: terbit.id,
         penduduk_id: row.penduduk_id || null,
         data_dna: draftDna,
         tenant_id: payload.tenant_id,
-      }).catch(() => { /* ignore */ });
+      }).then(() => { /* ignore */ }).catch(() => { /* ignore */ });
     }
 
     // Update ajuan status to diterima + send WA notification
     if (draftAjuan?.id) {
-      await supabase.from("surat_ajuan").update({ status: "diterima" }).eq("id", draftAjuan.id);
+      await (supabase as any).from("surat_ajuan").update({ status: "diterima" }).eq("id", draftAjuan.id);
       setAjuanList((prev) => prev.filter((a) => a.id !== draftAjuan.id));
       // Trigger WA notification via edge function (fire-and-forget)
       (supabase.functions as any).invoke("notifikasi-status-surat", {
@@ -970,7 +988,7 @@ export function SuratTerbitAdmin() {
   };
 
   const del = async (id: string) => {
-    if (!confirm("Hapus surat ini?")) return;
+    if (!(await confirm({ title: "Hapus surat ini?" }))) return;
     const { error } = await supabase.from("surat_terbit").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Terhapus.");
@@ -1418,7 +1436,7 @@ export function EventLogAdmin() {
             {loading && <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Memuat…</td></tr>}
             {!loading && rows.length === 0 && <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Belum ada aktivitas.</td></tr>}
             {rows.map((r) => {
-              const diff = r.payload?.diff;
+              const diff = (r.payload as any)?.diff;
               return (
                 <tr key={r.id} className="border-t border-border align-top">
                   <td className="px-4 py-3 tabular-nums whitespace-nowrap text-xs">{new Date(r.created_at).toLocaleString("id-ID")}</td>
@@ -1448,8 +1466,8 @@ export function EventLogAdmin() {
                           </li>
                         ))}
                       </ul>
-                    ) : r.payload?.pk ? (
-                      <span className="font-mono text-[10px] text-muted-foreground">pk {String(r.payload.pk).slice(0, 8)}</span>
+                    ) : (r.payload as any)?.pk ? (
+                      <span className="font-mono text-[10px] text-muted-foreground">pk {String((r.payload as any).pk).slice(0, 8)}</span>
                     ) : (
                       <span className="font-mono text-[10px] text-muted-foreground">{JSON.stringify(r.payload).slice(0, 80)}</span>
                     )}
@@ -1471,6 +1489,7 @@ export function BroadcastAdmin() {
   const { rows, loading } = useBroadcasts(reloadKey);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const confirm = useConfirm();
 
   const badge = (s: string) => {
     const cls =
@@ -1556,10 +1575,11 @@ function BroadcastForm({ onDone }: { onDone: () => void }) {
   const [dusun, setDusun] = useState("");
   const [topik, setTopik] = useState("");
   const [busy, setBusy] = useState(false);
+  const confirm = useConfirm();
 
   const kirim = async () => {
     if (!pesan.trim()) return toast.error("Pesan wajib diisi.");
-    if (!confirm("Kirim broadcast sekarang?")) return;
+    if (!(await confirm({ title: "Kirim broadcast sekarang?" }))) return;
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("wa-broadcast", {
       body: { judul: judul || undefined, pesan, dusun: dusun || undefined, topik: topik || undefined },
@@ -1600,11 +1620,12 @@ function BroadcastDetail({ id, onClose, onRefresh }: { id: string; onClose: () =
   const [reloadKey, setReloadKey] = useState(0);
   const { rows, loading } = useBroadcastTargets(id, reloadKey);
   const [busy, setBusy] = useState(false);
+  const confirm = useConfirm();
 
   const gagalCount = rows.filter((r) => r.status === "gagal" || r.status === "pending").length;
 
   const retry = async () => {
-    if (!confirm(`Kirim ulang ${gagalCount} target yang gagal/tertunda?`)) return;
+    if (!(await confirm({ title: `Kirim ulang ${gagalCount} target yang gagal/tertunda?` }))) return;
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("wa-broadcast", {
       body: { action: "retry", broadcastId: id },
@@ -1680,10 +1701,13 @@ export function SuratAjuanAdmin() {
   const [dnaData, setDnaData] = useState<any | null>(null);
   const [dnaFields, setDnaFields] = useState<any[]>([]);
   const [jenisSurat, setJenisSurat] = useState<any[]>([]);
+  const confirm = useConfirm();
+  const { tenant } = useTenant();
 
   const load = () => {
+    if (!tenant) return;
     setLoading(true);
-    supabase.from("surat_ajuan").select("*").order("created_at", { ascending: false }).then(({ data }) => {
+    (supabase as any).from("surat_ajuan").select("*").eq("tenant_id", tenant.id).order("created_at", { ascending: false }).then(({ data }: any) => {
       setRows(data || []);
       setLoading(false);
     });
@@ -1694,16 +1718,16 @@ export function SuratAjuanAdmin() {
     supabase.from("surat_jenis").select("id, kode_surat, nama").eq("aktif", true).order("urutan").then(({ data }) => {
       setJenisSurat(data || []);
     });
-  }, []);
+  }, [tenant]);
 
   const viewDna = async (row: any) => {
     setDraft(row);
     setDnaData(null);
-    const { data: dnaRows } = await supabase
+    const { data: dnaRows } = await (supabase as any)
       .from("surat_ajuan_data").select("*").eq("surat_ajuan_id", row.id).maybeSingle();
-    setDnaData(dnaRows?.data_dna || null);
+    setDnaData((dnaRows as any)?.data_dna || null);
     if (row.jenis_surat_id) {
-      const { data: fields } = await supabase
+      const { data: fields } = await (supabase as any)
         .from("surat_jenis_dna").select("*").eq("jenis_surat_id", row.jenis_surat_id).order("urutan");
       setDnaFields(fields || []);
     } else {
@@ -1719,16 +1743,13 @@ export function SuratAjuanAdmin() {
 
   const save = async (row: any) => {
     const prevStatus = row._prevStatus;
-    const payload = {
-      ...row,
-      status: row.status || "diproses",
-      diproses_pada: row.status === "diproses" ? new Date().toISOString() : row.diproses_pada,
-    };
-    delete payload._prevStatus;
+    const { id, created_at, updated_at, _prevStatus, ...payload } = row;
+    payload.status = row.status || "diproses";
+    payload.diproses_pada = row.status === "diproses" ? new Date().toISOString() : row.diproses_pada;
 
     const { error } = row.id
-      ? await supabase.from("surat_ajuan").update(payload).eq("id", row.id)
-      : await supabase.from("surat_ajuan").insert(payload);
+      ? await (supabase as any).from("surat_ajuan").update(payload).eq("id", row.id)
+      : await (supabase as any).from("surat_ajuan").insert(payload);
     if (error) return toast.error(error.message);
 
     // Kirim notifikasi WA saat status berubah
@@ -1746,8 +1767,8 @@ export function SuratAjuanAdmin() {
   };
 
   const del = async (id: string) => {
-    if (!confirm("Hapus pengajuan ini?")) return;
-    const { error } = await supabase.from("surat_ajuan").delete().eq("id", id);
+    if (!(await confirm({ title: "Hapus pengajuan ini?" }))) return;
+    const { error } = await (supabase as any).from("surat_ajuan").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Terhapus.");
     load();
@@ -1890,10 +1911,11 @@ export function BalitaAdmin() {
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<any | null>(null);
   const [dusunOpts, setDusunOpts] = useState<any[]>([]);
+  const confirm = useConfirm();
 
   const load = () => {
     setLoading(true);
-    supabase.from("balita").select("*").order("nama").then(({ data }) => {
+    (supabase as any).from("balita").select("*").order("nama").then(({ data }: any) => {
       setRows(data || []);
       setLoading(false);
     });
@@ -1909,8 +1931,8 @@ export function BalitaAdmin() {
   const save = async (row: any) => {
     const { id, created_at, updated_at, ...payload } = row;
     const { error } = id
-      ? await supabase.from("balita").update(payload).eq("id", id)
-      : await supabase.from("balita").insert(payload);
+      ? await (supabase as any).from("balita").update(payload).eq("id", id)
+      : await (supabase as any).from("balita").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Tersimpan.");
     setDraft(null);
@@ -1918,16 +1940,16 @@ export function BalitaAdmin() {
   };
 
   const del = async (id: string) => {
-    if (!confirm("Hapus data ini?")) return;
-    const { error } = await supabase.from("balita").delete().eq("id", id);
+    if (!(await confirm({ title: "Hapus data ini?" }))) return;
+    const { error } = await (supabase as any).from("balita").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Terhapus.");
     load();
   };
 
   const JK_OPTS = [
-    { value: "laki-laki", label: "Laki-laki" },
-    { value: "perempuan", label: "Perempuan" },
+    { value: "L", label: "Laki-laki" },
+    { value: "P", label: "Perempuan" },
   ];
 
   return (
@@ -1937,7 +1959,7 @@ export function BalitaAdmin() {
           <h1 className="font-display text-2xl font-bold">Data Balita</h1>
           <p className="text-sm text-muted-foreground mt-1">Kelola data balita untuk monitoring posyandu.</p>
         </div>
-        <button onClick={() => setDraft({ nama: "", tanggal_lahir: "", jenis_kelamin: "laki-laki", dusun: "", alamat: "" })} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90">+ Tambah</button>
+        <button onClick={() => setDraft({ nama: "", tanggal_lahir: "", jenis_kelamin: "L", nik_anak: "", dusun: "", alamat: "", nama_ortu: "" })} className="rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90">+ Tambah</button>
       </div>
 
       {draft && (
@@ -1958,7 +1980,7 @@ export function BalitaAdmin() {
             </label>
             <label className="text-xs">
               <span className="block mb-1 font-medium">Jenis Kelamin</span>
-              <select value={draft.jenis_kelamin || "laki-laki"} onChange={(e) => setDraft({ ...draft, jenis_kelamin: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+              <select value={draft.jenis_kelamin || "L"} onChange={(e) => setDraft({ ...draft, jenis_kelamin: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                 {JK_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </label>
@@ -2007,7 +2029,7 @@ export function BalitaAdmin() {
               return (
                 <tr key={r.id} className="border-t border-border">
                   <td className="px-4 py-3">{r.nama}</td>
-                  <td className="px-4 py-3">{r.jenis_kelamin === "laki-laki" ? "L" : "P"}</td>
+                  <td className="px-4 py-3">{r.jenis_kelamin === "P" ? "Perempuan" : "Laki-laki"}</td>
                   <td className="px-4 py-3">{r.tanggal_lahir ? new Date(r.tanggal_lahir).toLocaleDateString("id-ID") : "-"}</td>
                   <td className="px-4 py-3">{typeof age === "number" ? `${age} th` : age}</td>
                   <td className="px-4 py-3">{r.nama_ortu || "-"}</td>
@@ -2038,10 +2060,10 @@ export function WaChatbotAdmin() {
       const transformed = (data || []).map(r => ({
         ...r,
         // Gunakan kolom yang ada di database
-        phone_number: r.phone_number || r.nomor_wa,
-        intent: r.intent || r.last_menu || extractIntent(r.step_data),
-        last_message: r.last_message || extractLastMessage(r.step_data),
-        chat_status: r.chat_status || r.state,
+        phone_number: (r as any).phone_number || r.nomor_wa,
+        intent: (r as any).intent || r.last_menu || extractIntent(r.step_data),
+        last_message: (r as any).last_message || extractLastMessage(r.step_data),
+        chat_status: (r as any).chat_status || r.state,
       }));
       setRows(transformed);
       setLoading(false);

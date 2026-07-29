@@ -7,6 +7,7 @@ import { EditorialTitle, StatsBand } from "./sections";
 import { Seo } from "./lib/seo";
 import { useAutofillPenduduk } from "./lib/queries";
 import { uploadFile } from "./lib/upload";
+import { useTenantId } from "./lib/tenant";
 
 const inp = "w-full border border-current/25 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent";
 const btn = "bg-accent text-primary px-5 py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-60";
@@ -164,7 +165,7 @@ export function SuplesiPage() {
         kategori: 'lainnya',
       });
       if (result.success && result.url) {
-        setForm((s) => ({ ...s, lampiran_url: result.url }));
+        setForm((s) => ({ ...s, lampiran_url: result.url || "" }));
         toast.success("Lampiran terunggah.");
       } else {
         toast.error(result.error || "Gagal upload.");
@@ -176,9 +177,12 @@ export function SuplesiPage() {
     }
   };
 
-  useAutofillPenduduk(form.nik, (d) => {
-    setForm(f => ({ ...f, nama: d.nama, kontak: d.nomor_hp || f.kontak }));
-    toast.success(`Data ${d.nama} ditemukan!`);
+  const tenantId = useTenantId();
+  useAutofillPenduduk(form.nik, tenantId || "", (d) => {
+    if (d) {
+      setForm(f => ({ ...f, nama: d.nama, kontak: d.nomor_hp || f.kontak }));
+      toast.success(`Data ${d.nama} ditemukan!`);
+    }
   });
 
   const submit = async (e: React.FormEvent) => {

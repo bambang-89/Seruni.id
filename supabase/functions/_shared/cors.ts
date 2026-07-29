@@ -63,9 +63,12 @@ export function errorJson(message: string, status = 400, origin: string | null =
 }
 
 export async function voterHash(action: string, req: Request, extra = ""): Promise<string> {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("cf-connecting-ip") || "unknown";
   const ua = req.headers.get("user-agent") || "unknown";
-  const secret = Deno.env.get("VOTER_HASH_SECRET") || "seruni-default-secret-change-me";
+  const secret = Deno.env.get("VOTER_HASH_SECRET");
+  if (!secret) {
+    throw new Error("VOTER_HASH_SECRET environment variable is not set");
+  }
   const data = `${action}|${ip}|${ua}|${secret}${extra ? `|${extra}` : ""}`;
   const encoder = new TextEncoder();
   const keyData = encoder.encode(data);

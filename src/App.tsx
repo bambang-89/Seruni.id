@@ -5,6 +5,7 @@ import HomePage from "./seruni/HomePage";
 import { StandaloneLayout } from "./seruni/ui";
 import { AuthProvider } from "./seruni/lib/auth";
 import { TenantProvider } from "./seruni/lib/tenant";
+import { ConfirmPromptProvider } from "./seruni/ui/ConfirmDialog";
 import LoginPage from "./seruni/admin/LoginPage";
 import InitAdminPage from "./seruni/admin/InitAdminPage";
 import { Toaster } from "sonner";
@@ -204,6 +205,7 @@ export default function App() {
     <ErrorBoundary>
       <AuthProvider>
         <TenantProvider supabaseClient={supabase} defaultTenantSlug="seruni-mumbul">
+          <ConfirmPromptProvider>
           <Toaster position="top-right" richColors />
           <BrowserRouter>
             <Suspense fallback={<RouteFallback />}>
@@ -367,8 +369,9 @@ export default function App() {
         </Routes>
         </Suspense>
         </BrowserRouter>
-      </TenantProvider>
-    </AuthProvider>
+          </ConfirmPromptProvider>
+        </TenantProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

@@ -432,10 +432,14 @@ export function SuratAjuanForm() {
     setIsLoadingLookup(true);
     setLookupError(null);
 
+    let active = true;
+
     debounceRef.current = setTimeout(async () => {
       try {
         if (!tenantId) throw new Error("Tenant ID missing");
         const p = await fetchPendudukByNik(nik, tenantId);
+        if (!active) return;
+        
         if (p) {
           const kewarganegaraan = await fetchKewarganegaraan((p as any).warga_negara_id);
           const alamat_lengkap = composeAlamat(
@@ -491,9 +495,14 @@ export function SuratAjuanForm() {
         console.error("Autofill error:", e);
         setLookupError("Gagal lookup data penduduk.");
       } finally {
-        setIsLoadingLookup(false);
+        if (active) setIsLoadingLookup(false);
       }
     }, 500);
+
+    return () => {
+      active = false;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [nik, tenantId, dnaFields]);
 
   function validateAll(): boolean {
@@ -532,6 +541,7 @@ export function SuratAjuanForm() {
       }
 
       const payload: Record<string, unknown> = {
+        tenant_id: tenantId,
         nik: nik.trim(),
         nama: nama.trim(),
         kontak: kontak.trim(),

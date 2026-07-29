@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
   // Check voting topic exists and is active
   const { data: topik } = await supabase
-    .from("voting_topik").select("id,status,published,mulai,selesai").eq("id", topik_id).maybeSingle();
+    .from("voting_topik").select("id,status,published,mulai,selesai,tenant_id").eq("id", topik_id).maybeSingle();
 
   if (!topik || !topik.published) return json({ error: "Topik tidak ditemukan" }, 404, origin);
   if (topik.status !== "aktif") return json({ error: "Voting tidak aktif" }, 400, origin);
@@ -39,15 +39,17 @@ Deno.serve(async (req) => {
   if (topik.mulai && new Date(topik.mulai) > now) return json({ error: "Voting belum dimulai" }, 400, origin);
   if (topik.selesai && new Date(topik.selesai) < now) return json({ error: "Voting sudah ditutup" }, 400, origin);
 
-  // Check opsi valid
+  // Check opsi valid AND belongs to same tenant
   const { data: opsi } = await supabase
-    .from("voting_opsi").select("id,topik_id").eq("id", opsi_id).maybeSingle();
+    .from("voting_opsi").select("id,topik_id").eq("id", opsi_id).eq("tenant_id", topik.tenant_id).maybeSingle();
   if (!opsi || opsi.topik_id !== topik_id) return json({ error: "Opsi tidak valid" }, 400, origin);
 
   // Cast vote with voter hash for deduplication
   const voterHashValue = await voterHash("voting-topik-v2", req, `${topik_id}:${opsi_id}`);
   const { error } = await supabase.from("voting_suara").insert({
-    topik_id, opsi_id, voter_hash: voterHashValue, dusun: dusun ? String(dusun).slice(0, 80) : null,
+    topik_id, opsi_id, voter_hash: voterHashValue,
+    tenant_id: topik.tenant_id,
+    dusun: dusun ? String(dusun).slice(0, 80) : null,
   });
 
   if (error) {

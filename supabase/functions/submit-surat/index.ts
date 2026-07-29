@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405, origin);
 
   const body = await req.json().catch(() => ({}));
+  const tenant_id = clean(body.tenant_id, 36);
   const nik = clean(body.nik, 16);
   const nama = clean(body.nama, 120);
   const kontak = clean(body.kontak, 20);
@@ -80,6 +81,9 @@ Deno.serve(async (req) => {
   const lampiran = body.lampiran || [];
   const data_dna = body.data_dna || null;
   const data_identitas_raw = validateDataIdentitas(body.data_identitas);
+
+  // Validate tenant_id from body (prevents cross-tenant data leaks)
+  if (!tenant_id) return json({ error: "tenant_id wajib" }, 400, origin);
 
   // Validate NIK is exactly 16 digits
   if (!/^\d{16}$/.test(nik)) return json({ error: "NIK harus 16 digit angka" }, 400, origin);
@@ -92,14 +96,15 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Rate limit: satu perangkat maksimal 3 pengajuan surat per hari
+  // Rate limit: satu perangkat maksimal 3 pengajuan surat per hari (per tenant)
   const fp = await voterHash("surat-submit", req);
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
 
-  // Parallel queries: rate limit + tenant + jenis surat
-  const [rateLimitResult, tenantResult] = await Promise.all([
-    supabase.from("event_log").select("id").eq("event_name", "surat.diajukan").gte("created_at", since).eq("payload->>fp", fp),
-    supabase.from("tenants").select("id").limit(1).maybeSingle(),
+  // Parallel queries: rate limit + verify tenant exists + verify tenant owns this jenis_surat
+  const [rateLimitResult, tenantResult, jenisResult] = await Promise.all([
+    supabase.from("event_log").select("id").eq("event_name", "surat.diajukan").gte("created_at", since).eq("payload->>fp", fp).eq("tenant_id", tenant_id),
+    supabase.from("tenants").select("id").eq("id", tenant_id).maybeSingle(),
+    jenis_surat_id ? supabase.from("surat_jenis").select("id, nama, kode_surat, aktif").eq("id", jenis_surat_id).eq("tenant_id", tenant_id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
 
   const recent = rateLimitResult.data;
@@ -107,16 +112,11 @@ Deno.serve(async (req) => {
   if ((recent?.length ?? 0) >= 3) {
     return json({ error: "Batas pengajuan harian tercapai. Coba lagi besok." }, 429, origin);
   }
-  if (!tenant) return json({ error: "Konfigurasi tenant tidak ditemukan" }, 500, origin);
+  if (!tenant) return json({ error: "Tenant tidak valid" }, 400, origin);
 
-  // Validate jenis surat exists and is active
   let jenisSurat = null;
   if (jenis_surat_id) {
-    const { data: jenis } = await supabase
-      .from("surat_jenis")
-      .select("id, nama, kode_surat, aktif")
-      .eq("id", jenis_surat_id)
-      .maybeSingle();
+    const jenis = jenisResult.data;
     if (!jenis || !jenis.aktif) {
       return json({ error: "Jenis surat tidak ditemukan atau tidak aktif" }, 400, origin);
     }
@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
   const { data: ins, error } = await supabase
     .from("surat_ajuan")
     .insert({
-      tenant_id: tenant.id,
+      tenant_id: tenant_id,
       nomor_tiket,
       nik,
       nama,
@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
     await supabase
       .from("surat_ajuan_data")
       .insert({
-        tenant_id: tenant.id,
+        tenant_id: tenant_id,
         surat_ajuan_id: ins.id,
         data_dna: data_dna || {},
         data_identitas: data_identitas_raw || {},
@@ -178,6 +178,7 @@ Deno.serve(async (req) => {
     event_name: "surat.diajukan",
     entitas: "surat_ajuan",
     entitas_id: ins.id,
+    tenant_id: tenant_id,
     payload: { fp, nik, nomor_tiket },
   });
 
@@ -185,8 +186,8 @@ Deno.serve(async (req) => {
   const fonnteToken = Deno.env.get("FONNTE_TOKEN");
   if (fonnteToken) {
     const waPesan = buildWaPesan(nama, ins.nomor_tiket, jenisSurat?.nama || null);
-    // Fire-and-forget: don't await to avoid slowing response
-    sendFonnte(fonnteToken, kontak, waPesan);
+    // Di Edge Functions, Promise harus di-await agar fetch tidak terputus saat response dikirim
+    await sendFonnte(fonnteToken, kontak, waPesan);
   }
 
   return json({

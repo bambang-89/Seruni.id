@@ -4507,6 +4507,12 @@ export type Database = {
         | "selesai"
         | "tertunda"
         | "batal"
+      realisasi_status:
+        | "rencana"
+        | "berjalan"
+        | "selesai"
+        | "tertunda"
+        | "batal"
       rpjmdes_status: "draft" | "aktif" | "selesai"
       usulan_kategori:
         | "infrastruktur"
@@ -4711,6 +4717,7 @@ export const Constants = {
         "aset.disusutkan",
       ],
       realismo_status: ["rencana", "berjalan", "selesai", "tertunda", "batal"],
+      realisasi_status: ["rencana", "berjalan", "selesai", "tertunda", "batal"],
       rpjmdes_status: ["draft", "aktif", "selesai"],
       usulan_kategori: [
         "infrastruktur",

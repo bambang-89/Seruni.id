@@ -159,11 +159,11 @@ Deno.serve(async (req) => {
     jenisNama = js?.nama || null;
   }
 
-  // Kirim WA (non-blocking, non-fatal)
+  // Kirim WA (non-blocking, tapi harus di-await agar Edge Function tidak mati duluan)
   const fonnteToken = Deno.env.get("FONNTE_TOKEN");
   if (fonnteToken && ajuan.kontak) {
     const pesan = buildPesan(ajuan.nama, ajuan.nomor_tiket, status_baru, jenisNama);
-    sendFonnte(fonnteToken, ajuan.kontak, pesan);
+    await sendFonnte(fonnteToken, ajuan.kontak, pesan);
   }
 
   // Log event

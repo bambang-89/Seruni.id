@@ -340,7 +340,7 @@ export async function getDokumenForEntity(
   kategori?: UploadKategori
 ) {
   let query = supabase
-    .from('dokumen_upload')
+    .from('dokumen_upload' as any)
     .select('*')
     .eq('entity_type', entityType)
     .eq('entity_id', entityId);
@@ -374,7 +374,7 @@ export async function saveDokumenRecord(params: {
   ukuranFile: number;
 }) {
   const { data, error } = await supabase
-    .from('dokumen_upload')
+    .from('dokumen_upload' as any)
     .insert({
       entity_type: params.entityType,
       entity_id: params.entityId,
@@ -404,7 +404,7 @@ export async function deleteDokumen(dokumenId: string): Promise<boolean> {
   try {
     // Get record first
     const { data: record, error: getError } = await supabase
-      .from('dokumen_upload')
+      .from('dokumen_upload' as any)
       .select('storage_path')
       .eq('id', dokumenId)
       .single();
@@ -415,11 +415,11 @@ export async function deleteDokumen(dokumenId: string): Promise<boolean> {
     }
 
     // Delete from storage
-    await deleteFile(record.storage_path);
+    await deleteFile((record as any).storage_path);
 
     // Delete record
     const { error: deleteError } = await supabase
-      .from('dokumen_upload')
+      .from('dokumen_upload' as any)
       .delete()
       .eq('id', dokumenId);
 

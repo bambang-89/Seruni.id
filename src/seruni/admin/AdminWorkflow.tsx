@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirm } from "../ui/ConfirmDialog";
 
 const inp = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary";
 const btnPri = "rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 disabled:opacity-60";
@@ -85,6 +86,7 @@ export function SiteDraftAdmin() {
   const { rows, loading } = useDrafts(statusF, entF, reload);
   const [openId, setOpenId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   const setStatus = async (id: string, next: string, extra: Record<string, any> = {}) => {
     setBusyId(id);
@@ -105,7 +107,7 @@ export function SiteDraftAdmin() {
   };
 
   const rollback = async (id: string) => {
-    if (!confirm("Rollback publikasi ini ke versi sebelumnya?")) return;
+    if (!(await confirm({ title: "Rollback publikasi ini ke versi sebelumnya?" }))) return;
     setBusyId(id);
     const { error } = await (supabase.rpc as any)("rollback_site_draft", { _draft_id: id });
     setBusyId(null);
@@ -115,7 +117,7 @@ export function SiteDraftAdmin() {
   };
 
   const hapus = async (id: string) => {
-    if (!confirm("Hapus draft ini?")) return;
+    if (!(await confirm({ title: "Hapus draft ini?" }))) return;
     const { error } = await (supabase.from("site_draft" as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Terhapus.");
@@ -279,6 +281,7 @@ export function SiteVersionAdmin() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
+  const confirm = useConfirm();
 
   useEffect(() => {
     setLoading(true);
@@ -288,7 +291,7 @@ export function SiteVersionAdmin() {
   }, [entitas, reload]);
 
   const restore = async (id: string) => {
-    if (!confirm("Pulihkan ke versi ini? Perubahan saat ini akan tetap tersimpan sebagai versi baru.")) return;
+    if (!(await confirm({ title: "Pulihkan ke versi ini?" }))) return;
     const { error } = await (supabase.rpc as any)("restore_site_version", { _version_id: id });
     if (error) return toast.error(error.message);
     toast.success("Versi dipulihkan.");

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImageField } from "./AdminPages";
+import { StandaloneFormOverlay } from "../ui";
+import { useConfirm, usePrompt } from "../ui/ConfirmDialog";
 import { invalidatePageConfig } from "../lib/pageConfig";
 import { stashPagePreview, stashNavPreview, stashFooterPreview, openPreview } from "../lib/preview";
 
@@ -290,6 +292,7 @@ export function NavAdmin() {
   const [rows, setRows] = useState<NavRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<Partial<NavRow> | null>(null);
+  const confirm = useConfirm();
 
   const reload = async () => {
     setLoading(true);
@@ -324,7 +327,7 @@ export function NavAdmin() {
     reload();
   };
   const del = async (id: string) => {
-    if (!confirm("Hapus menu ini? Submenu di bawahnya juga akan terhapus.")) return;
+    if (!(await confirm({ title: "Hapus menu ini? Submenu di bawahnya juga akan terhapus." }))) return;
     const { error } = await (supabase as any).from("nav_item").delete().eq("id", id);
     if (error) return toast.error(error.message);
     reload();
@@ -359,57 +362,56 @@ export function NavAdmin() {
       </div>
 
       {draft && (
-        <div className="mb-6 bg-card border border-border rounded-xl p-5 space-y-3">
-          <div className="text-xs uppercase tracking-widest text-accent font-display">
-            {draft.id ? "Edit" : "Baru"} · {draft.parent_id ? "Submenu" : "Menu utama"}
+        <StandaloneFormOverlay title={`${draft.id ? "Edit" : "Baru"} — ${draft.parent_id ? "Submenu" : "Menu utama"}`} onClose={() => setDraft(null)}>
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Parent</label>
+                <select
+                  value={draft.parent_id ?? ""}
+                  onChange={(e) => setDraft({ ...draft, parent_id: e.target.value || null })}
+                  className={inp}
+                  autoComplete="off"
+                >
+                  <option value="">— (menu utama) —</option>
+                  {parents.map((p) => (
+                    <option key={p.id} value={p.id}>{p.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Urutan</label>
+                <input
+                  type="number"
+                  value={draft.urutan ?? 0}
+                  onChange={(e) => setDraft({ ...draft, urutan: Number(e.target.value) })}
+                  className={inp}
+                  autoComplete="off"
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Label (1 kata)</label>
+                <input value={draft.label ?? ""} onChange={(e) => setDraft({ ...draft, label: e.target.value })} className={inp} autoComplete="off" />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Href</label>
+                <input value={draft.href ?? ""} onChange={(e) => setDraft({ ...draft, href: e.target.value })} className={inp} autoComplete="off" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Deskripsi submenu (opsional)</label>
+                <input value={draft.deskripsi ?? ""} onChange={(e) => setDraft({ ...draft, deskripsi: e.target.value })} className={inp} autoComplete="off" />
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={draft.aktif ?? true} onChange={(e) => setDraft({ ...draft, aktif: e.target.checked })} />
+                Aktif
+              </label>
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-current/10 mt-6">
+              <button onClick={() => setDraft(null)} className="px-4 py-2 text-sm bg-secondary text-secondary-foreground rounded-lg hover:opacity-90">Batal</button>
+              <button onClick={save} className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90">Simpan</button>
+            </div>
           </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Parent</label>
-              <select
-                value={draft.parent_id ?? ""}
-                onChange={(e) => setDraft({ ...draft, parent_id: e.target.value || null })}
-                className={inp}
-                autoComplete="off"
-              >
-                <option value="">— (menu utama) —</option>
-                {parents.map((p) => (
-                  <option key={p.id} value={p.id}>{p.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Urutan</label>
-              <input
-                type="number"
-                value={draft.urutan ?? 0}
-                onChange={(e) => setDraft({ ...draft, urutan: Number(e.target.value) })}
-                className={inp}
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Label (1 kata)</label>
-              <input value={draft.label ?? ""} onChange={(e) => setDraft({ ...draft, label: e.target.value })} className={inp} autoComplete="off" />
-            </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Href</label>
-              <input value={draft.href ?? ""} onChange={(e) => setDraft({ ...draft, href: e.target.value })} className={inp} autoComplete="off" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Deskripsi submenu (opsional)</label>
-              <input value={draft.deskripsi ?? ""} onChange={(e) => setDraft({ ...draft, deskripsi: e.target.value })} className={inp} autoComplete="off" />
-            </div>
-            <label className="inline-flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={draft.aktif ?? true} onChange={(e) => setDraft({ ...draft, aktif: e.target.checked })} />
-              Aktif
-            </label>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={save} className={btnPri}>Simpan</button>
-            <button onClick={() => setDraft(null)} className={btnSec}>Batal</button>
-          </div>
-        </div>
+        </StandaloneFormOverlay>
       )}
 
       <div className="bg-card border border-border rounded-xl divide-y divide-border">
@@ -466,6 +468,7 @@ export function FooterAdmin() {
   const [rows, setRows] = useState<FooterRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<FooterRow | null>(null);
+  const confirm = useConfirm();
 
   const reload = async () => {
     setLoading(true);
@@ -491,7 +494,7 @@ export function FooterAdmin() {
     reload();
   };
   const del = async (id: string) => {
-    if (!confirm("Hapus kolom footer ini?")) return;
+    if (!(await confirm({ title: "Hapus kolom footer ini?" }))) return;
     const { error } = await (supabase as any).from("footer_column").delete().eq("id", id);
     if (error) return toast.error(error.message);
     reload();
@@ -527,71 +530,73 @@ export function FooterAdmin() {
       </div>
 
       {draft && (
-        <div className="mb-6 bg-card border border-border rounded-xl p-5 space-y-3">
-          <div className="grid sm:grid-cols-[1fr_100px_auto] gap-3 items-end">
-            <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Judul Kolom</label>
-              <input value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} className={inp} autoComplete="off" />
+        <StandaloneFormOverlay title="Edit Kolom Footer" onClose={() => setDraft(null)}>
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-[1fr_100px_auto] gap-3 items-end">
+              <div>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Judul Kolom</label>
+                <input value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} className={inp} autoComplete="off" />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-wider text-muted-foreground">Urutan</label>
+                <input type="number" value={draft.urutan} onChange={(e) => setDraft({ ...draft, urutan: Number(e.target.value) })} className={inp} autoComplete="off" />
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm pb-2">
+                <input type="checkbox" checked={draft.aktif} onChange={(e) => setDraft({ ...draft, aktif: e.target.checked })} />
+                Aktif
+              </label>
             </div>
-            <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Urutan</label>
-              <input type="number" value={draft.urutan} onChange={(e) => setDraft({ ...draft, urutan: Number(e.target.value) })} className={inp} autoComplete="off" />
-            </div>
-            <label className="inline-flex items-center gap-2 text-sm pb-2">
-              <input type="checkbox" checked={draft.aktif} onChange={(e) => setDraft({ ...draft, aktif: e.target.checked })} />
-              Aktif
-            </label>
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Tautan</div>
-              <button
-                className={btnSec}
-                onClick={() => setDraft({ ...draft, links: [...draft.links, { label: "", href: "" }] })}
-              >
-                + Tautan
-              </button>
-            </div>
-            {draft.links.map((l, i) => (
-              <div key={i} className="grid sm:grid-cols-[1fr_2fr_auto] gap-2">
-                <input
-                  placeholder="Label"
-                  value={l.label}
-                  onChange={(e) => {
-                    const arr = [...draft.links];
-                    arr[i] = { ...l, label: e.target.value };
-                    setDraft({ ...draft, links: arr });
-                  }}
-                  className={inp}
-                  autoComplete="off"
-                />
-                <input
-                  placeholder="/href atau https://…"
-                  value={l.href}
-                  onChange={(e) => {
-                    const arr = [...draft.links];
-                    arr[i] = { ...l, href: e.target.value };
-                    setDraft({ ...draft, links: arr });
-                  }}
-                  className={inp}
-                  autoComplete="off"
-                />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">Tautan</div>
                 <button
-                  className={btnDanger}
-                  onClick={() => setDraft({ ...draft, links: draft.links.filter((_, x) => x !== i) })}
+                  className={btnSec}
+                  onClick={() => setDraft({ ...draft, links: [...draft.links, { label: "", href: "" }] })}
                 >
-                  Hapus
+                  + Tautan
                 </button>
               </div>
-            ))}
-          </div>
+              {draft.links.map((l, i) => (
+                <div key={i} className="grid sm:grid-cols-[1fr_2fr_auto] gap-2">
+                  <input
+                    placeholder="Label"
+                    value={l.label}
+                    onChange={(e) => {
+                      const arr = [...draft.links];
+                      arr[i] = { ...l, label: e.target.value };
+                      setDraft({ ...draft, links: arr });
+                    }}
+                    className={inp}
+                    autoComplete="off"
+                  />
+                  <input
+                    placeholder="/href atau https://…"
+                    value={l.href}
+                    onChange={(e) => {
+                      const arr = [...draft.links];
+                      arr[i] = { ...l, href: e.target.value };
+                      setDraft({ ...draft, links: arr });
+                    }}
+                    className={inp}
+                    autoComplete="off"
+                  />
+                  <button
+                    className={btnDanger}
+                    onClick={() => setDraft({ ...draft, links: draft.links.filter((_, x) => x !== i) })}
+                  >
+                    Hapus
+                  </button>
+                </div>
+              ))}
+            </div>
 
-          <div className="flex gap-2">
-            <button onClick={save} className={btnPri}>Simpan</button>
-            <button onClick={() => setDraft(null)} className={btnSec}>Batal</button>
+            <div className="flex justify-end gap-3 pt-4 border-t border-current/10 mt-6">
+              <button onClick={() => setDraft(null)} className="px-4 py-2 text-sm bg-secondary text-secondary-foreground rounded-lg hover:opacity-90">Batal</button>
+              <button onClick={save} className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90">Simpan</button>
+            </div>
           </div>
-        </div>
+        </StandaloneFormOverlay>
       )}
 
       <div className="bg-card border border-border rounded-xl divide-y divide-border">
@@ -643,6 +648,8 @@ export function DraftQueueAdmin() {
   const [rows, setRows] = useState<DraftQueueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const confirm = useConfirm();
+  const prompt = usePrompt();
 
   const reload = async () => {
     setLoading(true);
@@ -682,7 +689,7 @@ export function DraftQueueAdmin() {
   };
 
   const reject = async (id: string) => {
-    const catatan = prompt("Alasan penolakan:");
+    const catatan = await prompt({ title: "Alasan Penolakan", placeholder: "Ketik alasan penolakan..." });
     if (!catatan) return;
     const { error } = await (supabase as any)
       .rpc("reject_draft", { _draft_id: id, _catatan: catatan });
@@ -692,7 +699,7 @@ export function DraftQueueAdmin() {
   };
 
   const publish = async (id: string) => {
-    if (!confirm("Publish draft ini ke live site?")) return;
+    if (!(await confirm({ title: "Publish draft ini ke live site?" }))) return;
     const { error } = await (supabase as any)
       .rpc("publish_site_draft", { _draft_id: id });
     if (error) return toast.error(error.message);
@@ -701,7 +708,7 @@ export function DraftQueueAdmin() {
   };
 
   const rollback = async (id: string) => {
-    if (!confirm("Rollback perubahan ini?")) return;
+    if (!(await confirm({ title: "Rollback perubahan ini?" }))) return;
     const { error } = await (supabase as any)
       .rpc("rollback_site_draft", { _draft_id: id });
     if (error) return toast.error(error.message);
@@ -896,6 +903,7 @@ export function VersionHistoryAdmin() {
   const [rows, setRows] = useState<VersionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("");
+  const confirm = useConfirm();
 
   const reload = async () => {
     setLoading(true);
@@ -917,7 +925,7 @@ export function VersionHistoryAdmin() {
     : rows;
 
   const restore = async (versionId: string) => {
-    if (!confirm("Pulihkan versi ini?")) return;
+    if (!(await confirm({ title: "Pulihkan versi ini?" }))) return;
     const { error } = await (supabase as any)
       .rpc("restore_site_version", { _version_id: versionId });
     if (error) return toast.error(error.message);

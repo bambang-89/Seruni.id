@@ -1,6 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
+function clean(s: unknown, max: number): string {
+  return String(s ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function isValidNik(nik: unknown): boolean {
+  return typeof nik === "string" && /^\d{16}$/.test(nik);
+}
+
+function isValidKontak(kontak: unknown): boolean {
+  if (!kontak) return true; // optional
+  return typeof kontak === "string" && kontak.length >= 8 && kontak.length <= 20 && /^[\d\s\-+()]+$/.test(kontak);
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Setup CORS
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -33,19 +46,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     const body = req.body;
 
-    const nik = body.nik;
-    const nama = body.nama;
-    const kontak = body.kontak;
+    const nik = clean(body.nik, 16);
+    const nama = clean(body.nama, 120);
+    const kontak = clean(body.kontak, 20);
+    const tenant_id = clean(body.tenant_id, 36);
     const jenis_surat_id = body.jenis_surat_id;
-    const keperluan = body.keperluan;
+    const keperluan = clean(body.keperluan, 500);
     const lampiran = body.lampiran || [];
     const data_dna = body.data_dna || null;
     const data_identitas_raw = body.data_identitas;
 
-    // Get Tenant
-    const { data: tenant } = await supabase.from('tenants').select('id').limit(1).maybeSingle();
+    // Validate NIK format: exactly 16 digits
+    if (!isValidNik(nik)) {
+      return res.status(400).json({ error: 'NIK harus 16 digit angka' });
+    }
+
+    // Validate kontak format if provided
+    if (!isValidKontak(kontak)) {
+      return res.status(400).json({ error: 'Format nomor kontak tidak valid' });
+    }
+
+    // Validate tenant_id from body (prevents cross-tenant data leaks)
+    if (!tenant_id || typeof tenant_id !== 'string' || tenant_id.length < 10) {
+      return res.status(400).json({ error: 'tenant_id wajib diisi' });
+    }
+
+    // Validate required fields
+    if (nama.length < 2) {
+      return res.status(400).json({ error: 'Nama minimal 2 karakter' });
+    }
+
+    if (keperluan.length < 5) {
+      return res.status(400).json({ error: 'Keperluan minimal 5 karakter' });
+    }
+
+    // Verify tenant exists and matches
+    const { data: tenant } = await supabase.from('tenants').select('id').eq('id', tenant_id).maybeSingle();
     if (!tenant) {
-      return res.status(500).json({ error: 'Tenant not found' });
+      return res.status(400).json({ error: 'Tenant tidak valid' });
     }
 
     // Get Next Nomor Tiket
@@ -58,14 +96,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: ins, error } = await supabase
       .from('surat_ajuan')
       .insert({
-        tenant_id: tenant.id,
+        tenant_id,
         nomor_tiket,
         nik,
         nama,
-        kontak,
+        kontak: kontak || null,
         jenis_surat_id: jenis_surat_id || null,
         keperluan,
-        lampiran: Array.isArray(lampiran) ? lampiran : [],
+        lampiran: Array.isArray(lampiran) ? lampiran.slice(0, 10) : [],
         status: 'menunggu',
       })
       .select('id, nomor_tiket, status')
@@ -80,7 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await supabase
         .from('surat_ajuan_data')
         .insert({
-          tenant_id: tenant.id,
+          tenant_id,
           surat_ajuan_id: ins.id,
           data_dna: data_dna || {},
           data_identitas: data_identitas_raw || {},
@@ -91,6 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       event_name: 'surat.diajukan',
       entitas: 'surat_ajuan',
       entitas_id: ins.id,
+      tenant_id,
       payload: { nik, nomor_tiket },
     });
 

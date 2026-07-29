@@ -265,7 +265,7 @@ async function runIdmScorer(sb: ReturnType<typeof createClient>, tenantId: strin
 
   // 5. Compute dimensi scores
   const dimensiMap: Record<number, number[]> = {};
-  for (const s of scores) {
+  for (const s of allScores) {
     if (!dimensiMap[s.dimensi_no]) dimensiMap[s.dimensi_no] = [];
     dimensiMap[s.dimensi_no].push(s.skor);
   }
@@ -306,7 +306,7 @@ async function runIdmScorer(sb: ReturnType<typeof createClient>, tenantId: strin
     { onConflict: "tenant_id" },
   );
 
-  return { tenantId, skorCount: scores.length, dimensiScores, totalSkor, status, errors };
+  return { tenantId, skorCount: allScores.length, dimensiScores, totalSkor, status, errors };
 }
 
 // ============================================================

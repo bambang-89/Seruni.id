@@ -101,15 +101,11 @@ export function SuratPreview({
   const [signingTTE, setSigningTTE] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    loadPreview();
-  }, [loadPreview]);
-
   const loadPreview = useCallback(async () => {
     setLoading(true);
     try {
       // Get surat_terbit data
-      const { data: surat } = await supabase
+      const { data: suratData } = await (supabase as any)
         .from('surat_terbit')
         .select(`
           *,
@@ -121,6 +117,7 @@ export function SuratPreview({
         `)
         .eq('id', suratId)
         .single();
+      const surat = suratData as any;
 
       if (surat) {
         // Get DNA data from surat_terbit_data
@@ -128,52 +125,52 @@ export function SuratPreview({
         let dnaFields: SuratDNAFieldDef[] = [];
         if (surat.jenis_surat_id) {
           const [{ data: dnaRow }, { data: fields }] = await Promise.all([
-            supabase.from('surat_terbit_data').select('data_dna').eq('surat_terbit_id', suratId).maybeSingle(),
-            supabase.from('surat_jenis_dna').select('field_name, label, tipe, grup').eq('jenis_surat_id', surat.jenis_surat_id).order('urutan'),
+            (supabase as any).from('surat_terbit_data').select('data_dna').eq('surat_terbit_id', suratId).maybeSingle(),
+            (supabase as any).from('surat_jenis_dna').select('field_name, label, tipe, grup').eq('jenis_surat_id', surat.jenis_surat_id).order('urutan'),
           ]);
-          dnaValues = dnaRow?.data_dna || {};
-          dnaFields = (fields || []).map((f: any) => ({ field_name: f.field_name, label: f.label, tipe: f.tipe, grup: f.grup }));
+          dnaValues = (dnaRow as any)?.data_dna || {};
+          dnaFields = ((fields as any) || []).map((f: any) => ({ field_name: f.field_name, label: f.label, tipe: f.tipe, grup: f.grup }));
         }
 
         // Get template
         let template = null;
         if (templateId) {
-          const { data: t } = await supabase
+          const { data: t } = await (supabase as any)
             .from('surat_template')
             .select('*')
             .eq('id', templateId)
             .single();
-          template = t;
+          template = t as any;
         } else {
           // Get default template
-          const { data: t } = await supabase
+          const { data: t } = await (supabase as any)
             .from('surat_template')
             .select('*')
             .eq('is_default', true)
             .single();
-          template = t;
+          template = t as any;
         }
 
         // Get pamong (penanda tangan) data
         let pamongData = null;
         const ttdOleh = surat.ttd_oleh || 'Kepala Desa';
-        const { data: pamongRows } = await supabase
+        const { data: pamongRows } = await (supabase as any)
           .from('desa_pamong')
           .select('*')
           .eq('jabatan', ttdOleh)
           .eq('aktif', true)
           .limit(1);
         if (pamongRows && pamongRows.length > 0) {
-          pamongData = pamongRows[0];
+          pamongData = (pamongRows as any)[0];
         } else {
           // Fallback: get first active pamong with ttd capability
-          const { data: fallbackPamong } = await supabase
+          const { data: fallbackPamong } = await (supabase as any)
             .from('desa_pamong')
             .select('*')
             .eq('aktif', true)
             .order('urutan', { ascending: true })
             .limit(1);
-          pamongData = fallbackPamong?.[0] || null;
+          pamongData = (fallbackPamong as any)?.[0] || null;
         }
 
         setPreviewData({
@@ -241,6 +238,10 @@ export function SuratPreview({
     }
   }, [suratId, templateId, data, identitas]);
 
+  useEffect(() => {
+    loadPreview();
+  }, [loadPreview]);
+
   const handlePrint = () => {
     const printContent = printRef.current;
     if (!printContent) return;
@@ -287,7 +288,7 @@ export function SuratPreview({
           status_preview: 'rejected',
           rejected_reason: rejectReason,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', suratId);
 
       if (!error) {
@@ -307,7 +308,7 @@ export function SuratPreview({
           approved_by: (await supabase.auth.getUser()).data.user?.id,
           approved_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', suratId);
 
       if (!error) {
@@ -386,7 +387,7 @@ export function SuratPreview({
           tte_signature_id: data.signature_id,
           signed_pdf_url: data.signed_pdf_url,
           status_preview: 'signed',
-        })
+        } as any)
         .eq('id', suratId);
 
       toast.success('Surat berhasil ditandatangani secara elektronik');
@@ -493,7 +494,7 @@ export function SuratPreview({
                 className="garis"
                 style={{
                   borderBottomWidth: tmpl.header.border_bottom_width,
-                  borderBottomStyle: tmpl.header.border_bottom_style,
+                  borderBottomStyle: tmpl.header.border_bottom_style as any,
                   borderBottomColor: '#000',
                 }}
               />

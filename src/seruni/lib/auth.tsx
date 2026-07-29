@@ -52,12 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithNik: AuthState["signInWithNik"] = async (nik, password) => {
     const email = nikToEmail(nik);
-    console.log("Attempting login with:", { email, password });
+    console.debug("Attempting login with NIK:", nik);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    console.error("signInWithNik Error:", error);
+    if (error) console.error("signInWithNik failed:", error.code, error.message);
     return error ? { error: `Gagal: ${error.message}` } : {};
   };
 

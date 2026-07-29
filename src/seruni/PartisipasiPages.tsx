@@ -18,6 +18,7 @@ import {
   type VotingTopik,
 } from "./lib/queries";
 import { uploadFile } from "./lib/upload";
+import { useTenantId } from "./lib/tenant";
 
 const inp = "mt-1 w-full border border-current/25 bg-transparent px-3 py-2 text-sm focus:outline-none focus:border-accent";
 const btnPri = "inline-flex items-center gap-3 border border-accent bg-accent text-primary px-5 py-2.5 font-display text-[11px] font-bold uppercase tracking-[0.28em] hover:bg-accent/85 transition-colors disabled:opacity-50";
@@ -210,8 +211,9 @@ function UsulanForm({ onSubmitted }: { onSubmitted: (tiket: string) => void }) {
     judul: "", deskripsi: "", lokasi: "", foto_url: "",
   });
 
-  useAutofillPenduduk(form.nik, (d) => {
-    setForm(f => ({ ...f, nama: d.nama, kontak: d.nomor_hp || f.kontak, dusun: d.alamat_lengkap || f.dusun }));
+  const tenantId = useTenantId();
+  useAutofillPenduduk(form.nik, tenantId || "", (d) => {
+    if (d) setForm(f => ({ ...f, nama: d.nama, kontak: d.nomor_hp || f.kontak, dusun: d.alamat_lengkap || f.dusun }));
   });
 
   const onFile = async (f: File | null) => {
@@ -219,11 +221,11 @@ function UsulanForm({ onSubmitted }: { onSubmitted: (tiket: string) => void }) {
     setUploading(true);
     try {
       const result = await uploadFile(f, {
-        entityType: 'usulan',
+        entityType: 'lainnya',
         kategori: 'foto_galeri',
       });
       if (result.success && result.url) {
-        setForm((s) => ({ ...s, foto_url: result.url }));
+        setForm((s) => ({ ...s, foto_url: result.url || "" }));
         toast.success("Foto terunggah.");
       } else {
         toast.error(result.error || "Gagal upload.");
@@ -239,7 +241,7 @@ function UsulanForm({ onSubmitted }: { onSubmitted: (tiket: string) => void }) {
     if (form.judul.trim().length < 5) return toast.error("Judul minimal 5 karakter.");
     if (form.deskripsi.trim().length < 10) return toast.error("Deskripsi terlalu pendek.");
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke("submit-usulan", { body: form });
+    const { data, error } = await supabase.functions.invoke("submit-usulan", { body: { ...form, tenant_id: tenantId } });
     setBusy(false);
     if (error || (data as any)?.error) {
       toast.error((data as any)?.error || error?.message || "Gagal mengirim usulan.");
@@ -408,7 +410,7 @@ export function UsulanPage() {
   const totalDukungan = rows.reduce((s, r) => s + r.vote_count, 0);
 
   return (
-    <EditorialLayout>
+    <StandaloneLayout>
 
       <StatsBand
         tone="dark"
@@ -450,7 +452,7 @@ export function UsulanPage() {
           </div>
         )}
       </SectionWrap>
-    </EditorialLayout>
+    </StandaloneLayout>
   );
 }
 

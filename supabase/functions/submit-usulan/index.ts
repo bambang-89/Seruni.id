@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405, origin);
 
   const body = await req.json().catch(() => ({}));
+  const tenant_id = clean(body.tenant_id, 36);
   const nik = clean(body.nik, 16);
   const nama = clean(body.nama, 120);
   const kontak = clean(body.kontak, 60);
@@ -44,6 +45,9 @@ Deno.serve(async (req) => {
   const deskripsi = clean(body.deskripsi, 4000);
   const lokasi = clean(body.lokasi, 200);
   const foto_url = clean(body.foto_url, 500);
+
+  // Validate tenant_id from body (prevents cross-tenant data leaks)
+  if (!tenant_id) return json({ error: "tenant_id wajib" }, 400, origin);
 
   // Enhanced validation
   if (!isValidNIK(nik)) return json({ error: "NIK harus 16 digit angka" }, 400, origin);
@@ -57,24 +61,25 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Rate limit: 5 per day
+  // Verify tenant exists
+  const { data: tenant } = await supabase.from("tenants").select("id").eq("id", tenant_id).maybeSingle();
+  if (!tenant) return json({ error: "Tenant tidak valid" }, 400, origin);
+
+  // Rate limit: 5 per day (per tenant)
   const fp = await voterHash("usulan-submit", req);
   const rateLimit = await checkRateLimit(supabase, fp, "usulan_warga.dibuat_publik", 5, 86400000);
   if (!rateLimit.allowed) {
     return json({ error: "Batas usulan harian tercapai. Coba lagi besok." }, 429, origin);
   }
 
-  // Get tenant
-  const { data: tenant } = await supabase.from("tenants").select("id").limit(1).maybeSingle();
-  if (!tenant) return json({ error: "Konfigurasi tenant tidak ditemukan" }, 500, origin);
-
-  // Generate nomor tiket
+  // Generate nomor tiket (per-tenant to avoid collisions)
   const now = new Date();
   const ym = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
   const prefix = `USL-${ym}-`;
   const { data: last } = await supabase
     .from("usulan_warga")
     .select("nomor_tiket")
+    .eq("tenant_id", tenant_id)
     .like("nomor_tiket", `${prefix}%`)
     .order("nomor_tiket", { ascending: false })
     .limit(1);
@@ -84,7 +89,7 @@ Deno.serve(async (req) => {
   const nomor_tiket = `${prefix}${String(nextSeq).padStart(4, "0")}`;
 
   const { data: ins, error } = await supabase.from("usulan_warga").insert({
-    tenant_id: tenant.id,
+    tenant_id: tenant_id,
     nomor_tiket, nama, kontak: kontak || null, dusun: dusun || null,
     kategori, judul, deskripsi, lokasi: lokasi || null, foto_url: foto_url || null,
     status: "baru",
@@ -95,6 +100,7 @@ Deno.serve(async (req) => {
     event_name: "usulan_warga.dibuat_publik",
     entitas: "usulan_warga",
     entitas_id: ins.id,
+    tenant_id: tenant_id,
     payload: { fp, kategori, dusun, nomor_tiket },
   });
 

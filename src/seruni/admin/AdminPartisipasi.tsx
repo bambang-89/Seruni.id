@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TableCrud } from "./AdminPages";
+import { useConfirm } from "../ui/ConfirmDialog";
 
 const inp = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary";
 const btnPri = "rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 disabled:opacity-60";
@@ -46,7 +47,7 @@ function useSelectOptions(table: string, labelKey: string, valueKey = "id", filt
 }
 
 export function RpjmdesBidangAdmin() {
-  const periodeOpts = useSelectOptions("rpjmdes_periode", "nama");
+  const periodeOpts = useSelectOptions("rpjmdes_periode", "nama", "id");
   return (
     <TableCrud
       table="rpjmdes_bidang"
@@ -66,7 +67,7 @@ export function RpjmdesBidangAdmin() {
 }
 
 export function RpjmdesProgramAdmin() {
-  const bidangOpts = useSelectOptions("rpjmdes_bidang", "nama");
+  const bidangOpts = useSelectOptions("rpjmdes_bidang", "nama", "id");
   return (
     <TableCrud
       table="rpjmdes_program"
@@ -79,7 +80,7 @@ export function RpjmdesProgramAdmin() {
         { key: "nama", label: "Nama Program" },
         { key: "indikator", label: "Indikator", type: "textarea" },
         { key: "target", label: "Target" },
-        { key: "sumber_dana", label: "Sumber Dana", type: "relation", relation: { table: "ref_sumber_dana", labelCol: "nama", valueCol: "nama" } },
+        { key: "sumber_dana", label: "Sumber Dana", type: "select", options: [{ value: "", label: "— pilih —" }, { value: "APBD", label: "APBD" }, { value: "APBN", label: "APBN" }, { value: "Swadaya", label: "Swadaya" }, { value: "Hibah", label: "Hibah" }, { value: "Lainnya", label: "Lainnya" }] },
         { key: "tahun_mulai", label: "Tahun Mulai", type: "number" },
         { key: "tahun_selesai", label: "Tahun Selesai", type: "number" },
         { key: "anggaran_indikatif", label: "Anggaran (Rp)", type: "number" },
@@ -109,8 +110,9 @@ export function RkpdesTahunAdmin() {
 }
 
 export function RkpdesKegiatanAdmin() {
-  const tahunOpts = useSelectOptions("rkpdes_tahun", "tahun");
-  const bidangOpts = useSelectOptions("rpjmdes_bidang", "nama");
+  const tahunOpts = useSelectOptions("rkpdes_tahun", "tahun", "id");
+  const bidangOpts = useSelectOptions("rpjmdes_bidang", "nama", "id");
+  const dusunOpts = useSelectOptions("wilayah_dusun", "nama");
   return (
     <TableCrud
       table="rkpdes_kegiatan"
@@ -126,11 +128,11 @@ export function RkpdesKegiatanAdmin() {
         { key: "bidang_id", label: "Bidang (opsional)", type: "select", options: [{ value: "", label: "— tidak dipilih —" }, ...bidangOpts] },
         { key: "nama", label: "Nama Kegiatan" },
         { key: "lokasi", label: "Lokasi" },
-        { key: "dusun", label: "Dusun", type: "relation", relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } },
+        { key: "dusun", label: "Dusun", type: "select", options: [{ value: "", label: "— pilih —" }, ...dusunOpts] },
         { key: "volume", label: "Volume" },
         { key: "satuan", label: "Satuan" },
         { key: "anggaran", label: "Anggaran (Rp)", type: "number" },
-        { key: "sumber_dana", label: "Sumber Dana", type: "relation", relation: { table: "ref_sumber_dana", labelCol: "nama", valueCol: "nama" } },
+        { key: "sumber_dana", label: "Sumber Dana", type: "select", options: [{ value: "", label: "— pilih —" }, { value: "APBD", label: "APBD" }, { value: "APBN", label: "APBN" }, { value: "Swadaya", label: "Swadaya" }, { value: "Hibah", label: "Hibah" }, { value: "Lainnya", label: "Lainnya" }] },
         { key: "pelaksana", label: "Pelaksana" },
         { key: "waktu", label: "Waktu" },
         { key: "status_realisasi", label: "Status", type: "select", options: [
@@ -153,6 +155,7 @@ export function UsulanAdmin() {
   const [loading, setLoading] = useState(true);
   const [statusF, setStatusF] = useState("");
   const [editing, setEditing] = useState<any | null>(null);
+  const confirm = useConfirm();
 
   const load = () => {
     setLoading(true);
@@ -173,7 +176,7 @@ export function UsulanAdmin() {
   };
 
   const hapus = async (id: string) => {
-    if (!confirm("Hapus usulan ini?")) return;
+    if (!(await confirm({ title: "Hapus usulan ini?" }))) return;
     const { error } = await (supabase.from("usulan_warga" as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Terhapus."); load();
@@ -286,7 +289,7 @@ export function VotingTopikAdmin() {
 }
 
 export function VotingOpsiAdmin() {
-  const topikOpts = useSelectOptions("voting_topik", "judul");
+  const topikOpts = useSelectOptions("voting_topik", "judul", "id");
   return (
     <TableCrud
       table="voting_opsi"

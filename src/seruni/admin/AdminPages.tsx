@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "../lib/auth";
 import { useTenantId } from "../lib/tenant";
+import { useConfirm } from "../ui/ConfirmDialog";
 import { Link } from "react-router-dom";
 import { uploadFile } from "../lib/upload";
 import {
@@ -18,6 +19,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { StandaloneFormOverlay } from "../ui";
 
 export function PageTitle({ title, desc }: { title: string; desc?: string }) {
   return (
@@ -479,18 +481,22 @@ export function RelationSelect({
   onChange,
   className,
   filterValue,
+  requireAktif = true,
 }: {
   relation: { table: string; labelCol: string; valueCol: string; filterBy?: string };
   value: string;
   onChange: (val: string) => void;
   className?: string;
   filterValue?: string;
+  /** Set false for tables that don't have an 'aktif' column (e.g. wilayah_dusun, berita, agenda). Default true. */
+  requireAktif?: boolean;
 }) {
   const [opts, setOpts] = useState<{value: string, label: string}[]>([]);
   useEffect(() => {
-    const q = supabase.from(relation.table as any).select(`${relation.labelCol},${relation.valueCol}`).eq("aktif", true);
+    let q = supabase.from(relation.table as any).select(`${relation.labelCol},${relation.valueCol}`);
+    if (requireAktif) q = q.eq("aktif", true);
     if (relation.filterBy && filterValue) {
-      q.eq(relation.filterBy, filterValue);
+      q = q.eq(relation.filterBy, filterValue);
     }
     q.then(({ data }) => {
       if (data) {
@@ -500,7 +506,7 @@ export function RelationSelect({
         })));
       }
     });
-  }, [relation.table, relation.labelCol, relation.valueCol, relation.filterBy, filterValue]);
+  }, [relation.table, relation.labelCol, relation.valueCol, relation.filterBy, filterValue, requireAktif]);
 
   return (
     <select
@@ -579,7 +585,9 @@ export function TableCrud({
   const [totalCount, setTotalCount] = useState(0);
   const [nikError, setNikError] = useState<string | null>(null);
   const [nikLoading, setNikLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const tenantId = useTenantId();
+  const confirm = useConfirm();
   const nikDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = () => {
@@ -605,32 +613,37 @@ export function TableCrud({
   const filteredRows = search ? rows : rows; // Already filtered by Supabase
 
   const save = async (row: any) => {
-    const { id, ...payload } = row;
-    // NIK validation: must be exactly 16 digits
-    const nikCol = columns.find(c => c.key === "nik" || c.label.toLowerCase().includes("nik"));
-    if (nikCol && payload.nik && !/^\d{16}$/.test(String(payload.nik))) {
-      setNikError("NIK harus 16 digit angka");
-      return;
+    setSaving(true);
+    try {
+      const { id, ...payload } = row;
+      // NIK validation: must be exactly 16 digits
+      const nikCol = columns.find(c => c.key === "nik" || c.label.toLowerCase().includes("nik"));
+      if (nikCol && payload.nik && !/^\d{16}$/.test(String(payload.nik))) {
+        setNikError("NIK harus 16 digit angka");
+        return;
+      }
+      // Auto-inject tenant_id for tables that need it
+      const tenantTables = ["penduduk","keluarga","surat_ajuan","berita","aduan_warga","usulan_warga","apbdes","kegiatan_pembangunan","agenda","pengumuman","galeri","page_hero_config","desa_pamong","wilayah_dusun","lembaga_desa","hero_slider","nav_items","footer_columns","rpjmdes_periode","rpjmdes_bidang","rpjmdes_program","rkpdes_tahun","rkpdes_kegiatan","bidang_tanah","infrastruktur","posyandu_agregat","stunting_agregat","bantuan_sosial","penerima_bansos","bencana_kejadian","dpt_pemilih","surat_jenis","langganan_wa","pbb_tagihan","balita","potensi_umkm","potensi_produk","potensi_wisata","voting_topik","voting_opsi"];
+      if (tenantTables.includes(table) && !payload.tenant_id && tenantId) {
+        payload.tenant_id = tenantId;
+      }
+      const q = id
+        ? (supabase.from(table as any) as any).update(payload).eq("id", id)
+        : (supabase.from(table as any) as any).insert(payload);
+      const { error } = await q;
+      if (error) { toast.error(error.message); return; }
+      toast.success("Tersimpan.");
+      setDraft(null);
+      setNikError(null);
+      setPage(1);
+      load();
+    } finally {
+      setSaving(false);
     }
-    // Auto-inject tenant_id for tables that need it
-    const tenantTables = ["penduduk", "keluarga", "surat_ajuan", "berita", "aduan_warga", "usulan_warga", "apbdes", "kegiatan_pembangunan", "agenda", "pengumuman", "galeri", "page_hero_config", "desa_pamong", "wilayah_dusun", "lembaga_desa", "hero_slider", "nav_items", "footer_columns"];
-    if (tenantTables.includes(table) && !payload.tenant_id && tenantId) {
-      payload.tenant_id = tenantId;
-    }
-    const q = id
-      ? (supabase.from(table as any) as any).update(payload).eq("id", id)
-      : (supabase.from(table as any) as any).insert(payload);
-    const { error } = await q;
-    if (error) return toast.error(error.message);
-    toast.success("Tersimpan.");
-    setDraft(null);
-    setNikError(null);
-    setPage(1);
-    load();
   };
 
   const del = async (id: string) => {
-    if (!confirm("Hapus baris ini?")) return;
+    if (!(await confirm({ title: "Hapus baris ini?" }))) return;
     const { error } = await (supabase.from(table as any) as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Terhapus.");
@@ -682,7 +695,7 @@ export function TableCrud({
         });
         if (Object.keys(row).length > 0) {
           // Auto-inject tenant_id for known multi-tenant tables during CSV import
-          const tenantTables = ["penduduk", "keluarga", "surat_ajuan", "berita", "aduan_warga", "usulan_warga", "apbdes", "kegiatan_pembangunan", "agenda", "pengumuman", "galeri"];
+          const tenantTables = ["penduduk","keluarga","surat_ajuan","berita","aduan_warga","usulan_warga","apbdes","kegiatan_pembangunan","agenda","pengumuman","galeri","rpjmdes_periode","rpjmdes_bidang","rpjmdes_program","rkpdes_tahun","rkpdes_kegiatan","bidang_tanah","infrastruktur","posyandu_agregat","stunting_agregat","bantuan_sosial","penerima_bansos","bencana_kejadian","dpt_pemilih","surat_jenis","langganan_wa","pbb_tagihan","balita","potensi_umkm","potensi_produk","potensi_wisata","voting_topik","voting_opsi"];
           if (tenantTables.includes(table) && tenantId && !row.tenant_id) {
             row.tenant_id = tenantId;
           }
@@ -724,176 +737,134 @@ export function TableCrud({
       </div>
 
       {draft && (
-        <div className="mb-6 rounded-xl bg-card border border-border p-5">
-          <h3 className="font-display font-semibold mb-3">{draft.id ? "Edit" : "Tambah"} Baris</h3>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {columns.map((c) => (
-              <div key={String(c.key)} className={c.type === "textarea" ? "sm:col-span-2" : ""}>
-                {c.type === "textarea" ? (
-                  <label className="block text-xs font-medium mb-1">
-                    <span className="block mb-1 font-medium">{c.label}</span>
-                    <textarea
-                      rows={4}
-                      value={(draft[c.key] ?? "") as string}
-                      onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
-                      className={inp}
-                      autoComplete="off"
-                    />
-                  </label>
-                ) : c.type === "checkbox" ? (
-                  <label className="inline-flex items-center gap-2 text-sm mt-6">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(draft[c.key])}
-                      onChange={(e) => setDraft({ ...draft, [c.key]: e.target.checked })}
-                    />
-                    Aktif
-                  </label>
-                ) : c.type === "select" ? (
-                  <label className="block text-xs font-medium mb-1">
-                    <span className="block mb-1 font-medium">{c.label}</span>
-                    <select
-                      value={(draft[c.key] ?? "") as string}
-                      onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
-                      className={inp}
-                      autoComplete="off"
-                    >
-                      <option value="" disabled>— pilih —</option>
-                      {(c.options ?? []).map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                ) : c.type === "relation" && c.relation ? (
-                  <label className="block text-xs font-medium mb-1">
-                    <span className="block mb-1 font-medium">{c.label}</span>
-                    <RelationSelect
-                      relation={c.relation}
-                      value={(draft[c.key] ?? "") as string}
-                      onChange={(val) => setDraft({ ...draft, [c.key]: val })}
-                      className={inp}
-                      filterValue={c.relation?.filterField ? (draft[c.relation.filterField] as string) : undefined}
-                    />
-                  </label>
-                ) : c.type === "image" ? (
-                  <label className="block text-xs font-medium mb-1">
-                    <span className="block mb-1 font-medium">{c.label}</span>
-                    <ImageField
-                      value={(draft[c.key] as string) || ""}
-                      folder={c.imageFolder || table}
-                      onChange={(url) => setDraft({ ...draft, [c.key]: url })}
-                    />
-                  </label>
-                ) : c.type === "video" ? (
-                  <label className="block text-xs font-medium mb-1">
-                    <span className="block mb-1 font-medium">{c.label}</span>
-                    <VideoField
-                      value={(draft[c.key] as string) || ""}
-                      folder={c.imageFolder || table}
-                      onChange={(url) => setDraft({ ...draft, [c.key]: url })}
-                    />
-                  </label>
-                ) : (
-                  <div>
-                    {(() => {
-                      const isNikField = c.key === "nik" || c.label.toLowerCase().includes("nik");
-                      const isNamaField = /nama/i.test(c.label);
-                      const isAlamatField = /alamat/i.test(c.label);
-                      const isEmailField = /email/i.test(c.label);
-                      const isTeleponField = /telepon|telp|kontak|nomor.?wa|hp/i.test(c.label);
-                      const isTanggalField = /tanggal|tgl/i.test(c.label);
-
-                      const autoComplete = isNikField ? "off"
-                        : isNamaField ? "name"
-                        : isAlamatField ? "street-address"
-                        : isEmailField ? "email"
-                        : isTeleponField ? "tel"
-                        : isTanggalField ? "off"
-                        : isNamaField ? "name"
-                        : "off";
-
-                      return (
-                        <label className="block text-xs font-medium mb-1">
-                          <span className="block mb-1 font-medium">{c.label}</span>
-                          <input
-                            type={c.type === "number" ? "number" : isTeleponField ? "tel" : isEmailField ? "email" : "text"}
-                            step={c.step}
-                            value={(draft[c.key] ?? "") as string | number}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              const val = c.type === "number" ? (raw === "" ? 0 : Number(raw)) : raw;
-                              setDraft({ ...draft, [c.key]: val });
-                              if (isNikField) {
-                                setNikError(null);
-                                setNikLoading(false);
-                                if (nikDebounceRef.current) clearTimeout(nikDebounceRef.current);
-                                if (/^\d{16}$/.test(raw)) {
-                                  nikDebounceRef.current = setTimeout(async () => {
-                                    setNikLoading(true);
-                                    const { data: p } = await (supabase.from("penduduk") as any)
-                                      .select("*").eq("nik", raw).maybeSingle();
-                                    if (!p) { setNikLoading(false); return; }
-                                    const genderMap: Record<string, string> = { L: "L", P: "P" };
-                                    const next: Record<string, unknown> = { ...draft };
-
-                                    for (const k of ["nama", "tempat_lahir", "tanggal_lahir", "alamat"]) {
-                                      if (p[k] !== undefined && p[k] !== null) next[k] = p[k];
-                                    }
-                                    next.jenis_kelamin = genderMap[p.jenis_kelamin] ?? p.jenis_kelamin ?? "L";
-                                    next.keluarga_id = p.keluarga_id ?? null;
-
-                                    if (p.agama) {
-                                      const { data: ref } = await (supabase.from("ref_agama") as any)
-                                        .select("kode").ilike("nama", String(p.agama)).maybeSingle();
-                                      next.agama = ref?.kode ?? String(p.agama);
-                                    }
-                                    if (p.pendidikan) {
-                                      const { data: ref } = await (supabase.from("ref_pendidikan") as any)
-                                        .select("nama").ilike("nama", String(p.pendidikan)).maybeSingle();
-                                      if (ref?.nama) next.pendidikan = ref.nama;
-                                    }
-                                    if (p.pekerjaan) {
-                                      const { data: ref } = await (supabase.from("ref_pekerjaan") as any)
-                                        .select("nama").ilike("nama", String(p.pekerjaan)).maybeSingle();
-                                      if (ref?.nama) next.pekerjaan = ref.nama;
-                                    }
-                                    if (p.status_kawin) {
-                                      const { data: ref } = await (supabase.from("ref_status_perkawinan") as any)
-                                        .select("kode").ilike("nama", String(p.status_kawin)).maybeSingle();
-                                      next.status_kawin = ref?.kode ?? String(p.status_kawin);
-                                    }
-                                    if (p.hubungan_kk) {
-                                      const { data: ref } = await (supabase.from("ref_hubungan_keluarga") as any)
-                                        .select("nama").ilike("nama", String(p.hubungan_kk)).maybeSingle();
-                                      if (ref?.nama) next.hubungan_kk = ref.nama;
-                                    }
-
-                                    setNikLoading(false);
-                                    setDraft(next);
-                                    toast.success("Data ditemukan — field otomatis terisi.");
-                                  }, 500);
+        <StandaloneFormOverlay title={`${draft.id ? "Edit" : "Tambah"} Baris`} onClose={() => { setDraft(null); setNikError(null); }}>
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              {columns.map((c) => (
+                <div key={String(c.key)} className={c.type === "textarea" ? "sm:col-span-2" : ""}>
+                  {c.type === "textarea" ? (
+                    <label className="block text-xs font-medium mb-1">
+                      <span className="block mb-1 font-medium">{c.label}</span>
+                      <textarea
+                        rows={4}
+                        value={(draft[c.key] ?? "") as string}
+                        onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
+                        className={inp}
+                        autoComplete="off"
+                      />
+                    </label>
+                  ) : c.type === "checkbox" ? (
+                    <label className="inline-flex items-center gap-2 text-sm mt-6">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(draft[c.key])}
+                        onChange={(e) => setDraft({ ...draft, [c.key]: e.target.checked })}
+                      />
+                      Aktif
+                    </label>
+                  ) : c.type === "select" ? (
+                    <label className="block text-xs font-medium mb-1">
+                      <span className="block mb-1 font-medium">{c.label}</span>
+                      <select
+                        value={(draft[c.key] ?? "") as string}
+                        onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
+                        className={inp}
+                        autoComplete="off"
+                      >
+                        <option value="" disabled>— pilih —</option>
+                        {(c.options ?? []).map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : c.type === "relation" && c.relation ? (
+                    <label className="block text-xs font-medium mb-1">
+                      <span className="block mb-1 font-medium">{c.label}</span>
+                      <RelationSelect
+                        relation={c.relation}
+                        value={(draft[c.key] ?? "") as string}
+                        onChange={(val) => setDraft({ ...draft, [c.key]: val })}
+                        className={inp}
+                        filterValue={c.relation?.filterField ? (draft[c.relation.filterField] as string) : undefined}
+                      />
+                    </label>
+                  ) : c.type === "image" ? (
+                    <label className="block text-xs font-medium mb-1">
+                      <span className="block mb-1 font-medium">{c.label}</span>
+                      <ImageField
+                        value={(draft[c.key] as string) || ""}
+                        folder={c.imageFolder || table}
+                        onChange={(url) => setDraft({ ...draft, [c.key]: url })}
+                      />
+                    </label>
+                  ) : c.type === "video" ? (
+                    <label className="block text-xs font-medium mb-1">
+                      <span className="block mb-1 font-medium">{c.label}</span>
+                      <VideoField
+                        value={(draft[c.key] as string) || ""}
+                        folder={c.imageFolder || table}
+                        onChange={(url) => setDraft({ ...draft, [c.key]: url })}
+                      />
+                    </label>
+                  ) : (
+                    <div>
+                      {(() => {
+                        const isNikField = c.key === "nik" || c.label.toLowerCase().includes("nik");
+                        const isEmailField = /email/i.test(c.label);
+                        const isTeleponField = /telepon|telp|kontak|nomor.?wa|hp/i.test(c.label);
+                        return (
+                          <label className="block text-xs font-medium mb-1">
+                            <span className="block mb-1 font-medium">{c.label}</span>
+                            <input
+                              type={c.type === "number" ? "number" : isTeleponField ? "tel" : isEmailField ? "email" : "text"}
+                              step={c.step}
+                              value={(draft[c.key] ?? "") as string | number}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const val = c.type === "number" ? (raw === "" ? 0 : Number(raw)) : raw;
+                                setDraft({ ...draft, [c.key]: val });
+                                if (isNikField) {
+                                  setNikError(null);
+                                  setNikLoading(false);
+                                  if (nikDebounceRef.current) clearTimeout(nikDebounceRef.current);
+                                  if (/^\d{16}$/.test(raw)) {
+                                    nikDebounceRef.current = setTimeout(async () => {
+                                      setNikLoading(true);
+                                      const { data: p } = await (supabase.from("penduduk") as any)
+                                        .select("*").eq("nik", raw).maybeSingle();
+                                      if (!p) { setNikLoading(false); return; }
+                                      const genderMap: Record<string, string> = { L: "L", P: "P" };
+                                      const next: Record<string, unknown> = { ...draft };
+                                      for (const k of ["nama", "tempat_lahir", "tanggal_lahir", "alamat"]) {
+                                        if (p[k] !== undefined && p[k] !== null) next[k] = p[k];
+                                      }
+                                      next.jenis_kelamin = genderMap[p.jenis_kelamin] ?? p.jenis_kelamin ?? "L";
+                                      next.keluarga_id = p.keluarga_id ?? null;
+                                      setNikLoading(false);
+                                      setDraft(next);
+                                    }, 500);
+                                  }
                                 }
-                              }
-                            }}
-                            autoComplete={autoComplete}
-                            className={inp}
-                          />
-                          {isNikField && (nikError || nikLoading) && (
-                            <p className="text-xs mt-1">{nikLoading ? <span className="text-blue-500">Mencari data penduduk...</span> : <span className="text-red-500">{nikError}</span>}</p>
-                          )}
-                        </label>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            ))}
+                              }}
+                              className={inp}
+                            />
+                            {isNikField && (nikError || nikLoading) && (
+                              <p className="text-xs mt-1">{nikLoading ? <span className="text-blue-500">Mencari data...</span> : <span className="text-red-500">{nikError}</span>}</p>
+                            )}
+                          </label>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-current/10 mt-6">
+              <button onClick={() => { setDraft(null); setNikError(null); }} className={btnSec}>Batal</button>
+              <button onClick={() => save(draft)} disabled={saving} className={btnPri}>{saving ? "Menyimpan..." : "Simpan"}</button>
+            </div>
           </div>
-          <div className="mt-4 flex gap-2">
-            <button onClick={() => save(draft)} className={btnPri}>Simpan</button>
-            <button onClick={() => { setDraft(null); setNikError(null); }} className={btnSec}>Batal</button>
-          </div>
-        </div>
+        </StandaloneFormOverlay>
       )}
 
       <div className="overflow-x-auto rounded-xl bg-card border border-border">
@@ -930,7 +901,6 @@ export function TableCrud({
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center gap-1 mt-4">
           <button onClick={() => setPage(1)} disabled={page === 1} className="px-3 py-1 rounded border text-sm disabled:opacity-50">«</button>
@@ -952,18 +922,13 @@ export function ImageField({ value, folder, onChange }: { value: string; folder:
     if (!f) return;
     setBusy(true);
     try {
-      // Show preview immediately while uploading
       const reader = new FileReader();
       reader.onload = (e) => setPreview(e.target?.result as string || "");
       reader.readAsDataURL(f);
-
-      const result = await uploadFile(f, {
-        entityType: 'lainnya',
-        kategori: 'foto_galeri',
-      } as any);
+      const result = await uploadFile(f, { entityType: 'lainnya', kategori: 'foto_galeri' } as any);
       if (result.success && result.url) {
         onChange(result.url);
-        toast.success("Foto berhasil diunggah ke penyimpanan internal.");
+        toast.success("Foto berhasil diunggah.");
       } else {
         toast.error(result.error || "Gagal upload.");
       }
@@ -981,52 +946,20 @@ export function ImageField({ value, folder, onChange }: { value: string; folder:
 
   return (
     <div className="space-y-2">
-      {/* Preview Image */}
       {(preview || value) && (
         <div className="relative">
-          <img
-            src={preview || value}
-            alt="preview"
-            className="h-32 w-full object-cover border border-border rounded-md"
-          />
-          <div className="absolute top-2 right-2">
-            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
-              ✓ Internal
-            </span>
-          </div>
+          <img src={preview || value} alt="preview" className="h-32 w-full object-cover border border-border rounded-md" />
         </div>
       )}
-
-      {/* Upload Button */}
       <div className="flex items-center gap-3">
         <label className="cursor-pointer inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90 disabled:opacity-50">
-          {busy ? "Mengunggah..." : "📁 Pilih File dari Device"}
-          <input
-            type="file"
-            accept="image/*"
-            disabled={busy}
-            onChange={(e) => onFile(e.target.files?.[0] || null)}
-            className="hidden"
-          />
+          {busy ? "Mengunggah..." : "📁 Pilih File"}
+          <input type="file" accept="image/*" disabled={busy} onChange={(e) => onFile(e.target.files?.[0] || null)} className="hidden" />
         </label>
         {(value || preview) && (
-          <button type="button" onClick={handleRemove} className={btnDanger}>
-            Hapus
-          </button>
+          <button type="button" onClick={handleRemove} className={btnDanger}>Hapus</button>
         )}
       </div>
-
-      {/* Info */}
-      <p className="text-xs text-muted-foreground">
-        <span className="font-medium">📱 Penyimpanan Internal</span> — Gambar disimpan di server aplikasi, bukan URL eksternal.
-      </p>
-
-      {/* Show current URL if exists (read-only) */}
-      {value && (
-        <div className="text-xs text-muted-foreground truncate">
-          Path: {value.split('/').pop() || value}
-        </div>
-      )}
     </div>
   );
 }
@@ -1088,7 +1021,6 @@ export function LembagaAdmin() {
   );
 }
 
-// ============ Berita ============
 export function BeritaAdmin() {
   return (
     <BeritaCrud />
@@ -1098,9 +1030,11 @@ export function BeritaAdmin() {
 function BeritaCrud() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<any | null>(null);
   const [isiText, setIsiText] = useState("");
   const tenantId = useTenantId();
+  const confirm = useConfirm();
 
   const load = () => {
     setLoading(true);
@@ -1121,14 +1055,15 @@ function BeritaCrud() {
   };
 
   const save = async () => {
+    setSaving(true);
     const payload: Record<string, any> = { ...draft, isi: isiText.split(/\n\n+/).map((s) => s.trim()).filter(Boolean) };
-    // Auto-inject tenant_id on INSERT
     if (!payload.id && tenantId && !payload.tenant_id) {
       payload.tenant_id = tenantId;
     }
     const { id, ...rest } = payload;
     const q = id ? (supabase.from("berita") as any).update(rest as any).eq("id", id) : (supabase.from("berita") as any).insert(rest as any);
     const { error } = await q;
+    setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Tersimpan.");
     setDraft(null);
@@ -1136,7 +1071,7 @@ function BeritaCrud() {
   };
 
   const del = async (id: string) => {
-    if (!confirm("Hapus berita ini?")) return;
+    if (!(await confirm({ title: "Hapus berita ini?" }))) return;
     const { error } = await supabase.from("berita").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Terhapus.");
@@ -1150,28 +1085,28 @@ function BeritaCrud() {
         <button onClick={openNew} className={btnPri}>+ Tambah Berita</button>
       </div>
       {draft && (
-        <div className="mb-6 rounded-xl bg-card border border-border p-5 space-y-3">
-          <h3 className="font-display font-semibold">{draft.id ? "Edit" : "Tambah"} Berita</h3>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div><label className="block text-xs mb-1">Judul</label><input className={inp} value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} autoComplete="off" /></div>
-            <div><label className="block text-xs mb-1">Slug (URL)</label><input className={inp} value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} placeholder="contoh: pengerasan-jalan" autoComplete="off" /></div>
-            <div><label className="block text-xs mb-1">Kategori</label><input className={inp} value={draft.kategori} onChange={(e) => setDraft({ ...draft, kategori: e.target.value })} autoComplete="off" /></div>
-            <div><label className="block text-xs mb-1">Tanggal</label><input type="date" className={inp} value={draft.tanggal} onChange={(e) => setDraft({ ...draft, tanggal: e.target.value })} autoComplete="off" /></div>
-            <div><label className="block text-xs mb-1">Penulis</label><input className={inp} value={draft.penulis} onChange={(e) => setDraft({ ...draft, penulis: e.target.value })} autoComplete="off" /></div>
-            <div className="flex items-end"><label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.published} onChange={(e) => setDraft({ ...draft, published: e.target.checked })} /> Publikasikan</label></div>
+        <StandaloneFormOverlay title={`${draft.id ? "Edit" : "Tambah"} Berita`} onClose={() => setDraft(null)}>
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div><label className="block text-xs mb-1">Judul</label><input className={inp} value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} /></div>
+              <div><label className="block text-xs mb-1">Slug (URL)</label><input className={inp} value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} /></div>
+              <div><label className="block text-xs mb-1">Kategori</label><input className={inp} value={draft.kategori} onChange={(e) => setDraft({ ...draft, kategori: e.target.value })} /></div>
+              <div><label className="block text-xs mb-1">Tanggal</label><input type="date" className={inp} value={draft.tanggal} onChange={(e) => setDraft({ ...draft, tanggal: e.target.value })} /></div>
+              <div><label className="block text-xs mb-1">Penulis</label><input className={inp} value={draft.penulis} onChange={(e) => setDraft({ ...draft, penulis: e.target.value })} /></div>
+              <div className="flex items-end"><label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.published} onChange={(e) => setDraft({ ...draft, published: e.target.checked })} /> Publikasikan</label></div>
+            </div>
+            <div><label className="block text-xs mb-1">Ringkasan</label><textarea rows={2} className={inp} value={draft.ringkasan} onChange={(e) => setDraft({ ...draft, ringkasan: e.target.value })} /></div>
+            <div>
+              <label className="block text-xs mb-1">Foto Sampul</label>
+              <ImageField value={draft.cover_url || ""} folder="berita" onChange={(url) => setDraft({ ...draft, cover_url: url })} />
+            </div>
+            <div><label className="block text-xs mb-1">Isi (pisahkan paragraf dengan baris kosong)</label><textarea rows={10} className={inp} value={isiText} onChange={(e) => setIsiText(e.target.value)} /></div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-current/10 mt-6">
+              <button onClick={() => setDraft(null)} className={btnSec}>Batal</button>
+              <button onClick={save} disabled={saving} className={btnPri}>{saving ? "Menyimpan..." : "Simpan"}</button>
+            </div>
           </div>
-          <div><label className="block text-xs mb-1">Ringkasan</label><textarea rows={2} className={inp} value={draft.ringkasan} onChange={(e) => setDraft({ ...draft, ringkasan: e.target.value })} autoComplete="off" /></div>
-          <div>
-            <label className="block text-xs mb-1">Foto Sampul (Cover)</label>
-            <ImageField
-              value={draft.cover_url || ""}
-              folder="berita"
-              onChange={(url) => setDraft({ ...draft, cover_url: url })}
-            />
-          </div>
-          <div><label className="block text-xs mb-1">Isi (pisahkan paragraf dengan baris kosong)</label><textarea rows={10} className={inp} value={isiText} onChange={(e) => setIsiText(e.target.value)} autoComplete="off" /></div>
-          <div className="flex gap-2"><button onClick={save} className={btnPri}>Simpan</button><button onClick={() => setDraft(null)} className={btnSec}>Batal</button></div>
-        </div>
+        </StandaloneFormOverlay>
       )}
       <div className="overflow-x-auto rounded-xl bg-card border border-border">
         <table className="w-full text-sm">

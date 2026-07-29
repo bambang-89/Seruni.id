@@ -210,7 +210,7 @@ export function TenantProvider({
     // Try Supabase if client available
     if (supabaseClient) {
       // Table uses 'subdomain' column, not 'slug'
-      const { data, error: err } = await supabaseClient
+      const { data, error: err } = await (supabaseClient as any)
         .from("tenants")
         .select("*")
         .eq("subdomain", slug)
@@ -292,7 +292,7 @@ export function TenantProvider({
 
     // Try Supabase if client available
     if (supabaseClient) {
-      const { data, error: err } = await supabaseClient
+      const { data, error: err } = await (supabaseClient as any)
         .from("tenants")
         .select("*")
         .eq("id", id)

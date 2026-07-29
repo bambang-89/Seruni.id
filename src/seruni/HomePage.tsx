@@ -65,7 +65,7 @@ function S1() {
     <EditorialSplit
       kicker="Bagian Satu — Tentang"
       judul={profilDesa?.visi || ""}
-      image={imageUrl}
+      image={imageUrl || ""}
       imageAlt="Potret Desa"
       tone="paper"
       href="/profil-desa"
@@ -223,7 +223,7 @@ function S4() {
       <div className="grid lg:grid-cols-[3fr_2fr] gap-10 lg:gap-16 items-start">
         {utama && (
           <FeaturedCard
-            image={utama.foto_url ? supabase.storage.from('seruni-media').getPublicUrl(utama.foto_url).data.publicUrl : ""}
+            image={utama.gambar_url ? supabase.storage.from('seruni-media').getPublicUrl(utama.gambar_url).data.publicUrl : ""}
             imageAlt={utama.judul}
             kicker={utama.kategori}
             meta={formatTanggal(utama.tanggal)}
@@ -541,7 +541,7 @@ function S9() {
                   <li key={p.nama}>
                     <div className="font-display text-base font-semibold">{p.nama}</div>
                     <div className="font-display text-[10px] font-bold uppercase tracking-[0.24em] opacity-60 mt-1">
-                      {p.tipe}
+                      {(p as any).tipe}
                     </div>
                   </li>
                 ))}

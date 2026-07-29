@@ -136,7 +136,7 @@ export function TemplateDesigner({ template, onSave, onPreview }: TemplateDesign
     file: File
   ) => {
     const result = await upload(file, {
-      entityType: 'template',
+      entityType: 'template' as any,
       kategori: 'foto_profil',
     });
 
@@ -157,16 +157,16 @@ export function TemplateDesigner({ template, onSave, onPreview }: TemplateDesign
 
       let result;
       if (template?.id) {
-        result = await supabase
+        result = await (supabase as any)
           .from('surat_template')
-          .update(data)
+          .update(data as any)
           .eq('id', template.id)
           .select()
           .single();
       } else {
-        result = await supabase
+        result = await (supabase as any)
           .from('surat_template')
-          .insert(data)
+          .insert(data as any)
           .select()
           .single();
       }
@@ -341,7 +341,7 @@ export function TemplateDesigner({ template, onSave, onPreview }: TemplateDesign
             <label className="block text-sm font-medium mb-1">Alamat</label>
             <input
               type="text"
-              value={form.alamat_desa_text}
+              value={(form.alamat_desa_text as string) || ""}
               onChange={e => updateField('alamat_desa_text', e.target.value)}
               autoComplete="off"
               className="w-full border rounded-md px-3 py-2"
@@ -466,12 +466,12 @@ export function TemplateList({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
+    (supabase as any)
       .from('surat_template')
       .select('*')
       .order('is_default', { ascending: false })
-      .then(({ data }) => {
-        setTemplates(data || []);
+      .then(({ data }: any) => {
+        setTemplates((data as SuratTemplate[]) || []);
         setLoading(false);
       });
   }, []);

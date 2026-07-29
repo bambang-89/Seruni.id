@@ -20,5 +20,9 @@
     "target": "ES2020",
     "useDefineForClassFields": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/routes/api-fix-rls.ts",
+    "src/db/schema.ts"
+  ]
 }

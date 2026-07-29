@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ToneProvider, toneOf } from "./lib/tone";
 import { usePageConfig } from "./lib/pageConfig";
 import { usePageHeroConfig } from "./lib/queries";
+import { Seo } from "./lib/seo";
 
 export function formatTanggal(iso: string) {
   return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
@@ -164,8 +165,7 @@ export function PageHeader({
   const bg = image ? (image.startsWith('http') ? image : supabase.storage.from('seruni-media').getPublicUrl(image).data.publicUrl) : undefined;
   return (
     <ToneProvider tone="dark" label="PageHeader">
-    {/* PageHeader hero background dengan tinggi 50vh */}
-    <section className="relative isolate overflow-hidden bg-[#0F0E0E] text-white border-b border-white/10 h-[50vh] flex items-end">
+    <section className="relative isolate overflow-hidden bg-[#0F0E0E] text-white border-b border-white/10 h-[55vh] flex items-center">
       {bg ? (
         <img
           src={bg}
@@ -175,27 +175,36 @@ export function PageHeader({
           loading="eager"
           fetchPriority="high"
         />
-      ) : (
-        <div className="absolute inset-0 bg-accent/20" />
-      )}
-      {/* Dark scrim so hero copy is always legible over any image */}
-      <div aria-hidden className="absolute inset-0 bg-black/60" />
-      <div aria-hidden className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/90 to-transparent" />
-      {/* Padding top 120px-140px untuk memberikan ruang bagi fixed navbar */}
-      <div className="relative w-full mx-auto max-w-7xl px-6 sm:px-8 lg:px-12 pt-32 sm:pt-40 pb-16 sm:pb-24">
-        <Crumbs items={crumbs} />
-        <p className="mt-10 font-display text-[11px] sm:text-xs font-bold uppercase tracking-[0.32em] text-accent">
-          {eyebrow}
-        </p>
-        <div className="mt-4 w-12 h-px bg-accent" />
-        <h1 className="mt-6 text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[0.95] max-w-4xl drop-shadow-lg">
-          <SplitTitle text={judul} italicRest={false} />
-        </h1>
-        {deskripsi && (
-          <p className="mt-8 text-base sm:text-lg text-white/85 max-w-2xl leading-relaxed">
-            {deskripsi}
+      ) : null}
+
+      {/* Gradient overlay */}
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          background: bg
+            ? 'linear-gradient(to right, rgba(15,14,12,0.92) 0%, rgba(15,14,12,0.65) 50%, rgba(15,14,12,0.15) 100%)'
+            : 'linear-gradient(135deg, #0f0e0e 0%, #1a1714 50%, #0f0e0e 100%)',
+        }}
+      />
+
+      {/* Content — left-aligned, below fixed navbar */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-20 md:pt-24">
+        <div className="max-w-2xl">
+          <Crumbs items={crumbs} />
+          <p className="mt-6 font-display text-[11px] sm:text-xs font-bold uppercase tracking-[0.32em] text-accent">
+            {eyebrow}
           </p>
-        )}
+          <div className="mt-4 w-12 h-px bg-accent" />
+          <h1 className="mt-6 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
+            <SplitTitle text={judul} italicRest={false} />
+          </h1>
+          {deskripsi && (
+            <p className="mt-6 text-base sm:text-lg text-white/80 max-w-xl leading-relaxed">
+              {deskripsi}
+            </p>
+          )}
+        </div>
       </div>
     </section>
     </ToneProvider>
@@ -220,7 +229,7 @@ export function EditorialLayout({
   eyebrow?: string;
   judul?: string;
   deskripsi?: string;
-  crumbs: { label: string; to?: string }[];
+  crumbs?: { label: string; to?: string }[];
   heroImage?: string;
   /** Route ini otomatis membaca page_config (hero image, eyebrow, judul override). */
   route?: string;
@@ -235,14 +244,14 @@ export function EditorialLayout({
     <>
       <Seo 
         title={heroConfig?.title?.trim() || cfg?.judul?.trim() || judul || ""} 
-        description={heroConfig?.subtitle?.trim() || (cfg?.deskripsi ?? deskripsi)} 
+        description={heroConfig?.subtitle?.trim() || (cfg?.deskripsi ?? deskripsi) || ""} 
         path={effectiveRoute} 
       />
       <PageHeader
         eyebrow={cfg?.eyebrow?.trim() || eyebrow || ""}
         judul={heroConfig?.title?.trim() || cfg?.judul?.trim() || judul || ""}
         deskripsi={heroConfig?.subtitle?.trim() || (cfg?.deskripsi ?? deskripsi)}
-        crumbs={crumbs}
+        crumbs={crumbs || []}
         image={heroConfig?.image_path || cfg?.hero_image_url || heroImage}
       />
       <main className="editorial-main [&>section+section]:border-t [&>section+section]:border-current/10">
@@ -311,7 +320,7 @@ export function EditorialProgress({
   );
 }
 
-export function StandaloneLayout() {
+export function StandaloneLayout({ children }: { children?: React.ReactNode }) {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -327,7 +336,7 @@ export function StandaloneLayout() {
         </div>
       </div>
       <main className="flex-1">
-        <Outlet />
+        {children || <Outlet />}
       </main>
     </div>
   );
@@ -345,13 +354,14 @@ export function StandaloneFormOverlay({ title, onClose, children }: { title: str
 
   return (
     <div className="fixed inset-0 z-[9999] bg-background/80 backdrop-blur-md overflow-y-auto">
-      <div className="min-h-screen p-4 sm:p-6 lg:p-12 animate-in fade-in zoom-in-95 duration-200">
+      <form className="min-h-screen p-4 sm:p-6 lg:p-12 animate-in fade-in zoom-in-95 duration-200" onSubmit={(e) => e.preventDefault()} autoComplete="off">
         <div className="mx-auto max-w-4xl bg-background border border-current/10 shadow-2xl rounded-2xl overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-current/10 bg-secondary/50">
             <h2 className="font-display text-xl font-bold">{title}</h2>
-            <button 
+            <button
               onClick={onClose}
+              type="button"
               className="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-current/10 transition-colors"
               title="Kembali"
             >
@@ -363,7 +373,7 @@ export function StandaloneFormOverlay({ title, onClose, children }: { title: str
             {children}
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
