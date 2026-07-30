@@ -437,7 +437,7 @@ export function SuratAjuanForm() {
     debounceRef.current = setTimeout(async () => {
       try {
         if (!tenantId) throw new Error("Tenant ID missing");
-        const p = await fetchPendudukByNik(nik, tenantId);
+        const p = await fetchPendudukByNik(nik);
         if (!active) return;
         
         if (p) {
@@ -563,20 +563,14 @@ export function SuratAjuanForm() {
         };
       }
 
-      const res = await fetch("/api/submit-surat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      
-      let data;
-      try {
-        data = await res.json();
-      } catch (e) {
-        throw new Error("Gagal mengirim pengajuan");
+      const res = await (supabase.functions as any).invoke("submit-surat", { body: payload });
+
+      if (res.error) {
+        throw new Error(res.error?.message || "Gagal mengirim pengajuan");
       }
 
-      if (!res.ok || !data?.ok) {
+      const data = res.data;
+      if (!data?.ok) {
         throw new Error(data?.error || "Gagal mengirim pengajuan");
       }
 

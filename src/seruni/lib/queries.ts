@@ -824,15 +824,20 @@ export function useStatistikDesa() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const effectiveTenant = tenantId && tenantId !== "00000000-0000-0000-0000-000000000001"
+    if (!tenantId) { setLoading(false); return; }
+    const effectiveTenant = tenantId !== "00000000-0000-0000-0000-000000000001"
       ? tenantId
       : ACTIVE_TENANT;
+
+    if (!effectiveTenant) { setLoading(false); return; }
 
     // raw client bypasses RLS; add tenant_id filter for correctness
     Promise.all([
       raw.from("wilayah_dusun").select("kk, jiwa, luas_ha").eq("tenant_id", effectiveTenant),
       raw.from("penduduk").select("jenis_kelamin, umur, pekerjaan, pendidikan").eq("tenant_id", effectiveTenant).eq("status", "hidup"),
     ]).then(([dusunRes, pendudukRes]) => {
+      if (dusunRes.error) console.warn("wilayah_dusun query error:", dusunRes.error.message);
+      if (pendudukRes.error) console.warn("penduduk query error:", pendudukRes.error.message);
       const penduduk = pendudukRes.data || [];
       const dusun = dusunRes.data || [];
 
@@ -1989,28 +1994,24 @@ export function useIdmIndikatorById(id?: string) {
   return { data, loading };
 }
 
-export async function fetchPendudukByNik(nik: string, tenantId: string) {
-  if (!nik || nik.length !== 16 || !tenantId) return null;
-  const { data } = await raw.from("penduduk")
-    .select("*")
-    .eq("tenant_id", tenantId)
-    .eq("nik", nik)
-    .maybeSingle();
+export async function fetchPendudukByNik(nik: string) {
+  if (!nik || nik.length !== 16) return null;
+  const { data } = await raw.rpc("find_penduduk_by_nik", { p_nik: nik }).maybeSingle();
   return data;
 }
 
-export function useAutofillPenduduk(nik: string, tenantId: string, onFound: (data: NonNullable<Awaited<ReturnType<typeof fetchPendudukByNik>>>) => void) {
+export function useAutofillPenduduk(nik: string, onFound: (data: NonNullable<Awaited<ReturnType<typeof fetchPendudukByNik>>>) => void) {
   const [loading, setLoading] = useState(false);
   useEffect(() => {
-    if (!nik || nik.length !== 16 || !tenantId) return;
+    if (!nik || nik.length !== 16) return;
     const t = setTimeout(async () => {
       setLoading(true);
-      const data = await fetchPendudukByNik(nik, tenantId);
+      const data = await fetchPendudukByNik(nik);
       if (data) onFound(data);
       setLoading(false);
     }, 500);
     return () => clearTimeout(t);
-  }, [nik, tenantId, onFound]);
+  }, [nik, onFound]);
   return { loading };
 }
 export interface PageHeroConfig {
