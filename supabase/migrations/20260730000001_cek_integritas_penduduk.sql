@@ -5,7 +5,7 @@
 --            penduduk vs keluarga tanpa terblokir RLS
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION public.cek_integritas_penduduk()
+CREATE OR REPLACE FUNCTION public.cek_integritas_penduduk(jsonb DEFAULT '{}')
 RETURNS TABLE (
   check_name TEXT,
   category TEXT,
@@ -220,4 +220,4 @@ END;
 $$;
 
 -- Allow all roles to execute
-GRANT EXECUTE ON FUNCTION public.cek_integritas_penduduk() TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.cek_integritas_penduduk(jsonb) TO anon, authenticated, service_role;

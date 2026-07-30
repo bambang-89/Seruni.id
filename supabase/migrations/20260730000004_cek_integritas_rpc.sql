@@ -5,7 +5,7 @@
 --            Bypasses RLS - untuk monitoring & debugging
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION public.cek_integritas_penduduk()
+CREATE OR REPLACE FUNCTION public.cek_integritas_penduduk(jsonb DEFAULT '{}')
 RETURNS TABLE (
   check_name TEXT,
   category TEXT,
@@ -174,4 +174,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.cek_integritas_penduduk() TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.cek_integritas_penduduk(jsonb) TO anon, authenticated, service_role;
