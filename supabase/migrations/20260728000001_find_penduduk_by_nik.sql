@@ -2,7 +2,6 @@
 -- MIGRASI: 20260728000001_find_penduduk_by_nik.sql
 -- Tanggal: 2026-07-28
 -- Deskripsi: RPC function untuk lookup NIK tanpa RLS filter
---            Digunakan oleh form publik (Surat Ajuan, Suplesi)
 --            SECURITY DEFINER agar bypass tenant isolation RLS
 -- ============================================================
 
@@ -26,9 +25,6 @@ RETURNS TABLE (
   alamat TEXT,
   rt VARCHAR(3),
   rw VARCHAR(3),
-  kecamatan TEXT,
-  kabupaten TEXT,
-  provinsi TEXT,
   nomor_hp TEXT,
   status_hidup TEXT,
   keluarga_id UUID,
@@ -57,9 +53,6 @@ BEGIN
     p.alamat,
     p.rt,
     p.rw,
-    p.kecamatan,
-    p.kabupaten,
-    p.provinsi,
     p.nomor_hp,
     p.status_hidup,
     p.keluarga_id,
