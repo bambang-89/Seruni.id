@@ -141,6 +141,7 @@ export function TableCrud({
   table, columns, blank, title, desc,
   orderBy = "urutan", orderAsc = true,
   pageSize = 50,
+  customActions,
 }: {
   table: string;
   columns: Column[];
@@ -150,6 +151,7 @@ export function TableCrud({
   orderBy?: string;
   orderAsc?: boolean;
   pageSize?: number;
+  customActions?: (row: any) => ReactNode;
 }) {
   const [draft, setDraft] = useState<any | null>(null);
   const [search, setSearch] = useState("");
@@ -397,6 +399,7 @@ export function TableCrud({
                           <DropdownMenuItem onClick={() => { setDraft(r); setNikError(null); }}>
                             Edit
                           </DropdownMenuItem>
+                          {customActions && customActions(r)}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => r.id && del(r.id)}>
                             Hapus

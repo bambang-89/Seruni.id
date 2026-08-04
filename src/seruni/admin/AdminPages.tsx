@@ -21,6 +21,8 @@ import {
 } from "recharts";
 import { StandaloneFormOverlay } from "../ui";
 import { TableCrud, ImageField, VideoField, type Column } from "../components/TableCrud";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function useSelectOptions(table: string, labelKey: string, valueKey = "id", filter?: (r: Record<string, unknown>) => boolean) {
   const [opts, setOpts] = useState<{ value: string; label: string }[]>([]);
@@ -505,6 +507,22 @@ function ConfirmDialog({
 
 export function SuratAjuanAdmin() {
   const jenisSuratOpts = useSelectOptions("surat_jenis", "nama");
+  const queryClient = useQueryClient();
+
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      const { error } = await supabase.from("surat_ajuan").update({ status }).eq("id", id);
+      if (error) throw error;
+      toast.success(`Status berhasil diubah menjadi ${status}`);
+      queryClient.invalidateQueries({ queryKey: ["surat_ajuan"] });
+    } catch (err: any) {
+      toast.error(err.message || "Gagal mengubah status");
+    }
+  };
+
+  const handlePreview = (id: string) => {
+    window.open(`/admin/surat-ajuan/preview/${id}`, "_blank");
+  };
 
   return (
     <TableCrud
@@ -531,7 +549,11 @@ export function SuratAjuanAdmin() {
           key: "jenis_surat_id", 
           label: "Jenis Surat", 
           type: "select", 
-          options: jenisSuratOpts 
+          options: jenisSuratOpts,
+          render: (r: any) => {
+            const opt = jenisSuratOpts.find(o => o.value === r.jenis_surat_id);
+            return opt ? opt.label : r.jenis_surat_id;
+          }
         },
         { key: "keperluan", label: "Keperluan", type: "textarea" },
         { 
@@ -549,6 +571,23 @@ export function SuratAjuanAdmin() {
         },
         { key: "created_at", label: "Tgl Pengajuan", readOnly: true },
       ]}
+      customActions={(r) => (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => handlePreview(r.id)}>
+            Preview Dokumen
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleUpdateStatus(r.id, "diproses")}>
+            Terima & Proses
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleUpdateStatus(r.id, "disetujui")}>
+            Setujui (Tanda Tangan)
+          </DropdownMenuItem>
+          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleUpdateStatus(r.id, "ditolak")}>
+            Tolak
+          </DropdownMenuItem>
+        </>
+      )}
     />
   );
 }
@@ -590,6 +629,7 @@ export const ProdukMarketplaceAdmin = () => <ComingSoon title="Produk" />;
 export const WisataAdmin = () => <ComingSoon title="Wisata" />;
 export const PbbAdmin = () => <ComingSoon title="PBB" />;
 export const ApbdesAdmin = () => <ComingSoon title="APBDes" />;
+export { SuratAjuanPreviewPage } from "./SuratAjuanPreviewPage";
 export const BalitaAdmin = () => <ComingSoon title="Balita" />;
 export const WaChatbotAdmin = () => <ComingSoon title="WA Chatbot" />;
 export const EventLogAdmin = () => <ComingSoon title="Event Log" />;

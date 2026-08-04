@@ -81,6 +81,7 @@ const WisataAdmin = lazy(() => AP().then((m) => ({ default: m.WisataAdmin })));
 const PbbAdmin = lazy(() => AP().then((m) => ({ default: m.PbbAdmin })));
 const ApbdesAdmin = lazy(() => AP().then((m) => ({ default: m.ApbdesAdmin })));
 const SuratAjuanAdmin = lazy(() => AP().then((m) => ({ default: m.SuratAjuanAdmin })));
+const SuratAjuanPreviewPage = lazy(() => AP().then((m) => ({ default: m.SuratAjuanPreviewPage })));
 const BalitaAdmin = lazy(() => AP().then((m) => ({ default: m.BalitaAdmin })));
 const WaChatbotAdmin = lazy(() => AP().then((m) => ({ default: m.WaChatbotAdmin })));
 const EventLogAdmin = lazy(() => AP().then((m) => ({ default: m.EventLogAdmin })));
@@ -252,6 +253,7 @@ export default function App() {
             <Route path="pbb" element={<PbbAdmin />} />
             <Route path="apbdes" element={<ApbdesAdmin />} />
             <Route path="surat-ajuan" element={<SuratAjuanAdmin />} />
+            <Route path="surat-ajuan/preview/:id" element={<SuratAjuanPreviewPage />} />
             <Route path="balita" element={<BalitaAdmin />} />
             <Route path="wa-chatbot" element={<WaChatbotAdmin />} />
             <Route path="event-log" element={<EventLogAdmin />} />
