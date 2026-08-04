@@ -37,11 +37,12 @@ export function SuratAjuanPreviewPage() {
 
         setData(ajuan);
         setUmum({ ...resT.data, ...resS.data });
-        setTemplate(resTemplate.data || {
-          format_nomor: "[KODE]/[NOMOR_URUT]/2026",
-          pejabat_nama: "[Nama Pejabat]",
-          pejabat_jabatan: "[Jabatan Pejabat]",
-          penutup_teks: "Demikian surat keterangan ini dibuat dengan sebenarnya, untuk dipergunakan sebagaimana mestinya."
+        const tpl = resTemplate.data || {};
+        setTemplate({
+          format_nomor: tpl.format_nomor || "[KODE]/[NOMOR_URUT]/2026",
+          pejabat_nama: tpl.pejabat_nama || "[Nama Pejabat]",
+          pejabat_jabatan: tpl.pejabat_jabatan || "[Jabatan Pejabat]",
+          penutup_teks: tpl.penutup_teks || "Demikian surat keterangan ini dibuat dengan sebenarnya, untuk dipergunakan sebagaimana mestinya."
         });
       } catch (err: any) {
         console.error("Error fetching preview:", err);
@@ -96,11 +97,13 @@ export function SuratAjuanPreviewPage() {
             <h3 className="text-xl font-bold uppercase">KECAMATAN {umum?.kecamatan || "[KECAMATAN]"}</h3>
             <h2 className="text-2xl font-bold uppercase">DESA {umum?.nama_desa || "[DESA]"}</h2>
             <p className="text-sm mt-1 italic">
-              {umum?.alamat_kantor || "[Alamat Kantor]"} &nbsp;|&nbsp; Kode Pos: {umum?.kodepos || "..."}
+              {umum?.alamat_kantor || "[Alamat Kantor]"} {umum?.kodepos ? ` | Kode Pos: ${umum.kodepos}` : ""}
             </p>
-            <p className="text-sm italic">
-              Email: <span>{umum?.email || "..."}</span> &nbsp;&nbsp; Web: <span>{umum?.website || "..."}</span>
-            </p>
+            {(umum?.email || umum?.website) && (
+              <p className="text-sm italic">
+                {umum?.email ? `Email: ${umum.email}` : ""} {umum?.email && umum?.website ? " | " : ""} {umum?.website ? `Web: ${umum.website}` : ""}
+              </p>
+            )}
           </div>
           <div className="w-20 text-right">
             {umum?.logo_provinsi_url ? (

@@ -261,15 +261,19 @@ export function composeAlamat(
   provinsi: unknown,
 ): string {
   const v = (val: unknown) => (val == null ? "" : String(val).trim());
+  const rt_str = v(rt) ? `RT ${v(rt)}` : null;
+  const rw_str = v(rw) ? `RW ${v(rw)}` : null;
+  const rt_rw = rt_str && rw_str ? `${rt_str}/${rw_str}` : (rt_str || rw_str);
+  
   const parts = [
     v(alamat) || null,
     v(dusun) ? `Dusun ${v(dusun)}` : null,
-    v(rt) || v(rw) ? `RT ${v(rt)}/RW ${v(rw)}` : null,
+    rt_rw,
     v(kecamatan) ? `Kec. ${v(kecamatan)}` : null,
     v(kabupaten) ? `Kab. ${v(kabupaten)}` : null,
-    v(provinsi) || null,
-  ].filter(Boolean) as string[];
-  return parts.join(", ") || "-";
+    v(provinsi) ? `Prov. ${v(provinsi)}` : null,
+  ];
+  return parts.filter(Boolean).join(", ") || "-";
 }
 
 export async function fetchKewarganegaraan(warga_negara_id: unknown): Promise<string> {
