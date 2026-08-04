@@ -6,23 +6,14 @@
 // ============================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { json as sharedJson, getCorsHeaders } from "../_shared/cors.ts";
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-};
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
+function json(data: unknown, status = 200, origin: string | null = null) {
+  return sharedJson(data, status, origin);
 }
 
-function errorJson(message: string, status = 400) {
-  return json({ error: message }, status);
+function errorJson(message: string, status = 400, origin: string | null = null) {
+  return json({ error: message }, status, origin);
 }
 
 // ============================================================
@@ -560,8 +551,9 @@ async function processEvents(
 // ============================================================
 
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS_HEADERS });
+    return new Response("ok", { headers: getCorsHeaders(origin) });
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -578,11 +570,11 @@ Deno.serve(async (req: Request) => {
 
   if (fetchErr) {
     console.error("event-processor fetch error:", fetchErr);
-    return errorJson("Gagal mengambil events: " + fetchErr.message, 500);
+    return errorJson("Gagal mengambil events: " + fetchErr.message, 500, origin);
   }
 
   if (!events?.length) {
-    return json({ processed: 0, message: "Tidak ada event pending" });
+    return json({ processed: 0, message: "Tidak ada event pending" }, 200, origin);
   }
 
   // Proses events
@@ -599,5 +591,5 @@ Deno.serve(async (req: Request) => {
     processed: events.length,
     results,
     timestamp: new Date().toISOString(),
-  });
+  }, 200, origin);
 });

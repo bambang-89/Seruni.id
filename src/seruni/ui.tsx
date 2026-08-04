@@ -9,7 +9,16 @@ import { usePageHeroConfig } from "./lib/queries";
 import { Seo } from "./lib/seo";
 
 export function formatTanggal(iso: string) {
-  return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  if (!iso) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const parts = iso.split("-");
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  const d = new Date(iso);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
 }
 
 /**

@@ -5,18 +5,10 @@
 // ============================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { json as sharedJson, getCorsHeaders } from "../_shared/cors.ts";
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-};
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-  });
+function json(data: unknown, status = 200, origin: string | null = null) {
+  return sharedJson(data, status, origin);
 }
 
 // ============================================================
@@ -314,8 +306,9 @@ async function runIdmScorer(sb: ReturnType<typeof createClient>, tenantId: strin
 // ============================================================
 
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS_HEADERS });
+    return new Response("ok", { headers: getCorsHeaders(origin) });
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -328,13 +321,13 @@ Deno.serve(async (req: Request) => {
   if (!tenantId) {
     const { data: tenants } = await sb.from("tenants").select("id");
     if (!tenants?.length) {
-      return json({ message: "Tidak ada tenant", processed: 0 });
+      return json({ message: "Tidak ada tenant", processed: 0 }, 200, origin);
     }
 
     const results = await Promise.all(tenants.map((t: any) => runIdmScorer(sb, t.id)));
-    return json({ processed: tenants.length, results, timestamp: new Date().toISOString() });
+    return json({ processed: tenants.length, results, timestamp: new Date().toISOString() }, 200, origin);
   }
 
   const result = await runIdmScorer(sb, tenantId);
-  return json({ ...result, timestamp: new Date().toISOString() });
+  return json({ ...result, timestamp: new Date().toISOString() }, 200, origin);
 });

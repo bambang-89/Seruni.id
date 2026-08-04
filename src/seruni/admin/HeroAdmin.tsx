@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { PageTitle, ImageField } from './AdminPages';
+import { PageTitle } from './AdminPages';
+import { ImageField } from '../components/TableCrud';
 import { StandaloneFormOverlay } from '../ui';
 import { useTenantId } from '../lib/tenant';
 import { useConfirm } from '../ui/ConfirmDialog';
@@ -14,6 +15,7 @@ type HeroRow = {
   image_path: string;
   video_path: string;
   is_active: boolean;
+  tenant_id?: string;
 };
 
 const inp = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary";
@@ -30,7 +32,7 @@ export function HeroAdmin() {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await (supabase as any).from('page_hero_config').select('*').order('page_route');
+    const { data, error } = await supabase.from('page_hero_config').select('*').order('page_route');
     if (error) toast.error("Gagal memuat data: " + error.message);
     else setRows(data || []);
     setLoading(false);
@@ -45,15 +47,15 @@ export function HeroAdmin() {
     }
     
     const payload = { ...row };
-    if (tenantId) (payload as any).tenant_id = tenantId;
+    if (tenantId) payload.tenant_id = tenantId;
     
     if (payload.id) {
       const { id, ...updateData } = payload;
-      const { error } = await (supabase as any).from('page_hero_config').update(updateData).eq('id', id);
+      const { error } = await supabase.from('page_hero_config').update(updateData).eq('id', id);
       if (error) toast.error(error.message);
       else { toast.success("Tersimpan."); setDraft(null); load(); }
     } else {
-      const { error } = await (supabase as any).from('page_hero_config').insert(payload);
+      const { error } = await supabase.from('page_hero_config').insert(payload);
       if (error) toast.error(error.message);
       else { toast.success("Tersimpan."); setDraft(null); load(); }
     }
@@ -61,7 +63,7 @@ export function HeroAdmin() {
 
   const del = async (id: string) => {
     if (!(await confirm({ title: "Hapus hero konfigurasi ini?" }))) return;
-    const { error } = await (supabase as any).from('page_hero_config').delete().eq('id', id);
+    const { error } = await supabase.from('page_hero_config').delete().eq('id', id);
     if (error) toast.error(error.message);
     else { toast.success("Terhapus."); load(); }
   };
@@ -105,7 +107,7 @@ export function HeroAdmin() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1">Background Image</label>
-                <ImageField value={draft.image_path || ""} folder="hero" onChange={url => setDraft({ ...draft, image_path: url })} />
+                <ImageField value={draft.image_path || ""} folder="hero" onChange={(url: string) => setDraft({ ...draft, image_path: url })} />
               </div>
               
               <div>

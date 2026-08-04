@@ -212,8 +212,8 @@ function UsulanForm({ onSubmitted }: { onSubmitted: (tiket: string) => void }) {
   });
 
   const tenantId = useTenantId();
-  useAutofillPenduduk(form.nik, tenantId || "", (d) => {
-    if (d) setForm(f => ({ ...f, nama: d.nama, kontak: d.nomor_hp || f.kontak, dusun: d.alamat_lengkap || f.dusun }));
+  useAutofillPenduduk(form.nik, (d) => {
+    if (d) setForm(f => ({ ...f, nama: (d as any).nama, kontak: (d as any).nomor_hp || f.kontak, dusun: (d as any).dusun || f.dusun }));
   });
 
   const onFile = async (f: File | null) => {
@@ -243,11 +243,11 @@ function UsulanForm({ onSubmitted }: { onSubmitted: (tiket: string) => void }) {
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("submit-usulan", { body: { ...form, tenant_id: tenantId } });
     setBusy(false);
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error || error?.message || "Gagal mengirim usulan.");
+    if (error || (data)?.error) {
+      toast.error((data)?.error || error?.message || "Gagal mengirim usulan.");
       return;
     }
-    const tiket = (data as any).nomor_tiket as string;
+    const tiket = data.nomor_tiket as string;
     toast.success(`Usulan terkirim. Nomor tiket: ${tiket}`);
     onSubmitted(tiket);
     setForm({ nik: "", nama: "", kontak: "", dusun: "", kategori: "", judul: "", deskripsi: "", lokasi: "", foto_url: "" });
@@ -316,9 +316,9 @@ function UsulanCard({ u, onVoted }: { u: UsulanWarga; onVoted: () => void }) {
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("vote-usulan", { body: { usulan_id: u.id, dusun: u.dusun } });
     setBusy(false);
-    if (error || (data as any)?.error) {
-      const msg = (data as any)?.error || error?.message || "Gagal";
-      if ((data as any)?.already) { setVoted(true); localStorage.setItem(`voted:usulan:${u.id}`, "1"); }
+    if (error || (data)?.error) {
+      const msg = (data)?.error || error?.message || "Gagal";
+      if ((data)?.already) { setVoted(true); localStorage.setItem(`voted:usulan:${u.id}`, "1"); }
       toast.error(msg);
       return;
     }
@@ -365,7 +365,7 @@ function LacakTiket() {
     setNotFound(false); setHasil(null);
     const { data } = await supabase.from("usulan_warga").select("*").ilike("nomor_tiket", nomor.trim()).maybeSingle();
     if (!data) setNotFound(true);
-    else setHasil(data as any);
+    else setHasil(data);
   };
   return (
     <div>
@@ -482,9 +482,9 @@ function VotingCard({ topik, onVoted }: { topik: VotingTopik; onVoted: () => voi
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("vote-topik", { body: { topik_id: topik.id, opsi_id: opsiId } });
     setBusy(false);
-    if (error || (data as any)?.error) {
-      const msg = (data as any)?.error || error?.message || "Gagal";
-      if ((data as any)?.already) { setVoted(true); localStorage.setItem(`voted:topik:${topik.id}`, "1"); }
+    if (error || (data)?.error) {
+      const msg = (data)?.error || error?.message || "Gagal";
+      if ((data)?.already) { setVoted(true); localStorage.setItem(`voted:topik:${topik.id}`, "1"); }
       toast.error(msg);
       return;
     }

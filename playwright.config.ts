@@ -2,15 +2,17 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  retries: 0,
+  workers: 1,
+  reporter: [['html', { open: 'never' }], ['list']],
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:8083',
+    baseURL: process.env.BASE_URL || 'http://localhost:8080',
     trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
+    screenshot: 'on',
+    video: 'on',
+    headless: false,
   },
   projects: [
     {
@@ -18,12 +20,10 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: 'npm run dev',
-        url: 'http://localhost:8083',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120 * 1000,
-      },
+  webServer: {
+    command: 'npx vite --port 8080',
+    url: 'http://localhost:8080',
+    reuseExistingServer: true,
+    timeout: 30 * 1000,
+  },
 });

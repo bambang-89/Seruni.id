@@ -26,7 +26,7 @@ const listeners = new Map<string, Set<(v: PageConfig | null) => void>>();
 
 async function fetchOne(route: string) {
   try {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("page_config")
       .select("*")
       .eq("route", route)

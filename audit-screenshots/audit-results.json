@@ -1,0 +1,245 @@
+[
+  {
+    "name": "home",
+    "url": "/",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "profil-desa",
+    "url": "/profil-desa",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "struktur",
+    "url": "/struktur",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "wilayah",
+    "url": "/wilayah",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "lembaga",
+    "url": "/lembaga",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "layanan",
+    "url": "/layanan",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "layanan-surat",
+    "url": "/layanan/surat",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "service-center",
+    "url": "/service-center",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "berita",
+    "url": "/berita",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "galeri",
+    "url": "/galeri",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "pengumuman",
+    "url": "/pengumuman",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "kalender",
+    "url": "/kalender",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "statistik",
+    "url": "/statistik/penduduk",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "pembangunan",
+    "url": "/pembangunan",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": [
+      "Failed to fetch dynamically imported module: http://localhost:8080/src/seruni/pages.tsx?t=1785355659423",
+      "Failed to fetch dynamically imported module: http://localhost:8080/src/seruni/pages.tsx?t=1785355659423"
+    ]
+  },
+  {
+    "name": "potensi",
+    "url": "/potensi",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "keuangan",
+    "url": "/keuangan",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "bansos",
+    "url": "/bansos",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "pbb",
+    "url": "/layanan/pbb",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "langganan-wa",
+    "url": "/langganan-wa",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "peta",
+    "url": "/peta",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "admin-login",
+    "url": "/admin/login",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "admin-dashboard",
+    "url": "/admin",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "admin-surat-ajuan",
+    "url": "/admin/surat-ajuan",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "admin-surat-terbit",
+    "url": "/admin/surat-terbit",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "admin-penduduk",
+    "url": "/admin/penduduk",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "admin-jenis-surat",
+    "url": "/admin/jenis-surat",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "admin-partisipasi",
+    "url": "/admin/partisipasi",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "admin-aduan",
+    "url": "/admin/aduan",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "admin-site",
+    "url": "/admin/site",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  },
+  {
+    "name": "admin-workflow",
+    "url": "/admin/workflow",
+    "blank": false,
+    "has404": false,
+    "hasError": false,
+    "errors": []
+  }
+]

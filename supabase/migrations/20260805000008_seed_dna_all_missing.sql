@@ -8,7 +8,7 @@ DECLARE v_tenant_id UUID; v_jenis UUID;
 BEGIN SELECT id INTO v_tenant_id FROM public.tenants LIMIT 1;
 
 -- 475.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''475.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '475.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -25,7 +25,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''475.0' LIMIT
   END IF;
 
 -- 510.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''510.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '510.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text, options)
     VALUES
@@ -42,7 +42,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''510.0' LIMIT
   END IF;
 
 -- 477.4
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''477.4' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '477.4' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -61,7 +61,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''477.4' LIMIT
   END IF;
 
 -- 477.3
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''477.3' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '477.3' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text, options)
     VALUES
@@ -82,7 +82,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''477.3' LIMIT
   END IF;
 
 -- 465.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''465.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '465.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text, options)
     VALUES
@@ -95,7 +95,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''465.0' LIMIT
   END IF;
 
 -- 474.6
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.6' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.6' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -108,7 +108,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.6' LIMIT
   END IF;
 
 -- 474.7
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.7' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.7' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -125,7 +125,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.7' LIMIT
   END IF;
 
 -- 474.9
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.9' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.9' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -140,7 +140,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.9' LIMIT
   END IF;
 
 -- 474.3
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.3' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.3' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -156,7 +156,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.3' LIMIT
   END IF;
 
 -- 451.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''451.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '451.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -192,7 +192,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''451.0' LIMIT
   END IF;
 
 -- 477.1
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''477.1' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '477.1' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -209,7 +209,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''477.1' LIMIT
   END IF;
 
 -- 140.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''140.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '140.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -231,7 +231,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''140.0' LIMIT
   END IF;
 
 -- 30.1
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''30.1' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '30.1' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -260,7 +260,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''30.1' LIMIT 
   END IF;
 
 -- 30.9
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''30.9' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '30.9' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -274,7 +274,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''30.9' LIMIT 
   END IF;
 
 -- 474.4
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.4' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.4' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -283,7 +283,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.4' LIMIT
   END IF;
 
 -- 474.5
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.5' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.5' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -292,7 +292,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.5' LIMIT
   END IF;
 
 -- 440.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''440.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '440.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -307,7 +307,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''440.0' LIMIT
   END IF;
 
 -- 523.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''523.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '523.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -322,7 +322,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''523.0' LIMIT
   END IF;
 
 -- 520.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''520.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '520.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -337,7 +337,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''520.0' LIMIT
   END IF;
 
 -- 461.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''461.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '461.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -354,7 +354,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''461.0' LIMIT
   END IF;
 
 -- 610.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''610.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '610.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -372,7 +372,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''610.0' LIMIT
   END IF;
 
 -- 420.0
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''420.0' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '420.0' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -387,7 +387,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''420.0' LIMIT
   END IF;
 
 -- 474.10
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.10' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.10' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -400,7 +400,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.10' LIMI
   END IF;
 
 -- 474.12
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.12' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.12' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -413,7 +413,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.12' LIMI
   END IF;
 
 -- 474.13
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.13' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.13' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -425,7 +425,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.13' LIMI
   END IF;
 
 -- 477.5
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''477.5' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '477.5' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -442,7 +442,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''477.5' LIMIT
   END IF;
 
 -- 474.14
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.14' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.14' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -452,7 +452,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.14' LIMI
   END IF;
 
 -- 474.8
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.8' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '474.8' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -465,7 +465,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''474.8' LIMIT
   END IF;
 
 -- 140.1
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''140.1' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '140.1' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -478,7 +478,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''140.1' LIMIT
   END IF;
 
 -- 451.1
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''451.1' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '451.1' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -492,7 +492,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''451.1' LIMIT
   END IF;
 
 -- 451.2
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''451.2' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '451.2' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -504,7 +504,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''451.2' LIMIT
   END IF;
 
 -- 451.3
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''451.3' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '451.3' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES
@@ -519,7 +519,7 @@ SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''451.3' LIMIT
   END IF;
 
 -- 451.4
-SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = ''451.4' LIMIT 1;
+SELECT id INTO v_jenis FROM public.surat_jenis WHERE kode_surat = '451.4' LIMIT 1;
   IF v_jenis IS NOT NULL THEN
     INSERT INTO public.surat_jenis_dna (tenant_id, jenis_surat_id, kode_surat, field_name, label, tipe, placeholder, wajib, grup, urutan, help_text)
     VALUES

@@ -41,7 +41,7 @@ export function useNavItems(): { data: NavParent[]; loaded: boolean } {
       setRows(pv);
       return;
     }
-    (supabase as any)
+    supabase
       .from("nav_item")
       .select("*")
       .eq("aktif", true)
@@ -108,7 +108,7 @@ export function useFooterColumns(): { data: FooterCol[]; loaded: boolean } {
       setRows(pv);
       return;
     }
-    (supabase as any)
+    supabase
       .from("footer_column")
       .select("*")
       .eq("aktif", true)

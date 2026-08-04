@@ -67,8 +67,23 @@ function Header() {
   const loc = useLocation();
   const { data: settings } = useSiteSettings();
   const { data: profilDesa } = useProfilDesa();
-  const logoUrl = profilDesa?.gambar_logo_url ? supabase.storage.from('seruni-media').getPublicUrl(profilDesa.gambar_logo_url).data.publicUrl : undefined;
-  
+  const { tenant } = useTenant();
+
+  // Logo: prioritas tenants.logo_url (dari Pengaturan Umum) → profil_desa.gambar_logo_url (legacy)
+  const logoUrl = (() => {
+    // 1. Logo dari Pengaturan Umum (tenants table)
+    const tenantLogo = tenant?.logo_url;
+    if (tenantLogo) {
+      if (tenantLogo.startsWith("http")) return tenantLogo;
+      return supabase.storage.from("seruni-media").getPublicUrl(tenantLogo).data.publicUrl;
+    }
+    // 2. Fallback ke profil_desa.gambar_logo_url
+    const p = profilDesa?.gambar_logo_url;
+    if (!p) return undefined;
+    if (p.startsWith("http")) return p;
+    return supabase.storage.from("seruni-media").getPublicUrl(p).data.publicUrl;
+  })();
+
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const toggleBtnRef = useRef<HTMLButtonElement | null>(null);
   const megaRef = useRef<HTMLDivElement | null>(null);
@@ -78,6 +93,25 @@ function Header() {
   const siteName = settings?.nama_resmi ?? "Desa Seruni";
   const waNumber = settings?.nomor_wa_resmi ?? "08123456789";
   const waDigits = waNumber.replace(/\D/g, "");
+
+  // Update Favicon dynamically based on tenant settings
+  useEffect(() => {
+    const faviconUrl = tenant?.favicon_url;
+    if (faviconUrl) {
+      let fullUrl = faviconUrl;
+      if (!fullUrl.startsWith("http")) {
+        fullUrl = supabase.storage.from("seruni-media").getPublicUrl(faviconUrl).data.publicUrl;
+      }
+      let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      link.href = fullUrl;
+    }
+  }, [tenant?.favicon_url]);
+
   const email = settings?.email ?? "info@desa.go.id";
   const address = settings?.alamat_kantor ?? "Kantor Desa";
   const social = settings?.social_media ?? {};
@@ -532,6 +566,14 @@ function Footer() {
   const siteName = settings?.nama_resmi ?? "Desa Seruni";
   const address = settings?.alamat_kantor ?? "Kantor Desa";
   const social = settings?.social_media ?? {};
+  // Wilayah: gabungkan dari site_settings dan tenant
+  const { tenant: footerTenant } = useTenant();
+  const wilayah = settings?.wilayah ?? [
+    footerTenant?.alamat?.kecamatan ? `Kec. ${footerTenant.alamat.kecamatan}` : null,
+    footerTenant?.alamat?.kabupaten ? `Kab. ${footerTenant.alamat.kabupaten}` : null,
+    footerTenant?.alamat?.provinsi || null,
+  ].filter(Boolean).join(", ") ?? "";
+
 
   return (
     <footer className="bg-[color:var(--color-primer-dark)] text-primary-foreground pt-14 pb-8">
@@ -544,7 +586,7 @@ function Footer() {
               </span>
               <div>
                 <div className="font-display text-lg font-semibold">{siteName}</div>
-                <div className="text-xs text-primary-foreground/70">{settings?.wilayah ?? "Kecamatan, Kabupaten, Provinsi"}</div>
+                <div className="text-xs text-primary-foreground/70">{wilayah || "Kecamatan, Kabupaten, Provinsi"}</div>
               </div>
             </div>
             <p className="text-sm text-primary-foreground/70 max-w-md">

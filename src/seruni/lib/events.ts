@@ -145,12 +145,15 @@ export interface PublishEventOptions {
 // ============================================================
 
 export function formatTanggalIndonesia(date: string | Date): string {
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const parts = date.split("-");
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
 }
 
 // ============================================================

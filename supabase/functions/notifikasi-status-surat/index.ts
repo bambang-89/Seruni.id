@@ -10,15 +10,11 @@
  * }
  */
 
+// @ts-expect-error Deno esm imports are not recognized by default tsconfig
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { corsHeaders } from "../_shared/cors.ts";
+import { json as sharedJson, getCorsHeaders } from "../_shared/cors.ts";
 
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
+declare const Deno: any;
 
 function normalizeNomor(phone: string): string {
   const cleaned = (phone || "").replace(/\D/g, "");
@@ -88,8 +84,11 @@ function buildPesan(
   ].filter(Boolean).join("\n");
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("origin");
+  const json = (data: unknown, status = 200) => sharedJson(data, status, origin);
+
+  if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(origin) });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const body = await req.json().catch(() => ({}));
@@ -113,13 +112,13 @@ Deno.serve(async (req) => {
   );
 
   // Support both surat_ajuan_id and surat_terbit_id
-  let ajuan: { nomor_tiket: string; nama: string; kontak: string; jenis_surat_id: string | null } | null = null;
+  let ajuan: { nomor_tiket: string; nama: string; kontak: string; jenis_surat_id: string | null; tenant_id?: string } | null = null;
   let ajuanId: string | null = body.surat_ajuan_id || null;
 
   if (body.surat_ajuan_id) {
     const { data, error } = await supabase
       .from("surat_ajuan")
-      .select("nomor_tiket, nama, kontak, jenis_surat_id")
+      .select("nomor_tiket, nama, kontak, jenis_surat_id, tenant_id")
       .eq("id", body.surat_ajuan_id)
       .single();
     if (error || !data) return json({ error: "Pengajuan tidak ditemukan" }, 404);
@@ -135,7 +134,7 @@ Deno.serve(async (req) => {
     if (terbit.surat_ajuan_id) {
       const { data, error } = await supabase
         .from("surat_ajuan")
-        .select("nomor_tiket, nama, kontak, jenis_surat_id")
+        .select("nomor_tiket, nama, kontak, jenis_surat_id, tenant_id")
         .eq("id", terbit.surat_ajuan_id)
         .single();
       if (error || !data) return json({ error: "Pengajuan tidak ditemukan" }, 404);
@@ -160,7 +159,16 @@ Deno.serve(async (req) => {
   }
 
   // Kirim WA (non-blocking, tapi harus di-await agar Edge Function tidak mati duluan)
-  const fonnteToken = Deno.env.get("FONNTE_TOKEN");
+  let fonnteToken: string | null = null;
+  if (ajuan.tenant_id) {
+    const { data: tenantData } = await supabase.from("tenants").select("fonnte_token").eq("id", ajuan.tenant_id).maybeSingle();
+    // Gunakan token desa, atau set ke string kosong/null jika tidak ada (untuk disable WA)
+    fonnteToken = tenantData?.fonnte_token || null;
+  } else {
+    // Jika tidak ada tenant_id sama sekali (super admin?), fallback ke environment variable
+    fonnteToken = Deno.env.get("FONNTE_TOKEN") || null;
+  }
+
   if (fonnteToken && ajuan.kontak) {
     const pesan = buildPesan(ajuan.nama, ajuan.nomor_tiket, status_baru, jenisNama);
     await sendFonnte(fonnteToken, ajuan.kontak, pesan);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-
+import { Seo } from "../lib/seo";
 import { useSiteSettings } from "../lib/zeroHardcode";
 import { StandaloneLayout } from "../ui";
 
@@ -42,6 +42,7 @@ export default function LoginPage() {
 
   return (
     <StandaloneLayout>
+      <Seo title="Login Admin" description="Masuk ke portal administrasi desa" />
       <div className="w-full max-w-md mx-auto flex-1 flex flex-col justify-center">
         <div className="text-center mb-6">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent text-primary font-display font-bold stempel-badge">

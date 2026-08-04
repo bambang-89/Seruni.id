@@ -1,8 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { raw } from "../lib/queries";
 import { PageTitle } from "./AdminPages";
-import { ImageField } from "./AdminPages";
+import { ImageField } from "../components/TableCrud";
 import { StandaloneFormOverlay } from "../ui";
 import { useTenantId } from "../lib/tenant";
 import { useConfirm } from "../ui/ConfirmDialog";
@@ -72,7 +73,7 @@ function RefSelect({
 }) {
   const [opts, setOpts] = useState<Option[]>([]);
   useEffect(() => {
-    (supabase as any).from(table).select(`${valueCol},${labelCol}`).eq("aktif", true).then(({ data }: any) => {
+    raw.from(table).select(`${valueCol},${labelCol}`).eq("aktif", true).then(({ data }: any) => {
       if (data) {
         const sorted = [...data].sort((a: any, b: any) => String(a[labelCol] || "").localeCompare(String(b[labelCol] || "")));
         setOpts(sorted.map((d: any) => ({
@@ -117,12 +118,47 @@ function WilayahSelect({
   );
 }
 
+// ===================== RtRw Select =====================
+function RtRwSelect({
+  label, value, onChange, table, dusunId, placeholder = "— pilih —"
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  table: string; dusunId?: string; placeholder?: string;
+}) {
+  const [opts, setOpts] = useState<Option[]>([]);
+  useEffect(() => {
+    if (!dusunId) { setOpts([]); return; }
+    raw.from(table).select("nomor").eq("dusun_id", dusunId).then(({ data }: any) => {
+      if (data) {
+        const sorted = [...data].sort((a: any, b: any) => String(a.nomor || "").localeCompare(String(b.nomor || "")));
+        setOpts(sorted.map((d: any) => ({
+          value: String(d.nomor ?? ""),
+          label: String(d.nomor ?? ""),
+        })));
+      }
+    });
+  }, [table, dusunId]);
+
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1">{label}</label>
+      <select value={value} onChange={e => onChange(e.target.value)} className={inp} autoComplete="off" disabled={!dusunId}>
+        <option value="">{placeholder}</option>
+        {opts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  );
+}
+
 // ===================== Main PendudukAdmin Component =====================
 export function PendudukAdmin() {
   const [rows, setRows] = useState<PendudukRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<PendudukRow | null>(null);
   const [search, setSearch] = useState("");
+  const [filterDusun, setFilterDusun] = useState("");
+  const [filterJk, setFilterJk] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [page, setPage] = useState(1);
   const confirm = useConfirm();
   const [totalCount, setTotalCount] = useState(0);
@@ -138,18 +174,18 @@ export function PendudukAdmin() {
 
   // Load dusun names for table display
   useEffect(() => {
-    (supabase as any).from("ref_dusun").select("id,nama").eq("aktif", true).then(({ data }: any) => {
+    raw.from("ref_dusun").select("id,nama").eq("aktif", true).eq("tenant_id", tenantId).then(({ data }: any) => {
       if (data) {
         const m = new Map<string, string>();
         data.forEach((r: any) => m.set(r.id, r.nama));
         setDusunNameMap(m);
       }
     });
-  }, []);
+  }, [tenantId]);
 
   const exportCSV = async () => {
     toast.loading("Menyiapkan data eksport...", { id: "export-csv" });
-    const { data, error } = await supabase.from("penduduk").select("*");
+    const { data, error } = await supabase.from("penduduk").select("*").eq("tenant_id", tenantId || "");
     if (error) { toast.error(error.message, { id: "export-csv" }); return; }
     if (!data || data.length === 0) { toast.error("Tidak ada data untuk dieksport", { id: "export-csv" }); return; }
     const csv = Papa.unparse(data);
@@ -172,11 +208,24 @@ export function PendudukAdmin() {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const csvRows = results.data as any[];
+        const csvRows = results.data as Record<string, unknown>[];
         if (csvRows.length === 0) { toast.error("File CSV kosong", { id: "import-csv" }); return; }
         try {
+          const errors = [];
+          for (let i = 0; i < csvRows.length; i++) {
+             const row: any = csvRows[i];
+             if (!row.nik || String(row.nik).length !== 16) errors.push(`Baris ${i + 2}: NIK harus 16 digit.`);
+             if (!row.nama || String(row.nama).trim().length === 0) errors.push(`Baris ${i + 2}: Nama wajib diisi.`);
+             if (!row.jenis_kelamin || !['L','P'].includes(String(row.jenis_kelamin).toUpperCase())) errors.push(`Baris ${i + 2}: Jenis kelamin harus L/P.`);
+          }
+          if (errors.length > 0) {
+            toast.error(`Terdapat ${errors.length} baris tidak valid. Lihat console log.`, { id: "import-csv", duration: 5000 });
+            console.error("CSV Import Validation Errors:", errors);
+            return;
+          }
+
           const niks = csvRows.map((r: any) => String(r.nik)).filter(Boolean);
-          const { data: existing } = await supabase.from("penduduk").select("id, nik").in("nik", niks);
+          const { data: existing } = await supabase.from("penduduk").select("id, nik").eq("tenant_id", tenantId || "").in("nik", niks);
           const nikToId = new Map(existing?.map((e: any) => [e.nik, e.id]) ?? []);
           const payload = csvRows.map((r: any) => {
             const processed: any = { ...r };
@@ -213,7 +262,7 @@ export function PendudukAdmin() {
 
   useEffect(() => {
     // Load provinsi (fixed: query by active flag or just all)
-    (supabase as any).from("ref_provinsi").select("id,nama").order("nama")
+    raw.from("ref_provinsi").select("id,nama").order("nama")
       .then(({ data }: any) => setProvinsiOpts(data?.map((r: any) => ({ value: r.id, label: r.nama })) ?? []));
   }, []);
 
@@ -222,37 +271,22 @@ export function PendudukAdmin() {
     if (!draft?.provinsi_id) { setKabupatenOpts([]); setKecamatanOpts([]); setDesaOpts([]); return; }
     const prov = provinsiOpts.find(p => p.value === draft.provinsi_id);
     if (!prov) return;
-    // Determine kode_provinsi from label (NTB = "52", others need lookup)
-    // For Lombok Timur (NTB), the kode starts with "52"
-    const provName = prov.label.toLowerCase();
-    let kodeProv = "";
-    if (provName.includes("nusa tenggara barat") || provName === "ntb") kodeProv = "52";
-    else if (provName.includes("nusa tenggara timur") || provName === "ntt") kodeProv = "53";
-    else if (provName.includes("jawa barat")) kodeProv = "32";
-    else if (provName.includes("jawa tengah")) kodeProv = "33";
-    else if (provName.includes("jawa timur")) kodeProv = "35";
-    // Fallback: query by name
-    if (!kodeProv) {
-      (supabase as any).from("ref_provinsi").select("kode").eq("id", prov.value).maybeSingle()
-        .then(({ data: pData }: any) => {
-          if (pData?.kode) {
-            (supabase as any).from("ref_kabupaten").select("id,nama").eq("kode_provinsi", pData.kode).order("nama")
-              .then(({ data: kb }: any) => setKabupatenOpts(kb?.map((r: any) => ({ value: r.id, label: r.nama })) ?? []));
-          }
-        });
-      return;
-    }
-    (supabase as any).from("ref_kabupaten").select("id,nama").eq("kode_provinsi", kodeProv).order("nama")
-      .then(({ data: kb }: any) => setKabupatenOpts(kb?.map((r: any) => ({ value: r.id, label: r.nama })) ?? []));
-  }, [draft?.provinsi_id]);
+    raw.from("ref_provinsi").select("kode").eq("id", prov.value).maybeSingle()
+      .then(({ data: pData }: any) => {
+        if (pData?.kode) {
+          raw.from("ref_kabupaten").select("id,nama").eq("kode_provinsi", pData.kode).order("nama")
+            .then(({ data: kb }: any) => setKabupatenOpts(kb?.map((r: any) => ({ value: r.id, label: r.nama })) ?? []));
+        }
+      });
+  }, [draft?.provinsi_id, provinsiOpts]);
 
   // Cascade: kabupaten → kecamatan (by kode_kabupaten)
   useEffect(() => {
     if (!draft?.kabupaten_id) { setKecamatanOpts([]); setDesaOpts([]); return; }
-    (supabase as any).from("ref_kabupaten").select("kode").eq("id", draft.kabupaten_id).maybeSingle()
+    raw.from("ref_kabupaten").select("kode").eq("id", draft.kabupaten_id).maybeSingle()
       .then(({ data: kb }: any) => {
         if (kb?.kode) {
-          (supabase as any).from("ref_kecamatan").select("id,nama").eq("kode_kabupaten", kb.kode).order("nama")
+          raw.from("ref_kecamatan").select("id,nama").eq("kode_kabupaten", kb.kode).order("nama")
             .then(({ data: kec }: any) => setKecamatanOpts(kec?.map((r: any) => ({ value: r.id, label: r.nama })) ?? []));
         }
       });
@@ -261,28 +295,38 @@ export function PendudukAdmin() {
   // Cascade: kecamatan → desa (by kode_kecamatan)
   useEffect(() => {
     if (!draft?.kecamatan_id) { setDesaOpts([]); return; }
-    (supabase as any).from("ref_kecamatan").select("kode").eq("id", draft.kecamatan_id).maybeSingle()
+    raw.from("ref_kecamatan").select("kode").eq("id", draft.kecamatan_id).maybeSingle()
       .then(({ data: kec }: any) => {
         if (kec?.kode) {
-          (supabase as any).from("ref_desa").select("id,nama").eq("kode_kecamatan", kec.kode).order("nama")
+          raw.from("ref_desa").select("id,nama").eq("kode_kecamatan", kec.kode).order("nama")
             .then(({ data: ds }: any) => setDesaOpts(ds?.map((r: any) => ({ value: r.id, label: r.nama })) ?? []));
         }
       });
   }, [draft?.kecamatan_id]);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
-    let q = supabase.from("penduduk").select("*", { count: "exact" }).order("nama");
-    if (search) q = q.ilike("nama", `%${search}%`);
+    let q = supabase.from("penduduk").select("*", { count: "exact" }).eq("tenant_id", tenantId || "").order("nama");
+    if (search) {
+      if (/^\d+$/.test(search)) {
+        q = q.ilike("nik", `%${search}%`);
+      } else {
+        q = q.ilike("nama", `%${search}%`);
+      }
+    }
+    if (filterDusun) q = q.eq("dusun", filterDusun);
+    if (filterJk) q = q.eq("jenis_kelamin", filterJk);
+    if (filterStatus) q = q.eq("status_hidup", filterStatus);
+    
     q = q.range((page - 1) * pageSize, page * pageSize - 1);
     q.then(({ data, count }: any) => {
       setRows(data || []);
       setTotalCount(count || 0);
       setLoading(false);
     });
-  };
+  }, [search, page, tenantId, filterDusun, filterJk, filterStatus]);
 
-  useEffect(() => { load(); }, [search, page]);
+  useEffect(() => { load(); }, [load]);
 
   const blankRow = (): PendudukRow => ({
     nik: "", nama: "", jenis_kelamin: "L", tempat_lahir: "", tanggal_lahir: "",
@@ -292,7 +336,7 @@ export function PendudukAdmin() {
   });
 
   const save = async (row: PendudukRow) => {
-    const { id, agama_id, pendidikan_id, pekerjaan_id, status_perkawinan_id, ...payload } = row;
+    const { id, agama_id, pendidikan_id, pekerjaan_id, status_perkawinan_id, provinsi_id, kabupaten_id, kecamatan_id, desa_id, dusun_id, ...payload } = row;
     if (!payload.nik || !/^\d{16}$/.test(payload.nik)) {
       setNikError("NIK harus 16 digit angka");
       return;
@@ -301,15 +345,23 @@ export function PendudukAdmin() {
       toast.error("Nama harus diisi");
       return;
     }
-    if (tenantId) (payload as any).tenant_id = tenantId;
-    // Inject _id fields if available (FK resolution)
-    if (agama_id) (payload as any).agama_id = agama_id;
-    if (pendidikan_id) (payload as any).pendidikan_id = pendidikan_id;
-    if (pekerjaan_id) (payload as any).pekerjaan_id = pekerjaan_id;
-    if (status_perkawinan_id) (payload as any).status_perkawinan_id = status_perkawinan_id;
+    if (tenantId) (payload as Record<string, unknown>).tenant_id = tenantId;
+    // Convert empty string → null for all UUID FK columns (Postgres rejects "" for uuid type)
+    const uuidOrNull = (v: string | undefined) => (v && v.trim() !== "" ? v : null);
+    (payload as Record<string, unknown>).agama_id = uuidOrNull(agama_id);
+    (payload as Record<string, unknown>).pendidikan_id = uuidOrNull(pendidikan_id);
+    (payload as Record<string, unknown>).pekerjaan_id = uuidOrNull(pekerjaan_id);
+    (payload as Record<string, unknown>).status_perkawinan_id = uuidOrNull(status_perkawinan_id);
+    (payload as Record<string, unknown>).provinsi_id = uuidOrNull(provinsi_id);
+    (payload as Record<string, unknown>).kabupaten_id = uuidOrNull(kabupaten_id);
+    (payload as Record<string, unknown>).kecamatan_id = uuidOrNull(kecamatan_id);
+    (payload as Record<string, unknown>).desa_id = uuidOrNull(desa_id);
+    (payload as Record<string, unknown>).dusun_id = uuidOrNull(dusun_id);
+    // keluarga_id is also UUID — convert "" → null
+    if ((payload as Record<string, unknown>).keluarga_id === "") (payload as Record<string, unknown>).keluarga_id = null;
 
     const q = id
-      ? supabase.from("penduduk").update(payload as any).eq("id", id)
+      ? supabase.from("penduduk").update(payload).eq("id", id!)
       : supabase.from("penduduk").insert(payload as any);
     const { error } = await q;
     if (error) { toast.error(error.message); return; }
@@ -337,8 +389,8 @@ export function PendudukAdmin() {
     if (/^\d{16}$/.test(nik)) {
       nikDebounceRef.current = setTimeout(async () => {
         setNikLoading(true);
-        const { data: pData } = await supabase.from("penduduk").select("*").eq("nik", nik).maybeSingle();
-        const p = pData as any;
+        const { data: pData } = await supabase.from("penduduk").select("*").eq("tenant_id", tenantId || "").eq("nik", nik).maybeSingle();
+        const p = pData as Record<string, unknown>;
         if (!p) { setNikLoading(false); return; }
         // Existing NIK found — only auto-fill if this is a NEW row (no id yet)
         setDraft((prev: any) => {
@@ -389,7 +441,7 @@ export function PendudukAdmin() {
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  const FormFields = ({ row }: { row: PendudukRow }) => (
+  const renderFormFields = (row: PendudukRow) => (
     <div className="grid sm:grid-cols-2 gap-3">
       {/* NIK */}
       <div className="sm:col-span-2">
@@ -437,25 +489,25 @@ export function PendudukAdmin() {
       {/* Ref dropdowns — by label, back-fill UUID when match found */}
       <RefSelect label="Agama" value={row.agama} onChange={v => setDraft({ ...row, agama: v })} table="ref_agama" valueCol="kode" labelCol="nama"
         onIdFound={(label) => {
-          (supabase as any).from("ref_agama").select("id,nama").eq("nama", label).maybeSingle()
+          raw.from("ref_agama").select("id,nama").eq("nama", label).maybeSingle()
             .then(({ data: d }: any) => { if (d?.id) setDraft((prev: any) => ({ ...prev, agama_id: d.id })); });
         }}
       />
       <RefSelect label="Pendidikan" value={row.pendidikan} onChange={v => setDraft({ ...row, pendidikan: v })} table="ref_pendidikan" valueCol="nama" labelCol="nama"
         onIdFound={(label) => {
-          (supabase as any).from("ref_pendidikan").select("id,nama").eq("nama", label).maybeSingle()
+          raw.from("ref_pendidikan").select("id,nama").eq("nama", label).maybeSingle()
             .then(({ data: d }: any) => { if (d?.id) setDraft((prev: any) => ({ ...prev, pendidikan_id: d.id })); });
         }}
       />
       <RefSelect label="Pekerjaan" value={row.pekerjaan} onChange={v => setDraft({ ...row, pekerjaan: v })} table="ref_pekerjaan" valueCol="nama" labelCol="nama"
         onIdFound={(label) => {
-          (supabase as any).from("ref_pekerjaan").select("id,nama").eq("nama", label).maybeSingle()
+          raw.from("ref_pekerjaan").select("id,nama").eq("nama", label).maybeSingle()
             .then(({ data: d }: any) => { if (d?.id) setDraft((prev: any) => ({ ...prev, pekerjaan_id: d.id })); });
         }}
       />
       <RefSelect label="Status Perkawinan" value={row.status_kawin} onChange={v => setDraft({ ...row, status_kawin: v })} table="ref_status_perkawinan" valueCol="kode" labelCol="nama"
         onIdFound={(label) => {
-          (supabase as any).from("ref_status_perkawinan").select("id,nama").eq("nama", label).maybeSingle()
+          raw.from("ref_status_perkawinan").select("id,nama").eq("nama", label).maybeSingle()
             .then(({ data: d }: any) => { if (d?.id) setDraft((prev: any) => ({ ...prev, status_perkawinan_id: d.id })); });
         }}
       />
@@ -472,18 +524,16 @@ export function PendudukAdmin() {
           <WilayahSelect label="Desa/Kelurahan" value={row.desa_id || ""} onChange={v => setDraft({ ...row, desa_id: v })} options={desaOpts} />
           <RefSelect label="Dusun" value={row.dusun || ""} onChange={v => setDraft({ ...row, dusun: v })} table="ref_dusun" valueCol="id" labelCol="nama"
             onIdFound={(label) => {
-              (supabase as any).from("ref_dusun").select("id,nama").eq("nama", label).maybeSingle()
+              raw.from("ref_dusun").select("id,nama").eq("nama", label).maybeSingle()
                 .then(({ data: d }: any) => { if (d?.id) setDraft((prev: any) => ({ ...prev, dusun_id: d.id })); });
             }}
           />
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="block text-xs font-medium mb-1">RT</label>
-              <input value={row.rt} onChange={e => setDraft({ ...row, rt: e.target.value })} className={inp} placeholder="001" autoComplete="off" />
+              <RtRwSelect label="RT" value={row.rt || ""} onChange={v => setDraft({ ...row, rt: v })} table="ref_rt" dusunId={row.dusun_id} />
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-medium mb-1">RW</label>
-              <input value={row.rw} onChange={e => setDraft({ ...row, rw: e.target.value })} className={inp} placeholder="001" autoComplete="off" />
+              <RtRwSelect label="RW" value={row.rw || ""} onChange={v => setDraft({ ...row, rw: v })} table="ref_rw" dusunId={row.dusun_id} />
             </div>
           </div>
         </div>
@@ -517,7 +567,7 @@ export function PendudukAdmin() {
       {/* Foto */}
       <div className="sm:col-span-2">
         <label className="block text-xs font-medium mb-1">Foto Penduduk</label>
-        <ImageField value={row.foto_url || ""} folder="penduduk" onChange={url => setDraft({ ...row, foto_url: url })} />
+        <ImageField value={row.foto_url || ""} folder="penduduk" onChange={(url: string) => setDraft({ ...row, foto_url: url })} />
       </div>
     </div>
   );
@@ -527,9 +577,28 @@ export function PendudukAdmin() {
       <PageTitle title="Penduduk" desc="Data warga desa (NIK unik). Menjadi rujukan modul surat, bansos, pemilu, dan analisis." />
 
       <div className="flex flex-wrap gap-2 justify-between items-center mb-4">
-        <div className="flex gap-2 items-center">
-          <input type="search" placeholder="Cari nama..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="rounded-md border border-input bg-background px-3 py-2 text-sm w-48" autoComplete="off" />
-          <span className="text-xs text-muted-foreground">{totalCount} data</span>
+        <div className="flex gap-2 items-center flex-wrap">
+          <input type="search" placeholder="Cari NIK/Nama..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} className="rounded-md border border-input bg-background px-3 py-2 text-sm w-48" autoComplete="off" />
+          <select value={filterJk} onChange={e => { setFilterJk(e.target.value); setPage(1); }} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
+            <option value="">Semua JK</option>
+            <option value="L">Laki-laki</option>
+            <option value="P">Perempuan</option>
+          </select>
+          <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
+            <option value="">Semua Status</option>
+            <option value="hidup">Hidup</option>
+            <option value="meninggal">Meninggal</option>
+            <option value="pindah">Pindah</option>
+          </select>
+          {Array.from(dusunNameMap.values()).length > 0 && (
+            <select value={filterDusun} onChange={e => { setFilterDusun(e.target.value); setPage(1); }} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
+              <option value="">Semua Dusun</option>
+              {Array.from(dusunNameMap.values()).map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          )}
+          <span className="text-xs text-muted-foreground ml-2">{totalCount} data</span>
         </div>
         <div className="flex gap-2">
           <button onClick={exportCSV} className={btnSec}>Eksport CSV</button>
@@ -543,7 +612,7 @@ export function PendudukAdmin() {
       {draft && (
         <StandaloneFormOverlay title={`${draft.id ? "Edit" : "Tambah"} Penduduk`} onClose={() => { setDraft(null); setNikError(null); }}>
           <div className="space-y-4">
-            <FormFields row={draft} />
+            {renderFormFields(draft)}
             <div className="flex justify-end gap-3 pt-4 border-t border-current/10 mt-6">
               <button onClick={() => { setDraft(null); setNikError(null); }} className="px-4 py-2 text-sm bg-secondary text-secondary-foreground rounded-lg hover:opacity-90">Batal</button>
               <button onClick={() => save(draft)} className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:opacity-90">Simpan</button>
@@ -636,6 +705,4 @@ export function PendudukAdmin() {
   );
 }
 
-export function KeluargaAdmin() {
-  return null; // delegated to AdminOps
-}
+

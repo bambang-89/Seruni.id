@@ -40,6 +40,7 @@ export function PetaLeaflet({ points, center = [-8.535, 116.655], zoom = 13 }: {
     }).addTo(map);
     mapRef.current = map;
     return () => { map.remove(); mapRef.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

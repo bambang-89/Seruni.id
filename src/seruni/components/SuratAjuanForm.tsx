@@ -18,7 +18,7 @@ import {
   type IdentitasData,
 } from "@/seruni/lib/queries";
 import { useTenantId } from "@/seruni/lib/tenant";
-import { UploadField } from "@/seruni/components/SuratDokumenUpload";
+import { SuratDokumenUpload, UploadField, type DokumenSurat } from "@/seruni/components/SuratDokumenUpload";
 
 const inputCls =
   "mt-1 w-full border border-current/25 bg-transparent px-3 py-2 text-sm focus:outline-none focus:border-accent";
@@ -51,7 +51,7 @@ function RelationalSelectField({ field, value, onChange, error }: { field: Surat
     // 2. If object (Relational mapping) -> e.g. { relation: { table: "wilayah_dusun", labelCol: "nama", valueCol: "nama" } }
     const obj = rawOptions as any;
     if (obj && obj.relation && obj.relation.table) {
-      supabase.from(obj.relation.table).select(`${obj.relation.labelCol},${obj.relation.valueCol}`).then(({ data }) => {
+      (supabase as any).from(obj.relation.table).select(`${obj.relation.labelCol},${obj.relation.valueCol}`).then(({ data }: any) => {
         if (data) {
           setOpts(data.map((d: any) => ({
             value: d[obj.relation.valueCol],
@@ -70,6 +70,27 @@ function RelationalSelectField({ field, value, onChange, error }: { field: Surat
 
     setOpts([]);
   }, [field.options]);
+
+  useEffect(() => {
+    if (value && opts.length > 0) {
+      const exactMatch = opts.find(o => o.value === value);
+      if (!exactMatch) {
+        const valStr = String(value).toLowerCase().trim();
+        // Coba cari kecocokan mengabaikan kapitalisasi (misal: "dusun a" == "Dusun A")
+        // atau bila Dusun di DB adalah "01" sedangkan dari NIK adalah "001" (bisa diexpand nanti jika perlu)
+        // khusus untuk "001" -> "01" bisa kita tambahkan pengecekan angka jika diperlukan
+        const fuzzy = opts.find(o => 
+          String(o.value).toLowerCase().trim() === valStr || 
+          String(o.label).toLowerCase().trim() === valStr ||
+          // Khusus RT/RW, seringkali "001" vs "01"
+          (Number(o.value) === Number(valStr) && !isNaN(Number(valStr)))
+        );
+        if (fuzzy) {
+          onChange(fuzzy.value);
+        }
+      }
+    }
+  }, [value, opts, onChange]);
 
   return (
     <div className="space-y-1">
@@ -259,7 +280,7 @@ function FieldRenderer({
             label=""
             description={helpText || `Upload ${field.label}`}
             value={value ? { url: value as string, namaFile: "", kategori: "dokumen_pendukung" } : undefined}
-            onChange={(v) => onChange(v?.url || null)}
+            onChange={(v: DokumenSurat | null) => onChange(v?.url || null)}
           />
           {error && <p className="text-xs text-red-500">{error}</p>}
         </div>
@@ -364,6 +385,7 @@ export function SuratAjuanForm() {
   const [nama, setNama] = useState("");
   const [kontak, setKontak] = useState("");
   const [keperluan, setKeperluan] = useState("");
+  const [instansiTujuan, setInstansiTujuan] = useState("");
 
 // Identity autofill state
   const [identitas, setIdentitas] = useState<IdentitasData | null>(null);
@@ -375,6 +397,8 @@ export function SuratAjuanForm() {
   const [dnaValues, setDnaValues] = useState<Record<string, unknown>>({});
   const [dnaErrors, setDnaErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<{ nomor_tiket: string } | null>(null);
+  const [documents, setDocuments] = useState<DokumenSurat[]>([]);
+  const [docError, setDocError] = useState<string | null>(null);
 
   const { data: dnaFields, loading: dnaLoading } = useSuratDNAFields(jenisSuratId ?? null);
 
@@ -436,42 +460,58 @@ export function SuratAjuanForm() {
 
     debounceRef.current = setTimeout(async () => {
       try {
-        if (!tenantId) throw new Error("Tenant ID missing");
-        const p = await fetchPendudukByNik(nik);
+        const p: any = await fetchPendudukByNik(nik);
         if (!active) return;
-        
+
         if (p) {
-          const kewarganegaraan = await fetchKewarganegaraan((p as any).warga_negara_id);
+          const kewarganegaraan = await fetchKewarganegaraan(p.warga_negara_id);
           const alamat_lengkap = composeAlamat(
-            (p as any).dusun,
-            (p as any).rt,
-            (p as any).rw,
-            (p as any).kecamatan,
-            (p as any).kabupaten,
-            (p as any).provinsi,
+            p.alamat,
+            p.dusun,
+            p.rt,
+            p.rw,
+            p.kecamatan,
+            p.kabupaten,
+            p.provinsi,
           );
           const genderMap: Record<string, string> = { L: "Laki-laki", P: "Perempuan" };
-          const id: IdentitasData = {
-            nik: (p as any).nik || nik,
-            nama: (p as any).nama || "",
-            tempat_lahir: (p as any).tempat_lahir || "",
-            tanggal_lahir: (p as any).tanggal_lahir || "",
-            jenis_kelamin: genderMap[(p as any).jenis_kelamin] || (p as any).jenis_kelamin || "-",
-            pekerjaan: (p as any).pekerjaan || "-",
+          const id: any = {
+            id: p.id,
+            nik: p.nik || nik,
+            nama: p.nama || "",
+            tempat_lahir: p.tempat_lahir || "",
+            tanggal_lahir: p.tanggal_lahir || "",
+            jenis_kelamin: genderMap[p.jenis_kelamin] || p.jenis_kelamin || "-",
+            agama: p.agama || "-",
+            pendidikan: p.pendidikan || "-",
+            pekerjaan: p.pekerjaan || "-",
+            status_kawin: p.status_kawin || "-",
+            no_kk: p.no_kk || "-",
             kewarganegaraan,
             alamat_lengkap,
-            nomor_hp: (p as any).nomor_hp || undefined,
+            dusun: p.dusun || "-",
+            rt: p.rt || "-",
+            rw: p.rw || "-",
+            kabupaten: p.kabupaten || "",
+            provinsi: p.provinsi || "",
+            kecamatan: p.kecamatan || "",
+            desa: p.desa || "",
+            nomor_hp: p.nomor_hp || undefined,
           };
           setIdentitas(id);
           toast.success("Data penduduk ditemukan, form otomatis diisi.");
-          if (!nama) setNama(id.nama);
-          if (!kontak && id.nomor_hp) setKontak(id.nomor_hp);
+          setNama(n => n || id.nama);
+          setKontak(k => (!k && id.nomor_hp) ? id.nomor_hp : k);
           // Autofill matching DNA fields
           setDnaValues(prev => {
             const next = { ...prev };
             dnaFields.forEach(f => {
-              if (f.field_name in p && !next[f.field_name]) {
-                next[f.field_name] = (p as any)[f.field_name];
+              if (!next[f.field_name]) {
+                if (id && f.field_name in id) {
+                  next[f.field_name] = (id as any)[f.field_name];
+                } else if (p && typeof p === "object" && f.field_name in p) {
+                  next[f.field_name] = (p as any)[f.field_name];
+                }
               }
             });
             return next;
@@ -481,7 +521,7 @@ export function SuratAjuanForm() {
             const next = { ...prev };
             delete next.nama;
             dnaFields.forEach(f => {
-              if (f.field_name in p) delete next[f.field_name];
+              if (p && typeof p === "object" && f.field_name in p) delete next[f.field_name];
             });
             return next;
           });
@@ -492,7 +532,6 @@ export function SuratAjuanForm() {
           setKontak("");
         }
       } catch (e) {
-        console.error("Autofill error:", e);
         setLookupError("Gagal lookup data penduduk.");
       } finally {
         if (active) setIsLoadingLookup(false);
@@ -503,24 +542,33 @@ export function SuratAjuanForm() {
       active = false;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [nik, tenantId, dnaFields]);
+  }, [nik, dnaFields]);
 
   function validateAll(): boolean {
     const errors: Record<string, string> = {};
 
-    if (nik.trim().length !== 16) errors.nik = "NIK harus 16 digit";
+    if (!/^\d{16}$/.test(nik.trim())) errors.nik = "NIK harus 16 digit angka";
     if (nama.trim().length < 2) errors.nama = "Nama minimal 2 karakter";
     const cleanPhone = kontak.replace(/\D/g, "");
     if (cleanPhone.length < 8) errors.kontak = "Nomor WhatsApp tidak valid";
     if (keperluan.trim().length < 10) errors.keperluan = "Keperluan minimal 10 karakter";
+    if (instansiTujuan.trim().length < 3) errors.instansiTujuan = "Instansi tujuan minimal 3 karakter";
 
     for (const f of dnaFields) {
       const err = validateField(f, dnaValues[f.field_name]);
       if (err) errors[f.field_name] = err;
     }
 
+    const hasKtp = documents.some(d => d.kategori === 'foto_ktp');
+    const hasSelfie = documents.some(d => d.kategori === 'foto_selfie_ktp');
+    if (!hasKtp || !hasSelfie) {
+      setDocError("Foto KTP dan Foto Selfie dengan KTP wajib diunggah.");
+    } else {
+      setDocError(null);
+    }
+
     setDnaErrors(errors);
-    return Object.keys(errors).length === 0;
+    return Object.keys(errors).length === 0 && hasKtp && hasSelfie;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -547,8 +595,13 @@ export function SuratAjuanForm() {
         kontak: kontak.trim(),
         jenis_surat_id: jenisSuratId,
         keperluan: keperluan.trim(),
+        instansi_tujuan: instansiTujuan.trim(),
         lampiran,
         data_dna: dnaValues,
+        dokumen_ktp_url: documents.find(d => d.kategori === 'foto_ktp')?.url,
+        foto_pemohon_url: documents.find(d => d.kategori === 'foto_selfie_ktp')?.url,
+        dokumen_kk_url: documents.find(d => d.kategori === 'foto_kk')?.url,
+        dokumen_pendukung_url: documents.find(d => d.kategori === 'dokumen_pendukung')?.url,
       };
 
       // Add data_identitas if autofilled
@@ -562,20 +615,26 @@ export function SuratAjuanForm() {
           alamat_lengkap: identitas.alamat_lengkap,
         };
       }
+      const res = await fetch(`/api/submit-surat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
 
-      const res = await (supabase.functions as any).invoke("submit-surat", { body: payload });
+      const data = await res.json();
 
-      if (res.error) {
-        throw new Error(res.error?.message || "Gagal mengirim pengajuan");
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal mengirim pengajuan");
       }
-
-      const data = res.data;
       if (!data?.ok) {
         throw new Error(data?.error || "Gagal mengirim pengajuan");
       }
 
       setSubmitted({ nomor_tiket: data.nomor_tiket });
     } catch (err: any) {
+      console.error("Submit error:", err);
       toast.error(err?.message || "Gagal mengirim pengajuan");
     } finally {
       setSubmitting(false);
@@ -769,6 +828,54 @@ export function SuratAjuanForm() {
           <div className="space-y-1">
             <label className="block text-sm">
               <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
+                Agama
+              </span>
+              <input
+                type="text"
+                value={identitas?.agama || ""}
+                readOnly
+                data-testid="field-agama"
+                className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
+                placeholder="Otomatis terisi dari NIK"
+              />
+            </label>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm">
+              <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
+                Status Kawin
+              </span>
+              <input
+                type="text"
+                value={identitas?.status_kawin || ""}
+                readOnly
+                data-testid="field-status-kawin"
+                className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
+                placeholder="Otomatis terisi dari NIK"
+              />
+            </label>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm">
+              <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
+                No. KK
+              </span>
+              <input
+                type="text"
+                value={identitas?.no_kk || ""}
+                readOnly
+                data-testid="field-no-kk"
+                className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
+                placeholder="Otomatis terisi dari NIK"
+              />
+            </label>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm">
+              <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
                 Pekerjaan
               </span>
               <input
@@ -865,6 +972,25 @@ export function SuratAjuanForm() {
         ))
       )}
 
+      {/* Instansi Tujuan */}
+      <div className="space-y-1">
+        <label className="block text-sm">
+          <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">
+            Instansi Tujuan<span className="text-red-500 ml-1">*</span>
+          </span>
+          <input
+            type="text"
+            value={instansiTujuan}
+            onChange={(e) => { setInstansiTujuan(e.target.value); setDnaErrors((p) => { const n = { ...p }; delete n.instansiTujuan; return n; }); }}
+            placeholder="Tujuan surat ini diberikan ke instansi mana? (Misal: Bank BRI, Sekolah, dll)"
+            maxLength={150}
+            autoComplete="off"
+            className={`${inputCls} ${dnaErrors.instansiTujuan ? "border-red-500" : ""}`}
+          />
+        </label>
+        {dnaErrors.instansiTujuan && <p className="text-xs text-red-500">{dnaErrors.instansiTujuan}</p>}
+      </div>
+
       {/* Keperluan */}
       <div className="space-y-1">
         <label className="block text-sm">
@@ -884,6 +1010,17 @@ export function SuratAjuanForm() {
         {dnaErrors.keperluan && <p className="text-xs text-red-500">{dnaErrors.keperluan}</p>}
         <p className="text-[11px] opacity-50">{keperluan.length}/2000 karakter</p>
       </div>
+
+      {/* Dokumen Upload */}
+      <fieldset className="border border-current/15 p-6 rounded-md bg-accent/5">
+        <SuratDokumenUpload
+          entityId=""
+          initialDocuments={documents}
+          onDocumentsChange={setDocuments}
+          showAllFields={true}
+        />
+        {docError && <p className="text-sm text-red-500 mt-2 font-medium">{docError}</p>}
+      </fieldset>
 
       {/* Notice */}
       <div className="border border-current/15 p-4 text-xs opacity-70 leading-relaxed">

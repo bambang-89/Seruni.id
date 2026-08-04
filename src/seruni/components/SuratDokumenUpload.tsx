@@ -8,7 +8,7 @@ import React from 'react';
 import { useUpload, UPLOAD_PREFERENCES, type UploadKategori, type UploadResult } from '@/seruni/lib/upload';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 
-interface DokumenSurat {
+export interface DokumenSurat {
   id?: string;
   url: string;
   namaFile: string;
@@ -89,6 +89,9 @@ export function UploadField({
     }
   }, []);
 
+  const isPhoto = kategori.startsWith('foto_');
+  const captureMode = kategori === 'foto_selfie_ktp' ? 'user' : 'environment';
+
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium">
@@ -139,6 +142,7 @@ export function UploadField({
               ref={inputRef}
               type="file"
               accept={prefs.allowedTypes.join(',')}
+              capture={isPhoto ? captureMode : undefined}
               onChange={handleFileSelect}
               className="hidden"
               disabled={uploading}
@@ -151,22 +155,12 @@ export function UploadField({
                 </>
               ) : (
                 <>
-                  <span>📁</span>
-                  <span>Pilih File</span>
+                  <span>{isPhoto ? '📷' : '📁'}</span>
+                  <span>{isPhoto ? 'Ambil Foto Langsung' : 'Pilih File'}</span>
                 </>
               )}
             </div>
           </label>
-
-          {/* Camera button for mobile */}
-          <button
-            type="button"
-            onClick={handleTakePhoto}
-            className="px-4 py-2 border rounded-md hover:bg-muted disabled:opacity-50 text-sm"
-            disabled={uploading}
-          >
-            📷 Kamera
-          </button>
         </div>
       )}
 
@@ -245,51 +239,6 @@ export function SuratDokumenUpload({
           onChange={(doc) => handleDocumentChange('foto_selfie_ktp', doc)}
         />
       </div>
-
-      {/* Optional documents */}
-      {showAllFields && (
-        <>
-          <div className="border-t pt-4">
-            <h4 className="font-medium text-muted-foreground">Dokumen Tambahan (Opsional)</h4>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <UploadField
-              kategori="foto_kk"
-              label="Foto Kartu Keluarga"
-              description="Foto KK asli (jika tersedia)"
-              value={getDocument('foto_kk')}
-              onChange={(doc) => handleDocumentChange('foto_kk', doc)}
-            />
-
-            <UploadField
-              kategori="akta_lahir"
-              label="Akta Kelahiran"
-              description="Scan/foto akta kelahiran (jika ada)"
-              value={getDocument('akta_lahir')}
-              onChange={(doc) => handleDocumentChange('akta_lahir', doc)}
-            />
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <UploadField
-              kategori="akta_nikah"
-              label="Akta Nikah / Buku Nikah"
-              description="Scan/foto akta nikah (jika ada)"
-              value={getDocument('akta_nikah')}
-              onChange={(doc) => handleDocumentChange('akta_nikah', doc)}
-            />
-
-            <UploadField
-              kategori="dokumen_pendukung"
-              label="Dokumen Pendukung Lainnya"
-              description="Sertifikat, izin, atau dokumen pendukung lainnya"
-              value={getDocument('dokumen_pendukung')}
-              onChange={(doc) => handleDocumentChange('dokumen_pendukung', doc)}
-            />
-          </div>
-        </>
-      )}
 
       {/* Status */}
       <div className="flex items-center gap-2 text-sm">

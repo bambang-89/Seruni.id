@@ -72,10 +72,8 @@ export function ProfilDesaPage() {
   const { data: settings } = useSiteSettings();
   const siteName = settings?.nama_resmi ?? "Desa Seruni";
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Profil Desa" description="Profil, sejarah, dan informasi umum Desa Seruni Mumbul" />
       <SectionWrap>
         <div className="grid lg:grid-cols-3 gap-10 lg:gap-14">
           <article className="lg:col-span-2">
@@ -112,10 +110,8 @@ export function ProfilDesaPage() {
 export function StrukturPage() {
   const { data: strukturPamong } = usePamong();
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Struktur Organisasi" description="Struktur pemerintahan dan organisasi desa" />
       <SectionWrap>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-current/15">
           {strukturPamong.map((p, i) => (
@@ -151,10 +147,8 @@ export function WilayahPage() {
   const totalJiwa = wilayahDusun.reduce((a, d) => a + d.jiwa, 0);
   const totalLuas = wilayahDusun.reduce((a, d) => a + d.luas_ha, 0);
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Wilayah Desa" description="Daftar wilayah dusun di Desa Seruni Mumbul" />
       <SectionWrap>
         <div className="overflow-x-auto border border-current/15">
           <table className="w-full text-sm">
@@ -192,10 +186,8 @@ export function WilayahPage() {
 export function LembagaPage() {
   const { data: lembagaDesa } = useLembaga();
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Lembaga Desa" description="Daftar lembaga dan organisasi kemasyarakatan di desa" />
       <SectionWrap>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-current/15">
           {lembagaDesa.map((l, i) => (
@@ -232,7 +224,7 @@ export function BeritaListPage() {
 
   return (
     <div className="bg-background text-foreground min-h-screen">
-      
+      <Seo title="Berita Terkini" description="Kabar dan berita terbaru dari Desa Seruni Mumbul" />
       <main className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-32 pb-16">
         <header className="mb-10 border-b-2 border-accent pb-4">
           <h1 className="font-display text-3xl sm:text-4xl font-bold uppercase tracking-widest">Berita Terkini</h1>
@@ -478,10 +470,8 @@ export function BeritaDetailPage() {
 export function KalenderPage() {
   const { data: agendaMendatang } = useAgenda();
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Agenda Desa" description="Agenda dan kalender kegiatan desa" />
       <SectionWrap>
         <ul className="divide-y divide-current/15 border-y border-current/15">
           {agendaMendatang.map((a) => (
@@ -517,10 +507,8 @@ export function KalenderPage() {
 export function GaleriPage() {
   const { data: galeriDetail } = useGaleri();
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Galeri Foto" description="Kumpulan foto kegiatan dan dokumentasi desa" />
       <SectionWrap>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-px bg-current/15">
           {galeriDetail.map((g) => (
@@ -546,10 +534,8 @@ export function GaleriPage() {
 export function PengumumanPage() {
   const { data: pengumumanResmi } = usePengumuman();
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Pengumuman Resmi" description="Pengumuman resmi dari Pemerintah Desa Seruni Mumbul" />
       <SectionWrap>
         <ul className="divide-y divide-current/15 border-y border-current/15">
           {pengumumanResmi.map((p) => (
@@ -606,10 +592,8 @@ export function LayananPage() {
     { to: "/verifikasi", kicker: "Legalitas", judul: "Verifikasi Dokumen", desc: "Cek keaslian surat desa dengan nomor & kode QR." },
   ];
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Layanan Warga" description="Katalog layanan administratif desa" />
       <SectionWrap>
         <div className="grid sm:grid-cols-2 gap-px bg-current/15">
           {catalog.map((c, i) => (
@@ -755,6 +739,7 @@ export function LayananSuratPage() {
 
   return (
     <StandaloneLayout>
+      <Seo title="Ajukan Surat Online" description="Layanan administrasi desa untuk mengajukan surat keterangan secara online." />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
 
         {/* ── Header ── */}
@@ -980,6 +965,7 @@ export function LayananPBBPage() {
 
   return (
     <StandaloneLayout>
+      <Seo title="Cek & Bayar PBB" description="Layanan administrasi desa untuk mengecek dan membayar Pajak Bumi dan Bangunan (PBB)." />
       <div className="max-w-4xl mx-auto py-12 px-6">
         <h1 className="text-2xl font-bold mb-6">Layanan PBB</h1>
         <form className="max-w-2xl border border-current/20 p-6 sm:p-8 grid gap-5" onSubmit={cariPbb}>
@@ -1078,9 +1064,10 @@ export function ServiceCenterPage() {
     if (lacakSuratNo && lacakSuratNo.trim()) {
       doLacakSurat(lacakSuratNo);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useAutofillPenduduk(nik, settings?.tenant_id || "", (d) => {
+  useAutofillPenduduk(nik, (d: any) => {
     if (d) {
       setNama(d.nama);
       if (d.nomor_hp) setKontak(d.nomor_hp);
@@ -1131,11 +1118,12 @@ export function ServiceCenterPage() {
     setLacakSuratLoading(true);
     setLacakSuratHasil(null);
     try {
-      const { data, error } = await supabase.rpc("lacak_surat", { _nomor_tiket: ticket.trim() });
-      if (error) return toast.error(error.message);
-      const row = Array.isArray(data) ? data[0] : data;
+      const res = await fetch(`/api/lacak-surat?ticket=${encodeURIComponent(ticket.trim())}`);
+      const row = await res.json();
+      if (!res.ok) return toast.error(row.error || "Gagal melacak surat");
+      
       if (!row || !row.ditemukan) {
-        setLacakSuratHasil({ ditemukan: false });
+        setLacakSuratHasil({ ditemukan: false } as any);
         return;
       }
       setLacakSuratHasil(row);
@@ -1153,6 +1141,7 @@ export function ServiceCenterPage() {
 
   return (
     <StandaloneLayout>
+      <Seo title="Service Center" description="Pusat layanan dan pengaduan warga desa." />
       <SectionWrap>
         <div className="mb-8 flex gap-px bg-current/15 w-fit">
           {(["kirim", "lacak", "lacak-surat"] as const).map((m) => (
@@ -1327,10 +1316,23 @@ export function ServiceCenterPage() {
 }
 
 export function VerifikasiPage() {
+  const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const queryId = searchParams.get('id');
+  const actualId = id || queryId || "";
   const [nomor, setNomor] = useState("");
   const [kode, setKode] = useState("");
-  const [tteId, setTteId] = useState("");
-  const [tab, setTab] = useState<'nomor' | 'tte'>('nomor');
+  const [tteId, setTteId] = useState(actualId);
+  const [tab, setTab] = useState<'nomor' | 'tte'>(actualId ? 'tte' : 'nomor');
+  
+  // Auto-verify if ID is in URL
+  useEffect(() => {
+    if (actualId) {
+      const e = { preventDefault: () => {} } as React.FormEvent;
+      cekTTE(e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actualId]);
   interface VerifikasiSurat {
     perihal?: string;
     nomor_surat?: string;
@@ -1380,11 +1382,17 @@ export function VerifikasiPage() {
     e.preventDefault();
     if (!nomor.trim() || !kode.trim()) return toast.error("Nomor & kode wajib diisi");
     setLoading(true);
-    const { data, error } = await supabase.rpc("verifikasi_surat", { _nomor: nomor.trim(), _kode: kode.trim() });
+    const fetchRes = await fetch(`/api/verifikasi?nomor=${encodeURIComponent(nomor.trim())}&kode=${encodeURIComponent(kode.trim())}`);
+    const data = await fetchRes.json();
     setLoading(false);
-    if (error) return toast.error(error.message);
-    const row = Array.isArray(data) ? data[0] : data;
-    setHasil((row as VerifikasiSurat) ?? { notfound: true });
+    
+    if (!fetchRes.ok) return toast.error(data.error || "Gagal terhubung ke server");
+      
+      if (data?.notfound || !data) {
+      setHasil({ notfound: true });
+      return;
+    }
+    setHasil(data as VerifikasiSurat);
   }
 
   interface SupabaseBypass {
@@ -1404,45 +1412,53 @@ export function VerifikasiPage() {
     setTteHasil(null);
 
     try {
-      // Get signature info
-      const { data: sig, error: sigError } = await (supabase as unknown as SupabaseBypass)
-        .from('tte_signatures')
+      // Get surat_terbit info which holds TTE information now
+      // Not joining directly to avoid errors if FK migration isn't run yet
+      const { data: surat, error: suratError } = await (supabase as unknown as SupabaseBypass)
+        .from('surat_terbit')
         .select('*')
         .eq('id', tteId.trim())
         .single();
 
-      if (sigError || !sig) {
+      if (suratError || !surat) {
         setTteHasil({ notfound: true });
         setLoading(false);
         return;
       }
-
-      // Get surat info
-      const { data: surat } = await (supabase as unknown as SupabaseBypass)
-        .from('surat_terbit')
-        .select('id, nomor_surat, jenis:jenis_nama, tanggal_terbit, keperluan:keterangan')
-        .eq('id', (sig.surat_id as string) || '')
-        .single();
-
-      // Get pamong (penanda tangan) info if pamong_id exists
-      let pamongInfo = null;
-      if (sig.pamong_id) {
-        const { data: pamong } = await (supabase as unknown as SupabaseBypass)
-          .from('desa_pamong')
-          .select('*')
-          .eq('id', sig.pamong_id as string)
-          .single();
-        pamongInfo = pamong;
+      
+      // Attempt to fetch pamong manually
+      let pamong = null;
+      if (surat.pamong_id) {
+        const { data: pData } = await (supabase as any).from('desa_pamong').select('*').eq('id', surat.pamong_id).single();
+        pamong = pData;
+      } else if (surat.penandatangan) {
+        const { data: pData } = await (supabase as any).from('desa_pamong').select('*').eq('nama', surat.penandatangan).limit(1);
+        pamong = pData?.[0];
       }
 
-      // Check expiry
-      const isExpired = new Date(sig.signed_at as string) < new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+      // Check expiry (e.g., 1 year from tanggal_terbit)
+      const terbitDate = surat.tanggal_terbit ? new Date(surat.tanggal_terbit as string) : new Date();
+      const isExpired = terbitDate < new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
 
+      // In the new schema, surat_terbit acts as the signature wrapper
       setTteHasil({
-        ...sig,
-        status: isExpired ? 'expired' : (sig.status as string),
-        surat: (surat as TteSignature['surat']) || null,
-        pamong: pamongInfo,
+        id: surat.id as string,
+        status: isExpired ? 'expired' : 'signed',
+        tipe: 'sederhana',
+        signed_by: surat.penandatangan as string || 'Pemerintah Desa',
+        signed_at: surat.tanggal_terbit as string,
+        qr_code_url: surat.qr_code_url as string,
+        surat: {
+          jenis: surat.jenis_nama as string || 'Surat Keterangan',
+          nomor_surat: surat.nomor_surat as string,
+          tanggal_terbit: surat.tanggal_terbit as string,
+          keperluan: surat.keperluan as string,
+        },
+        pamong: pamong || {
+          nama: surat.penandatangan || 'Pemerintah Desa',
+          jabatan: 'Pamong Desa (Data Diarsipkan)',
+          nip: '-',
+        }
       });
     } catch (err) {
       console.error('TTE verify error:', err);
@@ -1473,6 +1489,7 @@ export function VerifikasiPage() {
 
   return (
     <StandaloneLayout>
+      <Seo title="Verifikasi Dokumen" description="Layanan administrasi desa untuk memverifikasi keaslian dokumen dan surat resmi." />
       <div className="max-w-4xl mx-auto py-12 px-6">
         <h1 className="text-2xl font-bold mb-6">Verifikasi Dokumen</h1>
         {/* Tab Switcher */}
@@ -1682,8 +1699,10 @@ export function StatistikHubPage() {
   ];
   return (
     <EditorialLayout
-        
+
       >
+      <Seo title="Statistik Desa" description="Kumpulan data dan statistik desa untuk transparansi dan perencanaan." />
+
       <SectionWrap>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-current/15">
           {cards.map((c, i) => (
@@ -1708,8 +1727,10 @@ export function StatusIDMPage() {
   const { data: idmData } = useIdmData();
   return (
     <EditorialLayout
-        
+
       >
+      <Seo title="Status IDM" description="Informasi Status Indeks Desa Membangun (IDM) dan penilaian 6 dimensi desa." />
+
       <StatsBand
         kicker="Skor Agregat"
         tone="dark"
@@ -1746,9 +1767,10 @@ export function StatistikPendudukPage() {
   const { data: statistik } = useStatistikDesa();
   return (
     <EditorialLayout
-        
+
       >
-      
+      <Seo title="Statistik Penduduk" description="Data statistik demografi penduduk desa，包括性别、年龄、职业和学历分布。" />
+
       <StatsBand
         tone="dark"
         items={[
@@ -1800,12 +1822,13 @@ export function PembangunanPage() {
           { nilai: String(pembangunanData?.kegiatan_aktif?.length ?? 0), label: "Kegiatan Aktif" },
         ]}
       />
+      <Seo title="Pembangunan Desa" description="Data dan progres kegiatan pembangunan di desa" />
       <SectionWrap>
         <EditorialTitle sectionKey="realisasi-2026-kegiatan-aktif" kicker="Realisasi 2026" judul="Kegiatan Aktif" />
         <ul className="space-y-6">
           {(pembangunanData?.kegiatan_aktif ?? []).map((k) => (
             <li key={k.nama}>
-              <Link to={`/pembangunan/${(k as any).id}`} className="block hover:bg-muted/20 transition-colors">
+              <Link to={`/pembangunan/${(k as any).id || k.nama}`} className="block hover:bg-muted/20 transition-colors">
                 <EditorialProgress label={k.nama} value={k.progres} />
               </Link>
             </li>
@@ -1832,6 +1855,7 @@ export function PerencanaanPage() {
           { nilai: "2027", label: "Periode Musrenbang" },
         ]}
       />
+      <Seo title="Perencanaan Desa" description="Usulan dan perencanaan pembangunan desa" />
       <SectionWrap>
         <EditorialTitle sectionKey="top-10-usulan-warga-terpilih" kicker="Top 10" judul="Usulan Warga Terpilih" />
         <ul className="space-y-6">
@@ -1875,9 +1899,10 @@ export function PotensiPage() {
 
   return (
     <EditorialLayout
-        
+
       >
-      
+      <Seo title="Potensi Desa" description="Informasi potensi ekonomi, UMKM, dan wisata desa." />
+
       <SectionWrap id="ekonomi">
         <EditorialTitle sectionKey="umkm-usaha-warga" kicker="UMKM" judul="Usaha Warga" />
         <OfflineBadge show={!online} />
@@ -1984,9 +2009,10 @@ export function MarketplacePage() {
 
   return (
     <EditorialLayout
-        
+
       >
-      
+      <Seo title="Marketplace Desa" description="Pasar digital untuk produk dan usaha mikro masyarakat desa." />
+
       <SectionWrap>
         <OfflineBadge show={!online} />
         <FilterBar onReset={reset} hasilCount={filtered.length} totalCount={produk.length}>
@@ -2065,9 +2091,10 @@ export function PetaPage() {
   ];
   return (
     <EditorialLayout
-        
+
       >
-      
+      <Seo title="Peta Desa" description="Peta interaktif lokasi wisata, batas dusun, dan titik potensi desa." />
+
       <SectionWrap>
         <OfflineBadge show={!online} />
         <FilterBar hasilCount={wisataFiltered.length} totalCount={wisata.length} onReset={() => { setQ(""); setJenis(""); }}>
@@ -2226,8 +2253,10 @@ export function KeuanganPage() {
 
   return (
     <EditorialLayout
-        
+
       >
+      <Seo title="Keuangan Desa" description="Transparansi pengelolaan keuangan APBDes，包括 pendapatan、belanja dan pembiayaan." />
+
       <SectionWrap>
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <span className="font-display text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Tahun Anggaran</span>
@@ -2363,10 +2392,8 @@ function ApbdesTable({
 export function BansosPage() {
   const { data: bansos } = useBantuanSosial();
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Bantuan Sosial" description="Daftar program bantuan sosial dan verifikasi penerima manfaat" />
       <SectionWrap>
         {(!bansos || bansos.length === 0) ? (
           <p className="text-muted-foreground py-8 text-center">Belum ada program bantuan sosial.</p>
@@ -2426,6 +2453,7 @@ export function StuntingPage() {
           { nilai: String(totalUnderweight), label: "Underweight" },
         ]}
       />
+      <Seo title="Data Stunting" description="Data pengukuran dan prevalensi stunting di desa" />
       <SectionWrap>
         <EditorialTitle sectionKey="per-burnett-rincian-per-wilayah" kicker="Per Burnett" judul="Rincian per Wilayah" />
         {(!stunting || stunting.length === 0) ? (
@@ -2586,6 +2614,7 @@ export function PosyanduPage() {
           { nilai: String(stunting?.length ?? 0), label: "Data Pengukuran" },
         ]}
       />
+      <Seo title="Posyandu" description="Data posyandu dan hasil pengukuran balita" />
       <SectionWrap>
         <EditorialTitle sectionKey="cakupan-kehadiran-per-burnett" kicker="Cakupan" judul="Kehadiran per Burnett" />
         {(!posyandu || posyandu.length === 0) ? (
@@ -2904,11 +2933,11 @@ export function PengumumanDetailPage() {
                 ) : <div key={i} className="h-2" />)}
               </div>
             )}
-            {(data as any).lampiran_url && (
+            {data.lampiran_url && (
               <div className="mt-8 pt-6 border-t border-current/15">
                 <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider mb-3">Lampiran</p>
                 {}
-                <img src={(data as any).lampiran_url} alt="Lampiran pengumuman" className="max-w-full rounded border border-current/15 max-h-96" />
+                <img src={data.lampiran_url} alt="Lampiran pengumuman" className="max-w-full rounded border border-current/15 max-h-96" />
               </div>
             )}
           </div>
@@ -3317,8 +3346,8 @@ export function ProdukDetailPage() {
   if (!data) return <NotFoundState />;
   const imageUrl = data.foto_url || null;
   const harga = data.harga != null ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(data.harga) : null;
-  const waLink = (data as any).kontak_penjual
-    ? `https://wa.me/${(data as any).kontak_penjual.replace(/\D/g, "")}?text=${encodeURIComponent(`Halo, saya tertarik dengan produk: ${data.nama}`)}`
+  const waLink = data.kontak_penjual
+    ? `https://wa.me/${data.kontak_penjual.replace(/\D/g, "")}?text=${encodeURIComponent(`Halo, saya tertarik dengan produk: ${data.nama}`)}`
     : null;
 
   return (
@@ -3458,7 +3487,7 @@ export function WisataDetailPage() {
         </Link>
 
         {/* Hero image */}
-        {(data as any).foto_url && (
+        {data.foto_url && (
           <div className="rounded-xl overflow-hidden border border-current/15 shadow-sm mb-8">
             {}
             <img src={data.foto_url || undefined} alt={data.nama} className="w-full aspect-video object-cover" />
@@ -4027,7 +4056,7 @@ export function PendudukDetailPage() {
   const fmtTtl = `${data.tempat_lahir || ""}${data.tanggal_lahir ? `, ${formatTanggal(data.tanggal_lahir)}` : ""}`;
 
   const fotoUrl = data.foto_url
-    ? supabase.storage.from("seruni-media").getPublicUrl(data.foto_url).data.publicUrl
+    ? (data.foto_url.startsWith('http') ? data.foto_url : supabase.storage.from("seruni-media").getPublicUrl(data.foto_url).data.publicUrl)
     : null;
 
   return (
@@ -4863,7 +4892,7 @@ export function UsulanWargaDetailPage() {
   };
 
   const fotoUrl = data.foto_url
-    ? supabase.storage.from("seruni-media").getPublicUrl(data.foto_url).data.publicUrl
+    ? (data.foto_url.startsWith('http') ? data.foto_url : supabase.storage.from("seruni-media").getPublicUrl(data.foto_url).data.publicUrl)
     : null;
 
   return (
@@ -4882,7 +4911,7 @@ export function UsulanWargaDetailPage() {
           </div>
           <div className="px-6 pb-5 flex flex-wrap gap-3">
             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${statusCfg.bg} ${statusCfg.text}`}>
-              {('dot' in statusCfg && (statusCfg as any).dot) && <span className="w-2 h-2 rounded-full bg-current" />}
+              {!!(statusCfg as any).dot && <span className="w-2 h-2 rounded-full bg-current" />}
               {statusLabel[data.status || ""] || data.status || "—"}
             </span>
             {data.kategori && <span className="inline-flex px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-gray-700">{data.kategori}</span>}
@@ -5597,9 +5626,8 @@ export function SuratTerbitPage() {
 
 export function NotFoundPage() {
   return (
-    <EditorialLayout
-
-      >
+    <EditorialLayout>
+      <Seo title="Halaman Tidak Ditemukan" description="Halaman yang Anda cari tidak ditemukan" />
       <SectionWrap>
         <Link to="/" className={btnPrimary}>Kembali ke Beranda</Link>
       </SectionWrap>

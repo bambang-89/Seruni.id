@@ -25,6 +25,9 @@ export type UploadKategori =
   | 'foto_pamong'
   | 'ttd_image'
   | 'qr_code'
+  | 'logo'
+  | 'hero_image'
+  | 'favicon'
   | 'lainnya';
 
 export type EntityType =
@@ -98,7 +101,7 @@ export const UPLOAD_PREFERENCES: Record<UploadKategori, UploadPreferences> = {
   akta_lahir: {
     kategori: 'akta_lahir',
     folderPath: 'surat/akta',
-    maxSizeMB: 10,
+    maxSizeMB: 5,
     allowedTypes: ['image/jpeg', 'image/png', 'application/pdf'],
     isRequired: false,
     deskripsi: 'Akta Kelahiran',
@@ -106,7 +109,7 @@ export const UPLOAD_PREFERENCES: Record<UploadKategori, UploadPreferences> = {
   akta_nikah: {
     kategori: 'akta_nikah',
     folderPath: 'surat/akta',
-    maxSizeMB: 10,
+    maxSizeMB: 5,
     allowedTypes: ['image/jpeg', 'image/png', 'application/pdf'],
     isRequired: false,
     deskripsi: 'Akta Nikah / Buku Nikah',
@@ -114,7 +117,7 @@ export const UPLOAD_PREFERENCES: Record<UploadKategori, UploadPreferences> = {
   dokumen_pendukung: {
     kategori: 'dokumen_pendukung',
     folderPath: 'surat/pendukung',
-    maxSizeMB: 10,
+    maxSizeMB: 5,
     allowedTypes: ['image/jpeg', 'image/png', 'application/pdf'],
     isRequired: false,
     deskripsi: 'Dokumen pendukung lainnya',
@@ -122,7 +125,7 @@ export const UPLOAD_PREFERENCES: Record<UploadKategori, UploadPreferences> = {
   dokumen_sertifikat: {
     kategori: 'dokumen_sertifikat',
     folderPath: 'sertifikat',
-    maxSizeMB: 15,
+    maxSizeMB: 5,
     allowedTypes: ['image/jpeg', 'image/png', 'application/pdf'],
     isRequired: false,
     deskripsi: 'Dokumen Sertifikat Tanah',
@@ -130,7 +133,7 @@ export const UPLOAD_PREFERENCES: Record<UploadKategori, UploadPreferences> = {
   foto_profil: {
     kategori: 'foto_profil',
     folderPath: 'profil',
-    maxSizeMB: 2,
+    maxSizeMB: 5,
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
     isRequired: false,
     deskripsi: 'Foto Profil',
@@ -138,7 +141,7 @@ export const UPLOAD_PREFERENCES: Record<UploadKategori, UploadPreferences> = {
   foto_galeri: {
     kategori: 'foto_galeri',
     folderPath: 'galeri',
-    maxSizeMB: 10,
+    maxSizeMB: 5,
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
     isRequired: false,
     deskripsi: 'Foto Galeri Kegiatan',
@@ -146,7 +149,7 @@ export const UPLOAD_PREFERENCES: Record<UploadKategori, UploadPreferences> = {
   foto_kegiatan: {
     kategori: 'foto_kegiatan',
     folderPath: 'kegiatan',
-    maxSizeMB: 10,
+    maxSizeMB: 5,
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
     isRequired: false,
     deskripsi: 'Foto Dokumentasi Kegiatan',
@@ -170,7 +173,7 @@ export const UPLOAD_PREFERENCES: Record<UploadKategori, UploadPreferences> = {
   ttd_image: {
     kategori: 'ttd_image',
     folderPath: 'pamong/ttd',
-    maxSizeMB: 2,
+    maxSizeMB: 5,
     allowedTypes: ['image/png', 'image/jpeg', 'image/webp'],
     isRequired: false,
     deskripsi: 'Gambar Tanda Tangan',
@@ -178,7 +181,7 @@ export const UPLOAD_PREFERENCES: Record<UploadKategori, UploadPreferences> = {
   qr_code: {
     kategori: 'qr_code',
     folderPath: 'pamong/qr',
-    maxSizeMB: 1,
+    maxSizeMB: 5,
     allowedTypes: ['image/png', 'image/jpeg', 'image/webp'],
     isRequired: false,
     deskripsi: 'QR Code Verifikasi',
@@ -186,10 +189,34 @@ export const UPLOAD_PREFERENCES: Record<UploadKategori, UploadPreferences> = {
   lainnya: {
     kategori: 'lainnya',
     folderPath: 'lainnya',
-    maxSizeMB: 10,
+    maxSizeMB: 5,
     allowedTypes: ['image/jpeg', 'image/png', 'application/pdf'],
     isRequired: false,
     deskripsi: 'Dokumen lainnya',
+  },
+  logo: {
+    kategori: 'logo',
+    folderPath: 'identitas',
+    maxSizeMB: 2,
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
+    isRequired: false,
+    deskripsi: 'Logo Desa / Instansi',
+  },
+  hero_image: {
+    kategori: 'hero_image',
+    folderPath: 'site/hero',
+    maxSizeMB: 5,
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    isRequired: false,
+    deskripsi: 'Gambar Hero Halaman Publik',
+  },
+  favicon: {
+    kategori: 'favicon',
+    folderPath: 'identitas/favicon',
+    maxSizeMB: 1,
+    allowedTypes: ['image/png', 'image/x-icon', 'image/svg+xml', 'image/jpeg', 'image/webp'],
+    isRequired: false,
+    deskripsi: 'Favicon Website',
   },
 };
 
@@ -252,7 +279,18 @@ export async function uploadFile(
   file: File,
   options: UploadOptions
 ): Promise<UploadResult> {
-  const prefs = UPLOAD_PREFERENCES[options.kategori];
+  let prefs = UPLOAD_PREFERENCES[options.kategori];
+  if (!prefs) {
+    // Fallback if category is not yet registered
+    prefs = {
+      kategori: options.kategori,
+      folderPath: options.kategori,
+      maxSizeMB: 5,
+      allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'video/mp4', 'video/webm'],
+      isRequired: false,
+      deskripsi: 'File Default',
+    };
+  }
 
   // Validate
   const error = validateFile(file, prefs);
@@ -296,34 +334,15 @@ export async function uploadFile(
 }
 
 /**
- * Upload multiple files
- */
-export async function uploadMultipleFiles(
-  files: File[],
-  options: UploadOptions
-): Promise<UploadResult[]> {
-  const results: UploadResult[] = [];
-
-  for (const file of files) {
-    const result = await uploadFile(file, options);
-    results.push(result);
-  }
-
-  return results;
-}
-
-/**
- * Delete file from storage
+ * Delete a file from Supabase Storage by its storage path
  */
 export async function deleteFile(storagePath: string): Promise<boolean> {
   try {
     const { error } = await supabase.storage.from(BUCKET).remove([storagePath]);
-
     if (error) {
       console.error('Delete error:', error);
       return false;
     }
-
     return true;
   } catch (err) {
     console.error('Delete failed:', err);
@@ -331,109 +350,6 @@ export async function deleteFile(storagePath: string): Promise<boolean> {
   }
 }
 
-/**
- * Get document records for an entity
- */
-export async function getDokumenForEntity(
-  entityType: EntityType,
-  entityId: string,
-  kategori?: UploadKategori
-) {
-  let query = supabase
-    .from('dokumen_upload' as any)
-    .select('*')
-    .eq('entity_type', entityType)
-    .eq('entity_id', entityId);
-
-  if (kategori) {
-    query = query.eq('kategori', kategori);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Get dokumen error:', error);
-    return [];
-  }
-
-  return data || [];
-}
-
-/**
- * Save dokumen_upload record
- */
-export async function saveDokumenRecord(params: {
-  entityType: EntityType;
-  entityId: string;
-  kategori: UploadKategori;
-  storagePath: string;
-  storageUrl: string;
-  namaFile: string;
-  namaAsli: string;
-  tipeFile: string;
-  ukuranFile: number;
-}) {
-  const { data, error } = await supabase
-    .from('dokumen_upload' as any)
-    .insert({
-      entity_type: params.entityType,
-      entity_id: params.entityId,
-      kategori: params.kategori,
-      storage_path: params.storagePath,
-      storage_url: params.storageUrl,
-      nama_file: params.namaFile,
-      nama_asli: params.namaAsli,
-      tipe_file: params.tipeFile,
-      ukuran_file: params.ukuranFile,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Save dokumen error:', error);
-    return null;
-  }
-
-  return data;
-}
-
-/**
- * Delete dokumen record and file
- */
-export async function deleteDokumen(dokumenId: string): Promise<boolean> {
-  try {
-    // Get record first
-    const { data: record, error: getError } = await supabase
-      .from('dokumen_upload' as any)
-      .select('storage_path')
-      .eq('id', dokumenId)
-      .single();
-
-    if (getError || !record) {
-      console.error('Get record error:', getError);
-      return false;
-    }
-
-    // Delete from storage
-    await deleteFile((record as any).storage_path);
-
-    // Delete record
-    const { error: deleteError } = await supabase
-      .from('dokumen_upload' as any)
-      .delete()
-      .eq('id', dokumenId);
-
-    if (deleteError) {
-      console.error('Delete record error:', deleteError);
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    console.error('Delete dokumen failed:', err);
-    return false;
-  }
-}
 
 // ============================================================
 // REACT HOOK

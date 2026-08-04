@@ -37,6 +37,18 @@ import {
 import { PageHero } from "./components/PageHero";
 import { supabase } from "@/integrations/supabase/client";
 
+function getImageUrl(path?: string | null): string {
+  if (!path) return "";
+  if (path.startsWith("http")) return path; // external URL
+  return supabase.storage.from("seruni-media").getPublicUrl(path).data.publicUrl;
+}
+
+function getImageUrlFromProp(path?: string | null): string {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return supabase.storage.from("seruni-media").getPublicUrl(path).data.publicUrl;
+}
+
 function TaglineBar() {
   const { data: settings } = useSiteSettings();
   return (
@@ -59,7 +71,7 @@ function TaglineBar() {
 
 function S1() {
   const { data: profilDesa } = useProfilDesa();
-  const imageUrl = profilDesa?.gambar_hero_url ? supabase.storage.from('seruni-media').getPublicUrl(profilDesa.gambar_hero_url).data.publicUrl : undefined;
+  const imageUrl = getImageUrl(profilDesa?.gambar_hero_url);
   
   return (
     <EditorialSplit
@@ -223,7 +235,7 @@ function S4() {
       <div className="grid lg:grid-cols-[3fr_2fr] gap-10 lg:gap-16 items-start">
         {utama && (
           <FeaturedCard
-            image={utama.gambar_url ? supabase.storage.from('seruni-media').getPublicUrl(utama.gambar_url).data.publicUrl : ""}
+            image={getImageUrl(utama.gambar_url)}
             imageAlt={utama.judul}
             kicker={utama.kategori}
             meta={formatTanggal(utama.tanggal)}
@@ -541,7 +553,7 @@ function S9() {
                   <li key={p.nama}>
                     <div className="font-display text-base font-semibold">{p.nama}</div>
                     <div className="font-display text-[10px] font-bold uppercase tracking-[0.24em] opacity-60 mt-1">
-                      {(p as any).tipe}
+                      {p.tipe}
                     </div>
                   </li>
                 ))}
@@ -575,7 +587,7 @@ function QuoteKades() {
       quote={kades ? "Terpercaya dalam membangun desa untuk masyarakat" : ""}
       nama={kades?.nama || ""}
       jabatan="Kepala Desa"
-      image={kades?.foto_url ? supabase.storage.from('seruni-media').getPublicUrl(kades.foto_url).data.publicUrl : ""}
+      image={getImageUrl(kades?.foto_url)}
       imageAlt="Potret Kepala Desa"
     />
   );
@@ -604,7 +616,7 @@ function S10() {
             className="group relative aspect-square overflow-hidden bg-background"
           >
             <img
-              src={g.foto_url ? supabase.storage.from('seruni-media').getPublicUrl(g.foto_url).data.publicUrl : ""}
+              src={getImageUrl(g.foto_url)}
               alt={g.judul}
               loading="lazy"
               className="absolute inset-0 h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-[1.04]"

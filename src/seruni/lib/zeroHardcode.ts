@@ -21,14 +21,25 @@ export interface SiteSettings {
   telepon: string | null;
   telepon_darurat?: string; // dari settings JSON
   email: string | null;
+  website: string | null;
+  kodepos: string | null;
   jam_layanan: string | null;
   nomor_wa_resmi: string | null;
   wa_business_verified: boolean;
+  // Wilayah detail
+  dusun: string | null;
+  rt: string | null;
+  // Singkatan untuk nomor surat (dari site_settings)
+  singkatan_desa: string | null;
+  singkatan_kades: string | null;
+  // Token Fonnte WA (dari site_settings)
+  fonnte_token: string | null;
   social_media: {
     facebook?: string;
     instagram?: string;
     youtube?: string;
     tiktok?: string;
+    twitter?: string;
   };
   maps_embed_url: string | null;
 }
@@ -55,7 +66,7 @@ export function useSiteSettings() {
             social_media: typeof r.social_media === 'string'
               ? JSON.parse(r.social_media as unknown as string)
               : (r.social_media as unknown as SiteSettings['social_media']) || {},
-          });
+          } as any);
         }
         setLoading(false);
       });
@@ -73,13 +84,22 @@ function getDefaultSiteSettings(): SiteSettings {
     alamat_kantor: "",
     telepon: "",
     email: "",
+    website: null,
+    kodepos: null,
     jam_layanan: "",
     nomor_wa_resmi: "",
     wa_business_verified: false,
+    dusun: null,
+    rt: null,
+    singkatan_desa: null,
+    singkatan_kades: null,
+    fonnte_token: null,
     social_media: {
       facebook: "",
       instagram: "",
       youtube: "",
+      tiktok: "",
+      twitter: "",
     },
     maps_embed_url: null,
   };

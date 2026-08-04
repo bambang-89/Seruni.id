@@ -1,4 +1,4 @@
-import { TableCrud } from "./AdminPages";
+import { TableCrud, type Column } from "../components/TableCrud";
 import { PendudukAdmin } from "./PendudukAdmin";
 export function KeluargaAdmin() {
   return (
@@ -58,7 +58,7 @@ export function IdmAdmin() {
   return (
     <TableCrud
       table="idm_indikator"
-      title="IDM — Indikator Desa Membangun"
+      title="IDM - Indikator Desa Membangun"
       desc="Indikator per dimensi IDM per tahun. Publikasikan untuk tampil di halaman IDM publik."
       orderBy="tahun"
       orderAsc={false}
@@ -66,9 +66,9 @@ export function IdmAdmin() {
       columns={[
         { key: "tahun", label: "Tahun", type: "number" },
         { key: "dimensi_nama", label: "Dimensi", type: "select", options: [
-          { value: "IKS", label: "IKS — Sosial" },
-          { value: "IKE", label: "IKE — Ekonomi" },
-          { value: "IKL", label: "IKL — Lingkungan/Ekologi" },
+          { value: "IKS", label: "IKS - Sosial" },
+          { value: "IKE", label: "IKE - Ekonomi" },
+          { value: "IKL", label: "IKL - Lingkungan/Ekologi" },
         ]},
         { key: "indikator_nama", label: "Indikator" },
         { key: "nilai", label: "Nilai Mentah", type: "number" },

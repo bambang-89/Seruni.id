@@ -21,6 +21,9 @@ export interface Tenant {
   nama_resmi: string;
   tagline?: string;
   logo_url?: string;
+  logo_kabupaten_url?: string;
+  logo_provinsi_url?: string;
+  favicon_url?: string;
   warna_primer?: string;
   warna_aksen?: string;
   kontak?: {
@@ -144,7 +147,7 @@ export function buildSubdomainUrl(subdomain: string, path: string = "/"): string
 interface TenantProviderProps {
   children: ReactNode;
   defaultTenantSlug?: string;
-  supabaseClient?: unknown; // Supabase client
+  supabaseClient?: any; // Supabase client
 }
 
 export function TenantProvider({
@@ -210,7 +213,7 @@ export function TenantProvider({
     // Try Supabase if client available
     if (supabaseClient) {
       // Table uses 'subdomain' column, not 'slug'
-      const { data, error: err } = await (supabaseClient as any)
+      const { data, error: err } = await (supabaseClient)
         .from("tenants")
         .select("*")
         .eq("subdomain", slug)
@@ -223,6 +226,9 @@ export function TenantProvider({
           nama_resmi: data.nama_desa || "Kantor Desa Seruni Mumbul",
           tagline: data.settings?.tagline,
           logo_url: data.logo_url,
+          logo_kabupaten_url: data.logo_kabupaten_url,
+          logo_provinsi_url: data.logo_provinsi_url,
+          favicon_url: data.favicon_url,
           warna_primer: data.warna_primer,
           warna_aksen: data.warna_aksen,
           kontak: data.settings?.kontak,
@@ -241,7 +247,7 @@ export function TenantProvider({
         // Propagate tenant context to database session
         if (supabaseClient) {
           try {
-            await (supabaseClient as any).rpc('set_tenant_session', { p_tenant_id: t.id });
+            await supabaseClient.rpc('set_tenant_session', { p_tenant_id: t.id });
           } catch (e) {
             console.warn("Failed to set tenant session:", e);
           }
@@ -252,7 +258,7 @@ export function TenantProvider({
 
     // Fallback: use hardcoded default tenant
     const defaultTenant: Tenant = {
-      id: "00000000-0000-0000-0000-000000000001",
+      id: "d532ae95-0ad9-42bb-a6e8-5c840447c90e",
       slug: slug,
       nama_resmi: "Kantor Desa Seruni Mumbul",
       tagline: "Melayani dengan Sepenuh Hati",
@@ -264,7 +270,7 @@ export function TenantProvider({
     // Propagate tenant context to database session
     if (supabaseClient) {
       try {
-        await (supabaseClient as any).rpc('set_tenant_session', { p_tenant_id: defaultTenant.id });
+        await supabaseClient.rpc('set_tenant_session', { p_tenant_id: defaultTenant.id });
       } catch (e) {
         console.warn("Failed to set tenant session:", e);
       }
@@ -292,7 +298,7 @@ export function TenantProvider({
 
     // Try Supabase if client available
     if (supabaseClient) {
-      const { data, error: err } = await (supabaseClient as any)
+      const { data, error: err } = await (supabaseClient)
         .from("tenants")
         .select("*")
         .eq("id", id)
@@ -305,6 +311,9 @@ export function TenantProvider({
           nama_resmi: data.nama_desa || "Kantor Desa",
           tagline: data.settings?.tagline,
           logo_url: data.logo_url,
+          logo_kabupaten_url: data.logo_kabupaten_url,
+          logo_provinsi_url: data.logo_provinsi_url,
+          favicon_url: data.favicon_url,
           warna_primer: data.warna_primer,
           warna_aksen: data.warna_aksen,
           kontak: data.settings?.kontak,
@@ -323,7 +332,7 @@ export function TenantProvider({
         // Propagate tenant context to database session
         if (supabaseClient) {
           try {
-            await (supabaseClient as any).rpc('set_tenant_session', { p_tenant_id: t.id });
+            await supabaseClient.rpc('set_tenant_session', { p_tenant_id: t.id });
           } catch (e) {
             console.warn("Failed to set tenant session:", e);
           }
@@ -345,7 +354,7 @@ export function TenantProvider({
     // Propagate tenant context to database session
     if (supabaseClient) {
       try {
-        await (supabaseClient as any).rpc('set_tenant_session', { p_tenant_id: defaultTenant.id });
+        await supabaseClient.rpc('set_tenant_session', { p_tenant_id: defaultTenant.id });
       } catch (e) {
         console.warn("Failed to set tenant session:", e);
       }
@@ -458,7 +467,7 @@ export function TenantSwitcher({ supabaseClient }: { supabaseClient: any }) {
     if (!supabaseClient) return;
     setLoading(true);
 
-    const { data } = await (supabaseClient as any)
+    const { data } = await (supabaseClient)
       .from("tenants")
       .select("id, subdomain, nama_desa")
       .eq("aktif", true);

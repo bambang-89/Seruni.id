@@ -6,6 +6,7 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import type { SuratPreviewData } from '@/seruni/components/SuratPreview';
+import { addQRCodeToPDF } from './tte';
 
 export interface PDFOptions {
   format?: 'A4' | 'Letter';
@@ -75,10 +76,10 @@ export async function generatePDFFromElement(
 /**
  * Generate PDF from structured surat data
  */
-export function generatePDFFromData(
+export async function generatePDFFromData(
   data: SuratPreviewData,
   options: PDFOptions = {}
-): Blob {
+): Promise<Blob> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
   const pdf = new jsPDF({
@@ -173,7 +174,7 @@ export function generatePDFFromData(
   y += 10;
 
   // === KEPADA ===
-  addText('Kepada Yth.', 10);
+  addText(tmpl.tujuan_teks || 'Kepada Yth.', 10);
   addText(penduduk?.nama || '[Nama Pemohon]', 10, true);
   addText('di -', 10);
   addText('  Tempat', 10);
@@ -181,9 +182,9 @@ export function generatePDFFromData(
   y += 10;
 
   // === BODY ===
-  addText('Dengan hormat,', 10);
+  addText(tmpl.pembuka_teks || 'Dengan hormat,', 10);
   y += 3;
-  addText(`Berdasarkan permohonan dari pihak yang bersangkutan, bersama ini kami sampaikan ${data.jenis_surat} atas nama:`, 10);
+  addText((tmpl.pengantar_teks || 'Berdasarkan permohonan dari pihak yang bersangkutan, bersama ini kami sampaikan [jenis_surat] atas nama:').replace('[jenis_surat]', data.jenis_surat), 10);
 
   y += 5;
 
@@ -314,12 +315,20 @@ export function generatePDFFromData(
   }
 
   // QR Code from pamong
-  const qrUrl = tmpl.footer.qr_code_url || data.data.qr_code_url;
-  if (tmpl.footer.ttd_kanan_enabled && qrUrl) {
+  if (tmpl.footer.ttd_kanan_enabled) {
+    const documentId = data.surat_id || 'draft';
+    const documentHash = 'none'; // Will be real hash when integrated
+    // e.g. https://seruni.id/layanan/verify/xyz
+    const verificationUrl = window.location.origin + '/layanan/verify/' + documentId;
+    
     try {
-      pdf.addImage(qrUrl, 'PNG', pageWidth - opts.margin.right - 20, pageHeight - opts.margin.bottom - 25, 20, 20);
-    } catch {
-      // Skip if QR fails
+      await addQRCodeToPDF(pdf, documentId, documentHash, verificationUrl, {
+        x: pageWidth - opts.margin.right - 20,
+        y: pageHeight - opts.margin.bottom - 25,
+        size: 20
+      });
+    } catch (qrErr) {
+      console.warn('Failed to generate QR code on PDF:', qrErr);
     }
   }
 

@@ -10,35 +10,31 @@ import { useAutofillPenduduk } from "./lib/queries";
 import { uploadFile } from "./lib/upload";
 import { useTenantId } from "./lib/tenant";
 
-const raw = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-);
-const ACTIVE_TENANT = "d532ae95-0ad9-42bb-a6e8-5c840447c90e";
+
 
 const inp = "w-full border border-current/25 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent";
 const btn = "bg-accent text-primary px-5 py-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-60";
 
 // ================= Statistik Penduduk (live view) =================
 export function StatistikPendudukLivePage() {
+  const tenantId = useTenantId();
   const [agg, setAgg] = useState<any | null>(null);
   const [perDusun, setPerDusun] = useState<any[]>([]);
   useEffect(() => {
+    if (!tenantId) return;
     (async () => {
       const [a, d] = await Promise.all([
-        raw.from("penduduk_statistik").select("*").eq("tenant_id", ACTIVE_TENANT).maybeSingle(),
-        raw.from("penduduk_per_dusun").select("*").eq("tenant_id", ACTIVE_TENANT),
+        supabase.from("penduduk_statistik").select("*").eq("tenant_id" as any, tenantId).maybeSingle(),
+        supabase.from("penduduk_per_dusun").select("*").eq("tenant_id" as any, tenantId),
       ]);
       setAgg(a.data); setPerDusun(d.data || []);
     })();
-  }, []);
+  }, [tenantId]);
   const total = Number(agg?.jumlah_penduduk ?? 0);
   const maxDusun = Math.max(1, ...perDusun.map((r) => Number(r.jumlah_penduduk)));
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Statistik Penduduk" description="Data statistik penduduk desa secara real-time" />
       <StatsBand
         tone="dark"
         items={[
@@ -73,7 +69,7 @@ export function StatistikPendudukLivePage() {
 export function IDMLivePage() {
   const [rows, setRows] = useState<any[]>([]);
   useEffect(() => {
-    (supabase as any).from("idm_indikator").select("*")
+    supabase.from("idm_indikator").select("*")
       .eq("published", true).order("tahun", { ascending: false }).order("dimensi")
       .then(({ data }: any) => setRows(data || []));
   }, []);
@@ -88,10 +84,8 @@ export function IDMLivePage() {
   const skorTotal = kini.length ? kini.reduce((a, r) => a + Number(r.skor || 0), 0) / kini.length : 0;
   const status = skorTotal >= 0.815 ? "Mandiri" : skorTotal >= 0.707 ? "Maju" : skorTotal >= 0.599 ? "Berkembang" : skorTotal >= 0.491 ? "Tertinggal" : "Sangat Tertinggal";
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Status IDM" description="Status Indeks Desa Membangun (IDM) dan komponennya" />
       <StatsBand
         tone="dark"
         items={[
@@ -131,15 +125,13 @@ export function IDMLivePage() {
 export function AnalisisPage() {
   const [rows, setRows] = useState<any[]>([]);
   useEffect(() => {
-    (supabase as any).from("analisis_snapshot").select("*")
+    supabase.from("analisis_snapshot").select("*")
       .eq("published", true).order("tahun", { ascending: false })
       .then(({ data }: any) => setRows(data || []));
   }, []);
   return (
-    <EditorialLayout
-        
-      >
-      
+    <EditorialLayout>
+      <Seo title="Analisis Desa" description="Analisis kebutuhan dan potensi desa" />
       <SectionWrap>
         {!rows.length && <p className="text-sm opacity-70">Belum ada analisis yang dipublikasikan.</p>}
         <div className="grid md:grid-cols-2 gap-px bg-current/15">
@@ -185,7 +177,7 @@ export function SuplesiPage() {
   };
 
   const tenantId = useTenantId();
-  useAutofillPenduduk(form.nik, tenantId || "", (d) => {
+  useAutofillPenduduk(form.nik, (d: any) => {
     if (d) {
       setForm(f => ({ ...f, nama: d.nama, kontak: d.nomor_hp || f.kontak }));
       toast.success(`Data ${d.nama} ditemukan!`);
@@ -197,7 +189,7 @@ export function SuplesiPage() {
     if (form.nik && form.nik.trim().length !== 16) return toast.error("NIK harus 16 digit angka.");
     if (form.nama.trim().length < 2) return toast.error("Nama wajib diisi.");
     setLoading(true);
-    const { data, error } = await (supabase as any).functions.invoke("submit-suplesi", { body: form });
+    const { data, error } = await supabase.functions.invoke("submit-suplesi", { body: form });
     setLoading(false);
     if (error || data?.error) return toast.error(data?.error || error?.message || "Gagal mengirim.");
     setTiket(data.nomor_tiket);
@@ -206,6 +198,7 @@ export function SuplesiPage() {
   };
   return (
     <StandaloneLayout>
+      <Seo title="Ajukan Pembetulan Data" description="Formulir pembetulan data penduduk dan pengajuan suplesi" />
       <div className="max-w-4xl mx-auto py-8">
         <div className="grid md:grid-cols-2 gap-10">
           <div>

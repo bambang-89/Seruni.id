@@ -52,6 +52,7 @@ export type SuratPreviewData = {
       sub_instansi: string;
       nama_desa: string;
       alamat: string;
+      kontak: string;
     };
     header: {
       height: number;
@@ -69,6 +70,8 @@ export type SuratPreviewData = {
       qr_code_url?: string | null;
       pamong_id?: string | null;
     };
+    format_nomor: string;
+    penutup: string;
   };
 
   // Isi surat (from surat_terbit or surat_ajuan)
@@ -105,7 +108,7 @@ export function SuratPreview({
     setLoading(true);
     try {
       // Get surat_terbit data
-      const { data: suratData } = await (supabase as any)
+      const { data: suratData } = await supabase
         .from('surat_terbit')
         .select(`
           *,
@@ -126,33 +129,39 @@ export function SuratPreview({
         if (surat.jenis_surat_id) {
           const [{ data: dnaRow }, { data: fields }] = await Promise.all([
             (supabase as any).from('surat_terbit_data').select('data_dna').eq('surat_terbit_id', suratId).maybeSingle(),
-            (supabase as any).from('surat_jenis_dna').select('field_name, label, tipe, grup').eq('jenis_surat_id', surat.jenis_surat_id).order('urutan'),
+            supabase.from('surat_jenis_dna').select('field_name, label, tipe, grup').eq('jenis_surat_id', surat.jenis_surat_id).order('urutan'),
           ]);
-          dnaValues = (dnaRow as any)?.data_dna || {};
-          dnaFields = ((fields as any) || []).map((f: any) => ({ field_name: f.field_name, label: f.label, tipe: f.tipe, grup: f.grup }));
+          dnaValues = (dnaRow?.data_dna as Record<string, unknown>) || {};
+          dnaFields = (fields || []).map((f: any) => ({ 
+            field_name: String(f.field_name || ''), 
+            label: String(f.label || ''), 
+            tipe: String(f.tipe || 'text'), 
+            grup: String(f.grup || 'Umum') 
+          }));
         }
 
         // Get template
         let template = null;
         if (templateId) {
-          const { data: t } = await (supabase as any)
+          const { data: t } = await supabase
             .from('surat_template')
             .select('*')
             .eq('id', templateId)
             .single();
-          template = t as any;
+          template = t;
         } else {
           // Get default template
-          const { data: t } = await (supabase as any)
+          const { data: t } = await supabase
             .from('surat_template')
             .select('*')
+            .eq('tenant_id', surat.tenant_id)
             .eq('is_default', true)
-            .single();
-          template = t as any;
+            .maybeSingle();
+          template = t;
         }
 
         // Get pamong (penanda tangan) data
-        let pamongData = null;
+        let pamongData: any = null;
         const ttdOleh = surat.ttd_oleh || 'Kepala Desa';
         const { data: pamongRows } = await (supabase as any)
           .from('desa_pamong')
@@ -161,7 +170,7 @@ export function SuratPreview({
           .eq('aktif', true)
           .limit(1);
         if (pamongRows && pamongRows.length > 0) {
-          pamongData = (pamongRows as any)[0];
+          pamongData = pamongRows[0];
         } else {
           // Fallback: get first active pamong with ttd capability
           const { data: fallbackPamong } = await (supabase as any)
@@ -170,64 +179,76 @@ export function SuratPreview({
             .eq('aktif', true)
             .order('urutan', { ascending: true })
             .limit(1);
-          pamongData = (fallbackPamong as any)?.[0] || null;
+          pamongData = fallbackPamong?.[0] || null;
+        }
+
+        // Get tenant & site_settings directly
+        let identitasUmum: any = {};
+        if (surat.tenant_id) {
+          const [{ data: resT }, { data: resS }] = await Promise.all([
+            supabase.from("tenants").select("*").eq("id", surat.tenant_id).maybeSingle(),
+            supabase.from("site_settings").select("*").eq("tenant_id", surat.tenant_id).maybeSingle(),
+          ]);
+          identitasUmum = { ...resT, ...resS };
         }
 
         setPreviewData({
-          surat_id: surat.id,
-          nomor_surat: surat.nomor_surat || 'Draft',
-          jenis_surat: surat.jenis || surat.jenis_nama || '',
-          tanggal_surat: surat.tanggal_terbit || new Date().toISOString(),
-          tanggal_cetak: new Date().toISOString(),
+          surat_id: String(surat.id),
+          nomor_surat: String(surat.nomor_surat || 'Draft'),
+          jenis_surat: String(surat.jenis || surat.jenis_nama || ''),
+          tanggal_surat: String(surat.tanggal_terbit || new Date().toISOString()),
+          tanggal_cetak: String(new Date().toISOString()),
           penduduk: surat.penduduk ? {
-            nama: surat.penduduk.nama,
-            nik: surat.penduduk.nik,
-            tempat_lahir: surat.penduduk.tempat_lahir,
-            tanggal_lahir: surat.penduduk.tanggal_lahir,
-            jenis_kelamin: surat.penduduk.jenis_kelamin,
-            alamat: surat.penduduk.alamat || surat.penduduk.keluarga?.alamat,
-            pekerjaan: surat.penduduk.pekerjaan,
-            agama: surat.penduduk.agama,
-            status_kawin: surat.penduduk.status_kawin,
-            no_kk: surat.penduduk.keluarga?.no_kk,
-            foto_url: surat.penduduk.foto_url,
+            nama: String(surat.penduduk.nama || ''),
+            nik: String(surat.penduduk.nik || ''),
+            tempat_lahir: String(surat.penduduk.tempat_lahir || ''),
+            tanggal_lahir: String(surat.penduduk.tanggal_lahir || ''),
+            jenis_kelamin: String(surat.penduduk.jenis_kelamin || ''),
+            alamat: String(surat.penduduk.alamat || surat.penduduk.keluarga?.alamat || ''),
+            pekerjaan: String(surat.penduduk.pekerjaan || ''),
+            agama: String(surat.penduduk.agama || ''),
+            status_kawin: String(surat.penduduk.status_kawin || ''),
+            no_kk: String(surat.penduduk.keluarga?.no_kk || ''),
+            foto_url: surat.penduduk.foto_url ? String(surat.penduduk.foto_url) : undefined,
           } : undefined,
           dnaFields,
           dnaValues,
           lampiran: Array.isArray(surat.lampiran) ? surat.lampiran : [],
           template: {
-            kop: template ? {
-              logo_kiri_url: template.logo_kiri_url,
-              logo_kanan_url: template.logo_kanan_url,
-              instansi: template.judul_instansi_text,
-              sub_instansi: template.sub_judul_instansi_text,
-              nama_desa: template.nama_desa_text,
-              alamat: template.alamat_desa_text,
-            } : {
-              logo_kiri_url: identitas?.logo_url,
-              logo_kanan_url: identitas?.logo_url,
-              instansi: 'PEMERINTAH KABUPATEN LOMBOK TIMUR',
-              sub_instansi: 'KECAMATAN PRINGGABAYA',
-              nama_desa: 'DESA SERUNI MUMBUL',
-              alamat: 'Jl. Raya Seruni Mumbul No. 1, Pringgabaya, Lombok Timur 83654',
+            kop: {
+              logo_kiri_url: identitasUmum.logo_kabupaten_url ? (identitasUmum.logo_kabupaten_url.startsWith('http') ? identitasUmum.logo_kabupaten_url : supabase.storage.from("seruni-media").getPublicUrl(identitasUmum.logo_kabupaten_url).data.publicUrl) : (identitasUmum.logo_url ? (identitasUmum.logo_url.startsWith('http') ? identitasUmum.logo_url : supabase.storage.from("seruni-media").getPublicUrl(identitasUmum.logo_url).data.publicUrl) : ''),
+              logo_kanan_url: identitasUmum.logo_provinsi_url ? (identitasUmum.logo_provinsi_url.startsWith('http') ? identitasUmum.logo_provinsi_url : supabase.storage.from("seruni-media").getPublicUrl(identitasUmum.logo_provinsi_url).data.publicUrl) : '',
+              instansi: `PEMERINTAH KABUPATEN ${identitasUmum.kabupaten || ''}`,
+              sub_instansi: `KECAMATAN ${identitasUmum.kecamatan || ''}`,
+              nama_desa: `DESA ${identitasUmum.nama_desa || ''}`,
+              alamat: `Alamat: ${identitasUmum.alamat_kantor || ''} Kodepos: ${identitasUmum.kodepos || ''}`,
+              kontak: `Kontak: ${identitasUmum.telepon || ''} Surel: ${identitasUmum.email || ''} Website: ${identitasUmum.website || ''}`
             },
             header: {
-              height: template?.header_height || 100,
-              background_color: template?.header_background_color || '#FFFFFF',
-              border_bottom_enabled: template?.header_border_bottom_enabled ?? true,
-              border_bottom_style: template?.header_border_bottom_style || 'solid',
-              border_bottom_width: template?.header_border_bottom_width || 2,
+              height: 100,
+              background_color: '#FFFFFF',
+              border_bottom_enabled: true,
+              border_bottom_style: 'solid',
+              border_bottom_width: 2,
             },
             footer: {
-              ttd_kanan_enabled: template?.footer_ttd_kanan_enabled ?? true,
-              ttd_kanan_judul: template?.footer_ttd_kanan_judul || 'Kepala Desa',
-              ttd_nama: pamongData?.nama || surat.ttd_nama || '..................',
-              ttd_nip: pamongData?.nip || surat.ttd_nip || '',
-              ttd_image_url: pamongData?.ttd_image_url || null,
-              qr_code_url: pamongData?.qr_code_url || null,
-              pamong_id: pamongData?.id || null,
+              ttd_kanan_enabled: true,
+              ttd_kanan_judul: String(template?.pejabat_jabatan || pamongData?.jabatan || 'Kepala Desa'),
+              ttd_nama: String(template?.pejabat_nama || pamongData?.nama || surat.ttd_nama || '..................'),
+              ttd_nip: String(pamongData?.nip || surat.ttd_nip || ''),
+              ttd_image_url: pamongData?.ttd_image_url ? String(pamongData.ttd_image_url) : null,
+              qr_code_url: pamongData?.qr_code_url ? String(pamongData.qr_code_url) : null,
+              pamong_id: pamongData?.id ? String(pamongData.id) : null,
             },
+            penutup: String(template?.penutup_teks || 'Demikian Surat Keterangan ini dibuat dengan sebenarnya untuk dapat dipergunakan sebagaimana mestinya.'),
+            tujuan_teks: String(template?.tujuan_teks || 'Kepada Yth.'),
+            pembuka_teks: String(template?.pembuka_teks || 'Dengan hormat,'),
+            pengantar_teks: String(template?.pengantar_teks || 'Berdasarkan permohonan dari pihak yang bersangkutan, bersama ini kami sampaikan [jenis_surat] atas nama:'),
+            format_nomor: String(template?.format_nomor || '[kode_surat]/[nomor]/[singkatan_kades].[singkatan_desa]/[bulan_romawi]/[tahun]')
+              .replace('[singkatan_kades]', identitasUmum.singkatan_kades || 'KADES')
+              .replace('[singkatan_desa]', identitasUmum.singkatan_desa || 'DESA'),
           },
+
           data: { ...data, ...surat },
         });
       }
@@ -236,7 +257,7 @@ export function SuratPreview({
     } finally {
       setLoading(false);
     }
-  }, [suratId, templateId, data, identitas]);
+  }, [suratId, templateId, data]);
 
   useEffect(() => {
     loadPreview();
@@ -301,21 +322,40 @@ export function SuratPreview({
 
   const handleApprove = async () => {
     try {
+      const updatePayload: any = {
+        status_preview: 'approved',
+        approved_by: (await supabase.auth.getUser()).data.user?.id,
+        approved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        pamong_id: previewData?.template?.footer?.pamong_id || null,
+      };
+
       const { error } = await supabase
         .from('surat_terbit')
-        .update({
-          status_preview: 'approved',
-          approved_by: (await supabase.auth.getUser()).data.user?.id,
-          approved_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any)
+        .update(updatePayload)
         .eq('id', suratId);
 
-      if (!error) {
+      if (error && error.message.includes('pamong_id')) {
+        // Fallback if pamong_id column doesn't exist yet (migration not run)
+        console.warn('pamong_id column not found, falling back to save without it.');
+        delete updatePayload.pamong_id;
+        const { error: fallbackError } = await supabase
+          .from('surat_terbit')
+          .update(updatePayload)
+          .eq('id', suratId);
+          
+        if (!fallbackError) {
+          onApprove?.();
+        } else {
+          console.error('Fallback approve failed:', fallbackError);
+        }
+      } else if (!error) {
         onApprove?.();
+      } else {
+        console.error('Approve failed:', error);
       }
     } catch (err) {
-      console.error('Approve failed:', err);
+      console.error('Approve Exception:', err);
     }
   };
 
@@ -343,7 +383,7 @@ export function SuratPreview({
 
     setGeneratingPDF(true);
     try {
-      const blob = generatePDFFromData(previewData);
+      const blob = await generatePDFFromData(previewData);
       downloadPDF(blob, `${previewData.jenis_surat}_${previewData.nomor_surat}.pdf`);
     } catch (err) {
       console.error('PDF generation failed:', err);
@@ -366,7 +406,7 @@ export function SuratPreview({
       const docHash = await generateDocumentHash(pdfBlob);
 
       // Call Supabase Edge Function for TTE
-      const { data, error } = await (supabase.functions as any).invoke('tte-sign', {
+      const { data, error } = await supabase.functions.invoke('tte-sign', {
         body: {
           surat_id: suratId,
           document_hash: docHash,
@@ -386,7 +426,7 @@ export function SuratPreview({
         .update({
           tte_signature_id: data.signature_id,
           signed_pdf_url: data.signed_pdf_url,
-          status_preview: 'signed',
+          status_preview: 'approved',
         } as any)
         .eq('id', suratId);
 
@@ -420,12 +460,16 @@ export function SuratPreview({
   }
 
   const formatTanggal = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    if (!dateStr) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const parts = dateStr.split("-");
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
   };
 
   const { template: tmpl, penduduk } = previewData;
@@ -461,55 +505,33 @@ export function SuratPreview({
       {/* Preview Content */}
       <div className="flex-1 overflow-auto bg-gray-100 p-4">
         <div className="max-w-[210mm] mx-auto bg-white shadow-lg">
-          <div ref={printRef} className="p-4" style={{ minHeight: '297mm' }}>
+          <div ref={printRef} className="p-4" style={{ minHeight: '297mm', fontFamily: '"Times New Roman", Times, serif', color: 'black' }}>
             {/* KOP Header */}
-            <div className="kop">
-              <div className="flex items-center justify-center gap-4 mb-2">
-                {tmpl.kop.logo_kiri_url && (
-                  <img
-                    src={tmpl.kop.logo_kiri_url}
-                    alt="Logo"
-                    className="w-16 h-16 object-contain"
-                  />
-                )}
-                <div>
-                  <p className="font-bold text-sm">{tmpl.kop.instansi}</p>
-                  <p className="text-xs">{tmpl.kop.sub_instansi}</p>
-                  <p className="text-base font-bold">{tmpl.kop.nama_desa}</p>
-                </div>
-                {tmpl.kop.logo_kanan_url && (
-                  <img
-                    src={tmpl.kop.logo_kanan_url}
-                    alt="Logo"
-                    className="w-16 h-16 object-contain"
-                  />
-                )}
+            <div className="flex items-center gap-4 mb-4 pb-4 relative">
+              {tmpl.kop.logo_kiri_url ? (
+                <img src={tmpl.kop.logo_kiri_url} alt="Logo" className="w-20 h-24 object-contain" />
+              ) : (
+                <div className="w-20 h-24 flex items-center justify-center"></div>
+              )}
+              <div className="flex-1 text-center">
+                <h3 className="text-xl font-bold uppercase">{tmpl.kop.instansi}</h3>
+                <h3 className="text-xl font-bold uppercase">{tmpl.kop.sub_instansi}</h3>
+                <h2 className="text-2xl font-bold uppercase">{tmpl.kop.nama_desa}</h2>
+                <p className="text-sm mt-1">{tmpl.kop.alamat}</p>
+                <p className="text-sm">{tmpl.kop.kontak}</p>
               </div>
-              <p className="text-xs text-center">{tmpl.kop.alamat}</p>
+              <div className="absolute bottom-0 w-full" style={{ borderBottom: "3px solid black", borderTop: "1px solid black", height: "4px" }}></div>
             </div>
 
-            {/* Garis */}
-            {tmpl.header.border_bottom_enabled && (
-              <div
-                className="garis"
-                style={{
-                  borderBottomWidth: tmpl.header.border_bottom_width,
-                  borderBottomStyle: tmpl.header.border_bottom_style as any,
-                  borderBottomColor: '#000',
-                }}
-              />
-            )}
-
-            {/* Nomor Surat */}
-            <div className="nomor">
-              <p>Nomor: {previewData.nomor_surat}</p>
-              <p>Lampiran: {previewData.lampiran && previewData.lampiran.length > 0 ? String(previewData.lampiran.length) : '-'}</p>
-              <p>Perihal: {previewData.data.perihal || previewData.jenis_surat}</p>
+            {/* Judul dan Nomor Surat */}
+            <div className="text-center mb-8">
+              <h4 className="text-lg font-bold underline underline-offset-4 uppercase">{previewData.jenis_surat}</h4>
+              <p className="text-sm">Nomor : {tmpl.format_nomor.replace('[nomor]', previewData.nomor_surat !== 'Draft' ? previewData.nomor_surat : '...').replace('[kode_surat]', previewData.data?.kode_surat || '...').replace('[bulan_romawi]', 'VIII').replace('[tahun]', new Date().getFullYear().toString())}</p>
             </div>
 
             {/* Kepada */}
             <div className="mb-4">
-              <p>Kepada Yth.</p>
+              <p>{previewData.template.tujuan_teks}</p>
               <p className="font-bold ml-4">
                 {penduduk?.nama || '[Nama Pemohon]'}
               </p>
@@ -519,9 +541,9 @@ export function SuratPreview({
 
             {/* Body Surat */}
             <div className="body">
-              <p className="mb-4">Dengan hormat,</p>
+              <p className="mb-4">{previewData.template.pembuka_teks}</p>
               <p className="mb-4 text-indent">
-                Bersama ini kami sampaikan {previewData.jenis_surat} atas nama:
+                {(previewData.template.pengantar_teks || '').replace('[jenis_surat]', previewData.jenis_surat)}
               </p>
 
               {/* Data Pemohon */}
@@ -606,8 +628,7 @@ export function SuratPreview({
 
               {/* Penutup */}
               <p className="mb-4">
-               Demikian surat keterangan ini dibuat dengan sebenarnya dan agar dapat
-                digunakan sebagaimana mestinya.
+                {tmpl.penutup || 'Demikian surat keterangan ini dibuat dengan sebenarnya dan agar dapat digunakan sebagaimana mestinya.'}
               </p>
             </div>
 
@@ -637,22 +658,11 @@ export function SuratPreview({
               </div>
             </div>
 
-            {/* QR Code untuk Verifikasi */}
-            {tmpl.footer.ttd_kanan_enabled && tmpl.footer.qr_code_url && (
-              <div className="absolute bottom-4 right-4 w-20 h-20">
-                <img
-                  src={tmpl.footer.qr_code_url}
-                  alt="QR Verifikasi"
-                  className="w-full h-full object-contain"
-                />
-                <p className="text-[8px] text-center mt-1 text-gray-400">Scan untuk verifikasi</p>
-              </div>
-            )}
-
-            {/* QR placeholder if no QR URL */}
-            {tmpl.footer.ttd_kanan_enabled && !tmpl.footer.qr_code_url && (
-              <div className="absolute bottom-4 right-4 w-20 h-20 border border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-400">
-                QR<br/>Belum ada
+            {/* QR Code Placeholder untuk Preview */}
+            {tmpl.footer.ttd_kanan_enabled && (
+              <div className="absolute bottom-4 right-4 w-20 h-20 border border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-400 flex-col text-center">
+                <span>QR Code</span>
+                <span className="text-[10px] mt-1">Otomatis<br/>Generated</span>
               </div>
             )}
           </div>

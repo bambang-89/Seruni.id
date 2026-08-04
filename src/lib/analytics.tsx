@@ -19,17 +19,6 @@ interface UseAnalyticsReturn {
 export function useAnalytics(): UseAnalyticsReturn {
   const location = useLocation();
 
-  // Track page view
-  const trackPageView = useCallback((page?: string) => {
-    const path = page || location.pathname;
-    trackEvent('page_view', {
-      path,
-      referrer: document.referrer,
-      screen_width: window.innerWidth,
-      screen_height: window.innerHeight,
-    });
-  }, [location.pathname]);
-
   // Track custom event
   const trackEvent = useCallback((
     event: string,
@@ -60,6 +49,17 @@ export function useAnalytics(): UseAnalyticsReturn {
     // Option 3: Custom endpoint
     // fetch('/api/analytics', { method: 'POST', body: JSON.stringify(eventData) })
   }, []);
+
+  // Track page view
+  const trackPageView = useCallback((page?: string) => {
+    const path = page || location.pathname;
+    trackEvent('page_view', {
+      path,
+      referrer: document.referrer,
+      screen_width: window.innerWidth,
+      screen_height: window.innerHeight,
+    });
+  }, [location.pathname, trackEvent]);
 
   // Auto-track page views on route change
   useEffect(() => {

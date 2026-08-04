@@ -32,7 +32,7 @@ function useDrafts(status: string, entitas: string, reloadKey: number) {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     setLoading(true);
-    let q = (supabase.from("site_draft" as any) as any).select("*").order("created_at", { ascending: false });
+    let q = supabase.from("site_draft").select("*").order("created_at", { ascending: false });
     if (status) q = q.eq("status", status);
     if (entitas) q = q.eq("entitas", entitas);
     q.then(({ data }: any) => { setRows((data || []) as Draft[]); setLoading(false); });
@@ -44,7 +44,7 @@ function DiffPreview({ draft }: { draft: Draft }) {
   const [live, setLive] = useState<any | null>(null);
   useEffect(() => {
     if (!draft.entitas_id) { setLive(null); return; }
-    (supabase.from(draft.entitas as any) as any).select("*").eq("id", draft.entitas_id).maybeSingle()
+    supabase.from(draft.entitas).select("*").eq("id", draft.entitas_id).maybeSingle()
       .then(({ data }: any) => setLive(data));
   }, [draft.entitas, draft.entitas_id]);
   const keys = Array.from(new Set([...Object.keys(draft.payload || {}), ...Object.keys(live || {})]))
@@ -90,7 +90,7 @@ export function SiteDraftAdmin() {
 
   const setStatus = async (id: string, next: string, extra: Record<string, any> = {}) => {
     setBusyId(id);
-    const { error } = await (supabase.from("site_draft" as any) as any).update({ status: next, ...extra }).eq("id", id);
+    const { error } = await supabase.from("site_draft").update({ status: next, ...extra }).eq("id", id);
     setBusyId(null);
     if (error) return toast.error(error.message);
     toast.success("Status diperbarui.");
@@ -118,7 +118,7 @@ export function SiteDraftAdmin() {
 
   const hapus = async (id: string) => {
     if (!(await confirm({ title: "Hapus draft ini?" }))) return;
-    const { error } = await (supabase.from("site_draft" as any) as any).delete().eq("id", id);
+    const { error } = await supabase.from("site_draft").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Terhapus.");
     setReload((k) => k + 1);
@@ -211,7 +211,7 @@ function NewDraftButton({ onCreated }: { onCreated: () => void }) {
 
   useEffect(() => {
     setEntitasId("");
-    (supabase.from(entitas as any) as any).select("*").order("updated_at", { ascending: false })
+    (supabase as any).from(entitas).select("*").order("updated_at", { ascending: false })
       .then(({ data }: any) => setRows(data || []));
   }, [entitas]);
 
@@ -228,10 +228,10 @@ function NewDraftButton({ onCreated }: { onCreated: () => void }) {
     let payload: any;
     try { payload = JSON.parse(payloadText); } catch { return toast.error("Payload bukan JSON valid."); }
     setBusy(true);
-    const { error } = await (supabase.from("site_draft" as any) as any).insert({
+    const { error } = await supabase.from("site_draft").insert({
       entitas, entitas_id: entitasId || null, action: entitasId ? "update" : "create",
       payload, catatan, status: "draft",
-    });
+    } as any);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Draft dibuat.");
@@ -285,7 +285,7 @@ export function SiteVersionAdmin() {
 
   useEffect(() => {
     setLoading(true);
-    (supabase.from("site_version" as any) as any).select("*").eq("entitas", entitas)
+    supabase.from("site_version").select("*").eq("entitas", entitas)
       .order("created_at", { ascending: false }).limit(500)
       .then(({ data }: any) => { setRows(data || []); setLoading(false); });
   }, [entitas, reload]);
@@ -366,7 +366,7 @@ export function VotingClosureAdmin() {
 
   useEffect(() => {
     setLoading(true);
-    (supabase.from("voting_topik" as any) as any).select("*").order("created_at", { ascending: false })
+    supabase.from("voting_topik").select("*").order("created_at", { ascending: false })
       .then(({ data }: any) => { setRows(data || []); setLoading(false); });
   }, [reload]);
 
@@ -381,7 +381,7 @@ export function VotingClosureAdmin() {
 
   const simpanRingkasan = async (id: string) => {
     setBusyId(id);
-    const { error } = await (supabase.from("voting_topik" as any) as any)
+    const { error } = await supabase.from("voting_topik")
       .update({ hasil_ringkasan: ringkasan[id] || "", hasil_dipublikasi: true, hasil_dipublikasi_pada: new Date().toISOString() })
       .eq("id", id);
     setBusyId(null);

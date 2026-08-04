@@ -153,20 +153,20 @@ export function TemplateDesigner({ template, onSave, onPreview }: TemplateDesign
     setSaving(true);
     try {
       const data = { ...form };
-      delete (data as any).id; // Remove id for insert
+      delete data.id; // Remove id for insert
 
       let result;
       if (template?.id) {
-        result = await (supabase as any)
+        result = await supabase
           .from('surat_template')
-          .update(data as any)
+          .update(data)
           .eq('id', template.id)
           .select()
           .single();
       } else {
-        result = await (supabase as any)
+        result = await supabase
           .from('surat_template')
-          .insert(data as any)
+          .insert(data)
           .select()
           .single();
       }
@@ -466,7 +466,7 @@ export function TemplateList({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (supabase as any)
+    supabase
       .from('surat_template')
       .select('*')
       .order('is_default', { ascending: false })

@@ -5,22 +5,19 @@ const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-};
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
+  const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
   if (req.method !== "POST") {
     return new Response(
       JSON.stringify({ error: "Method not allowed" }),
-      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 405, headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" } }
     );
   }
 
@@ -30,7 +27,7 @@ Deno.serve(async (req) => {
     if (!nik || !password) {
       return new Response(
         JSON.stringify({ error: "nik dan password diperlukan" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" } }
       );
     }
 
@@ -46,7 +43,7 @@ Deno.serve(async (req) => {
           error: "User tidak ditemukan",
           hint: "Buat user dulu via Supabase Dashboard"
         }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 404, headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" } }
       );
     }
 
@@ -59,7 +56,7 @@ Deno.serve(async (req) => {
     if (error) {
       return new Response(
         JSON.stringify({ error: error.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" } }
       );
     }
 
@@ -73,13 +70,13 @@ Deno.serve(async (req) => {
           email: user.email
         }
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" } }
     );
 
   } catch (error) {
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...getCorsHeaders(origin), "Content-Type": "application/json" } }
     );
   }
 });

@@ -62,16 +62,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUpFirstAdmin: AuthState["signUpFirstAdmin"] = async (nik, nama, password) => {
-    const { data, error } = await supabase.functions.invoke("create-admin", {
-      body: { nik, nama, password }
-    });
-    
-    if (error) {
-      return { error: error.message };
-    }
-    
-    if (data && data.error) {
-      return { error: data.error };
+    try {
+      const res = await fetch("/api/create-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nik, nama, password })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        return { error: data.error || "Gagal membuat admin" };
+      }
+      
+      if (data && data.error) {
+        return { error: data.error };
+      }
+    } catch (err: any) {
+      return { error: err.message || "Network error" };
     }
     
     // Auto-login after successful creation

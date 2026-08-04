@@ -53,39 +53,43 @@ class ErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNod
 // Lazy-load admin bundles (heavy CRUD, only for signed-in admins).
 const AdminShell = lazy(() => import("./seruni/admin/AdminShell"));
 const AP = () => import("./seruni/admin/AdminPages");
-const AO = () => import("./seruni/admin/AdminOps");
 const AdminDashboard = lazy(() => AP().then((m) => ({ default: m.AdminDashboard })));
-const ProfilDesaAdmin = lazy(() => AP().then((m) => ({ default: m.ProfilDesaAdmin })));
 const PamongAdmin = lazy(() => AP().then((m) => ({ default: m.PamongAdmin })));
-const DusunAdmin = lazy(() => AP().then((m) => ({ default: m.DusunAdmin })));
 const LembagaAdmin = lazy(() => AP().then((m) => ({ default: m.LembagaAdmin })));
 const BeritaAdmin = lazy(() => AP().then((m) => ({ default: m.BeritaAdmin })));
 const AgendaAdmin = lazy(() => AP().then((m) => ({ default: m.AgendaAdmin })));
 const PengumumanAdmin = lazy(() => AP().then((m) => ({ default: m.PengumumanAdmin })));
 const GaleriAdmin = lazy(() => AP().then((m) => ({ default: m.GaleriAdmin })));
-const BidangTanahAdmin = lazy(() => AO().then((m) => ({ default: m.BidangTanahAdmin })));
-const InfrastrukturAdmin = lazy(() => AO().then((m) => ({ default: m.InfrastrukturAdmin })));
-const KegiatanPembangunanAdmin = lazy(() => AO().then((m) => ({ default: m.KegiatanPembangunanAdmin })));
-const PosyanduAdmin = lazy(() => AO().then((m) => ({ default: m.PosyanduAdmin })));
-const StuntingAdmin = lazy(() => AO().then((m) => ({ default: m.StuntingAdmin })));
-const BansosAdmin = lazy(() => AO().then((m) => ({ default: m.BansosAdmin })));
-const PenerimaBansosAdmin = lazy(() => AO().then((m) => ({ default: m.PenerimaBansosAdmin })));
-const BencanaAdmin = lazy(() => AO().then((m) => ({ default: m.BencanaAdmin })));
-const AduanAdmin = lazy(() => AO().then((m) => ({ default: m.AduanAdmin })));
-const DptAdmin = lazy(() => AO().then((m) => ({ default: m.DptAdmin })));
-const JenisSuratAdmin = lazy(() => AO().then((m) => ({ default: m.JenisSuratAdmin })));
-const EventLogAdmin = lazy(() => AO().then((m) => ({ default: m.EventLogAdmin })));
-const SuratTerbitAdmin = lazy(() => AO().then((m) => ({ default: m.SuratTerbitAdmin })));
-const LanggananWaAdmin = lazy(() => AO().then((m) => ({ default: m.LanggananWaAdmin })));
-const BroadcastAdmin = lazy(() => AO().then((m) => ({ default: m.BroadcastAdmin })));
-const UmkmAdmin = lazy(() => AO().then((m) => ({ default: m.UmkmAdmin })));
-const ProdukMarketplaceAdmin = lazy(() => AO().then((m) => ({ default: m.ProdukMarketplaceAdmin })));
-const WisataAdmin = lazy(() => AO().then((m) => ({ default: m.WisataAdmin })));
-const PbbAdmin = lazy(() => AO().then((m) => ({ default: m.PbbAdmin })));
-const ApbdesAdmin = lazy(() => AO().then((m) => ({ default: m.ApbdesAdmin })));
-const SuratAjuanAdmin = lazy(() => AO().then((m) => ({ default: m.SuratAjuanAdmin })));
-const BalitaAdmin = lazy(() => AO().then((m) => ({ default: m.BalitaAdmin })));
-const WaChatbotAdmin = lazy(() => AO().then((m) => ({ default: m.WaChatbotAdmin })));
+const BidangTanahAdmin = lazy(() => AP().then((m) => ({ default: m.BidangTanahAdmin })));
+const InfrastrukturAdmin = lazy(() => AP().then((m) => ({ default: m.InfrastrukturAdmin })));
+const KegiatanPembangunanAdmin = lazy(() => AP().then((m) => ({ default: m.KegiatanPembangunanAdmin })));
+const PosyanduAdmin = lazy(() => AP().then((m) => ({ default: m.PosyanduAdmin })));
+const StuntingAdmin = lazy(() => AP().then((m) => ({ default: m.StuntingAdmin })));
+const BansosAdmin = lazy(() => AP().then((m) => ({ default: m.BansosAdmin })));
+const PenerimaBansosAdmin = lazy(() => AP().then((m) => ({ default: m.PenerimaBansosAdmin })));
+const BencanaAdmin = lazy(() => AP().then((m) => ({ default: m.BencanaAdmin })));
+const AduanAdmin = lazy(() => AP().then((m) => ({ default: m.AduanAdmin })));
+const DptAdmin = lazy(() => AP().then((m) => ({ default: m.DptAdmin })));
+const JenisSuratAdmin = lazy(() => AP().then((m) => ({ default: m.JenisSuratAdmin })));
+const SuratTerbitAdmin = lazy(() => AP().then((m) => ({ default: m.SuratTerbitAdmin })));
+const CetakSuratTerbitAdmin = lazy(() => AP().then((m) => ({ default: m.CetakSuratTerbitAdmin })));
+const LanggananWaAdmin = lazy(() => AP().then((m) => ({ default: m.LanggananWaAdmin })));
+const BroadcastAdmin = lazy(() => AP().then((m) => ({ default: m.BroadcastAdmin })));
+const UmkmAdmin = lazy(() => AP().then((m) => ({ default: m.UmkmAdmin })));
+const ProdukMarketplaceAdmin = lazy(() => AP().then((m) => ({ default: m.ProdukMarketplaceAdmin })));
+const WisataAdmin = lazy(() => AP().then((m) => ({ default: m.WisataAdmin })));
+const PbbAdmin = lazy(() => AP().then((m) => ({ default: m.PbbAdmin })));
+const ApbdesAdmin = lazy(() => AP().then((m) => ({ default: m.ApbdesAdmin })));
+const SuratAjuanAdmin = lazy(() => AP().then((m) => ({ default: m.SuratAjuanAdmin })));
+const BalitaAdmin = lazy(() => AP().then((m) => ({ default: m.BalitaAdmin })));
+const WaChatbotAdmin = lazy(() => AP().then((m) => ({ default: m.WaChatbotAdmin })));
+const EventLogAdmin = lazy(() => AP().then((m) => ({ default: m.EventLogAdmin })));
+const AdminUmum = lazy(() => import("./seruni/admin/AdminUmum"));
+const AdminTemplateSurat = lazy(() => import("./seruni/admin/AdminTemplateSurat"));
+const WA = () => import("./seruni/admin/WilayahAdmin");
+const RefDusunAdmin = lazy(() => WA().then((m) => ({ default: m.DusunAdmin })));
+const RefRtAdmin = lazy(() => WA().then((m) => ({ default: m.RtAdmin })));
+const RefRwAdmin = lazy(() => WA().then((m) => ({ default: m.RwAdmin })));
 const AS = () => import("./seruni/admin/AdminSite");
 const PageConfigAdmin = lazy(() => AS().then((m) => ({ default: m.PageConfigAdmin })));
 const NavAdmin = lazy(() => AS().then((m) => ({ default: m.NavAdmin })));
@@ -215,9 +219,12 @@ export default function App() {
             <Route path="/admin/init" element={<InitAdminPage />} />
             <Route path="/admin" element={<AdminShell />}>
             <Route index element={<AdminDashboard />} />
-            <Route path="profil-desa" element={<ProfilDesaAdmin />} />
+            <Route path="profil-desa" element={<AdminUmum />} />
+            <Route path="template-surat" element={<AdminTemplateSurat />} />
             <Route path="struktur" element={<PamongAdmin />} />
-            <Route path="wilayah" element={<DusunAdmin />} />
+            <Route path="wilayah" element={<RefDusunAdmin />} />
+            <Route path="wilayah-rt" element={<RefRtAdmin />} />
+            <Route path="wilayah-rw" element={<RefRwAdmin />} />
             <Route path="lembaga" element={<LembagaAdmin />} />
             <Route path="berita" element={<BeritaAdmin />} />
             <Route path="agenda" element={<AgendaAdmin />} />
@@ -236,6 +243,7 @@ export default function App() {
             <Route path="dpt" element={<DptAdmin />} />
             <Route path="jenis-surat" element={<JenisSuratAdmin />} />
             <Route path="surat-terbit" element={<SuratTerbitAdmin />} />
+            <Route path="surat-terbit/cetak/:id" element={<CetakSuratTerbitAdmin />} />
             <Route path="langganan-wa" element={<LanggananWaAdmin />} />
             <Route path="broadcast" element={<BroadcastAdmin />} />
             <Route path="umkm" element={<UmkmAdmin />} />
@@ -274,6 +282,13 @@ export default function App() {
             <Route path="analisis" element={<AnalisisAdmin />} />
             <Route path="sinkron-log" element={<SinkronLogAdmin />} />
             <Route path="suplesi" element={<SuplesiAdmin />} />
+            <Route path="*" element={
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+                <h1 className="text-4xl font-bold text-gray-900 mb-2">404</h1>
+                <h2 className="text-lg font-medium text-gray-700 mb-4">Halaman Tidak Ditemukan</h2>
+                <p className="text-gray-500 mb-6">Maaf, jalur atau modul yang Anda tuju tidak tersedia atau belum dikonfigurasi.</p>
+              </div>
+            } />
           </Route>
 
           <Route element={<Layout />}>
@@ -298,6 +313,10 @@ export default function App() {
           <Route path="layanan/pbb" element={<LayananPBBPage />} />
           <Route path="service-center" element={<ServiceCenterPage />} />
           <Route path="verifikasi" element={<VerifikasiPage />} />
+          <Route path="layanan/verify/:id" element={<VerifikasiPage />} />
+          <Route path="layanan/verify" element={<VerifikasiPage />} />
+          <Route path="verify/:id" element={<VerifikasiPage />} />
+          <Route path="verify" element={<VerifikasiPage />} />
 
           {/* Data & Statistik */}
           <Route path="statistik" element={<StatistikHubPage />} />
@@ -368,6 +387,7 @@ export default function App() {
             <Route path="rpjmdes-bidang/:id" element={<RpjmdesBidangDetailPage />} />
             <Route path="rpjmdes-program/:id" element={<RpjmdesProgramDetailPage />} />
             <Route path="rkpdes-kegiatan/:id" element={<RkpdesKegiatanDetailPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
         </Suspense>

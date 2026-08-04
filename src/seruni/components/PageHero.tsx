@@ -13,7 +13,7 @@ export function PageHero({ route }: { route: string }) {
   }
 
   const title = data?.title || (isHomepage ? "Desa Seruni Mumbul" : "Halaman");
-  const subtitle = data?.subtitle || (isHomepage ? "Kecamatan Pringgabaya, Kabupaten Lombok Timur" : "");
+  const subtitle = data?.subtitle || (isHomepage ? "" : "");
 
   const imageUrl = data?.image_path
     ? (data.image_path.startsWith('http') ? data.image_path : supabase.storage.from('seruni-media').getPublicUrl(data.image_path).data.publicUrl)

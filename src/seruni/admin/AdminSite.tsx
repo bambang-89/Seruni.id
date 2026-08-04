@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { raw } from "../lib/queries";
 import { toast } from "sonner";
-import { ImageField } from "./AdminPages";
+import { ImageField } from "../components/TableCrud";
 import { StandaloneFormOverlay } from "../ui";
 import { useConfirm, usePrompt } from "../ui/ConfirmDialog";
 import { invalidatePageConfig } from "../lib/pageConfig";
@@ -48,8 +49,8 @@ export function PageConfigAdmin() {
 
   const reload = async () => {
     setLoading(true);
-    const { data } = await (supabase as any).from("page_config").select("*").order("route");
-    setRows(((data as any[]) ?? []).map((r) => ({ ...r, section_titles: r.section_titles ?? [] })) as PageRow[]);
+    const { data } = await raw.from("page_config").select("*").order("route");
+    setRows(((data as Record<string, unknown>[]) ?? []).map((r) => ({ ...r, section_titles: r.section_titles ?? [] })) as PageRow[]);
     setLoading(false);
   };
   useEffect(() => {
@@ -68,8 +69,15 @@ export function PageConfigAdmin() {
   }, [selRoute, rows]);
 
   const validateTitle = (s: string) => {
+    if (!s || !s.trim()) return "Judul tidak boleh kosong.";
     const parts = s.trim().split(/\s+/).filter(Boolean);
-    if (parts.length !== 2) return "Judul wajib 2 kata (kata 1 regular + kata 2 italic amber).";
+    if (parts.length > 5) return "Judul sebaiknya tidak lebih dari 5 kata.";
+    return null;
+  };
+
+  const warnTitle = (s: string) => {
+    const parts = s.trim().split(/\s+/).filter(Boolean);
+    if (parts.length !== 2) return "Tampilan terbaik: 2 kata (kata pertama regular, kata kedua italic/amber).";
     return null;
   };
 
@@ -81,7 +89,9 @@ export function PageConfigAdmin() {
       const e = validateTitle(s.judul);
       if (e) return toast.error(`Section "${s.key || "?"}": ${e}`);
     }
-    const { error } = await (supabase as any).from("page_config").update({
+    const warn = warnTitle(draft.judul);
+    if (warn) toast.info(warn);
+    const { error } = await raw.from("page_config").update({
       eyebrow: draft.eyebrow,
       judul: draft.judul,
       deskripsi: draft.deskripsi,
@@ -296,8 +306,8 @@ export function NavAdmin() {
 
   const reload = async () => {
     setLoading(true);
-    const { data } = await (supabase as any).from("nav_item").select("*").order("parent_id").order("urutan");
-    setRows(((data as any[]) ?? []) as NavRow[]);
+    const { data } = await raw.from("nav_item").select("*").order("parent_id").order("urutan");
+    setRows(((data as Record<string, unknown>[]) ?? []) as NavRow[]);
     setLoading(false);
   };
   useEffect(() => {
@@ -309,6 +319,8 @@ export function NavAdmin() {
 
   const save = async () => {
     if (!draft || !draft.label || !draft.href) return toast.error("Label & href wajib diisi.");
+    const wordCount = draft.label.trim().split(/\s+/).filter(Boolean).length;
+    if (wordCount > 2) toast.info("Label lebih dari 2 kata dapat mempengaruhi tampilan navbar.");
     const payload = {
       parent_id: draft.parent_id ?? null,
       label: draft.label,
@@ -318,8 +330,8 @@ export function NavAdmin() {
       aktif: draft.aktif ?? true,
     };
     const q = draft.id
-      ? (supabase as any).from("nav_item").update(payload).eq("id", draft.id)
-      : (supabase as any).from("nav_item").insert(payload);
+      ? raw.from("nav_item").update(payload).eq("id", draft.id)
+      : raw.from("nav_item").insert(payload);
     const { error } = await q;
     if (error) return toast.error(error.message);
     toast.success("Menu tersimpan.");
@@ -328,7 +340,7 @@ export function NavAdmin() {
   };
   const del = async (id: string) => {
     if (!(await confirm({ title: "Hapus menu ini? Submenu di bawahnya juga akan terhapus." }))) return;
-    const { error } = await (supabase as any).from("nav_item").delete().eq("id", id);
+    const { error } = await raw.from("nav_item").delete().eq("id", id);
     if (error) return toast.error(error.message);
     reload();
   };
@@ -472,8 +484,8 @@ export function FooterAdmin() {
 
   const reload = async () => {
     setLoading(true);
-    const { data } = await (supabase as any).from("footer_column").select("*").order("urutan");
-    setRows(((data as any[]) ?? []).map((r) => ({ ...r, links: r.links ?? [] })) as FooterRow[]);
+    const { data } = await raw.from("footer_column").select("*").order("urutan");
+    setRows(((data as Record<string, unknown>[]) ?? []).map((r) => ({ ...r, links: r.links ?? [] })) as FooterRow[]);
     setLoading(false);
   };
   useEffect(() => {
@@ -483,10 +495,11 @@ export function FooterAdmin() {
   const save = async () => {
     if (!draft) return;
     if (!draft.judul.trim()) return toast.error("Judul kolom wajib diisi.");
-    const payload = { judul: draft.judul, urutan: draft.urutan, aktif: draft.aktif, links: draft.links };
+    const cleanedLinks = draft.links.filter(l => l.label.trim() && l.href.trim());
+    const payload = { judul: draft.judul, urutan: draft.urutan, aktif: draft.aktif, links: cleanedLinks };
     const q = draft.id
-      ? (supabase as any).from("footer_column").update(payload).eq("id", draft.id)
-      : (supabase as any).from("footer_column").insert(payload);
+      ? raw.from("footer_column").update(payload).eq("id", draft.id)
+      : raw.from("footer_column").insert(payload);
     const { error } = await q;
     if (error) return toast.error(error.message);
     toast.success("Kolom footer tersimpan.");
@@ -495,7 +508,7 @@ export function FooterAdmin() {
   };
   const del = async (id: string) => {
     if (!(await confirm({ title: "Hapus kolom footer ini?" }))) return;
-    const { error } = await (supabase as any).from("footer_column").delete().eq("id", id);
+    const { error } = await raw.from("footer_column").delete().eq("id", id);
     if (error) return toast.error(error.message);
     reload();
   };
@@ -653,7 +666,7 @@ export function DraftQueueAdmin() {
 
   const reload = async () => {
     setLoading(true);
-    const { data } = await (supabase as any)
+    const { data } = await raw
       .from("draft_queue")
       .select("*")
       .order("updated_at", { ascending: false })
@@ -673,7 +686,7 @@ export function DraftQueueAdmin() {
   const pendingCount = rows.filter((r) => r.status === "review").length;
 
   const submitForReview = async (id: string) => {
-    const { error } = await (supabase as any)
+    const { error } = await raw
       .rpc("submit_draft_for_review", { _draft_id: id });
     if (error) return toast.error(error.message);
     toast.success("Draft diajukan untuk review.");
@@ -681,7 +694,7 @@ export function DraftQueueAdmin() {
   };
 
   const approve = async (id: string) => {
-    const { error } = await (supabase as any)
+    const { error } = await raw
       .rpc("approve_draft", { _draft_id: id });
     if (error) return toast.error(error.message);
     toast.success("Draft disetujui!");
@@ -691,7 +704,7 @@ export function DraftQueueAdmin() {
   const reject = async (id: string) => {
     const catatan = await prompt({ title: "Alasan Penolakan", placeholder: "Ketik alasan penolakan..." });
     if (!catatan) return;
-    const { error } = await (supabase as any)
+    const { error } = await raw
       .rpc("reject_draft", { _draft_id: id, _catatan: catatan });
     if (error) return toast.error(error.message);
     toast.success("Draft ditolak.");
@@ -700,7 +713,7 @@ export function DraftQueueAdmin() {
 
   const publish = async (id: string) => {
     if (!(await confirm({ title: "Publish draft ini ke live site?" }))) return;
-    const { error } = await (supabase as any)
+    const { error } = await raw
       .rpc("publish_site_draft", { _draft_id: id });
     if (error) return toast.error(error.message);
     toast.success("Draft dipublish!");
@@ -709,7 +722,7 @@ export function DraftQueueAdmin() {
 
   const rollback = async (id: string) => {
     if (!(await confirm({ title: "Rollback perubahan ini?" }))) return;
-    const { error } = await (supabase as any)
+    const { error } = await raw
       .rpc("rollback_site_draft", { _draft_id: id });
     if (error) return toast.error(error.message);
     toast.success("Di-rollback ke versi sebelumnya.");
@@ -907,7 +920,7 @@ export function VersionHistoryAdmin() {
 
   const reload = async () => {
     setLoading(true);
-    const { data } = await (supabase as any)
+    const { data } = await raw
       .from("site_version")
       .select("*")
       .order("created_at", { ascending: false })
@@ -926,7 +939,7 @@ export function VersionHistoryAdmin() {
 
   const restore = async (versionId: string) => {
     if (!(await confirm({ title: "Pulihkan versi ini?" }))) return;
-    const { error } = await (supabase as any)
+    const { error } = await raw
       .rpc("restore_site_version", { _version_id: versionId });
     if (error) return toast.error(error.message);
     toast.success("Versi dipulihkan.");
@@ -983,7 +996,7 @@ export function VersionHistoryAdmin() {
                 </div>
                 <button
                   onClick={() => restore(row.id)}
-                  className="btnSec text-xs shrink-0"
+                  className="inline-flex items-center gap-1 rounded border border-border bg-background px-3 py-1 text-xs hover:bg-muted shrink-0"
                 >
                   Pulihkan
                 </button>

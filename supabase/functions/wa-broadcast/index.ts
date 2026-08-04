@@ -8,7 +8,7 @@
 //   POST { action: "retry", broadcastId: "..." }             → resend failed/pending targets
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { json as sharedJson, getCorsHeaders } from "../_shared/cors.ts";
 
 interface NewPayload {
   pesan?: string;
@@ -46,7 +46,7 @@ async function sendOne(fonnteToken: string, nomor: string, pesan: string) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const origin = req.headers.get("origin"); if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(origin) });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     if (!roleRow) return json({ error: "Hanya admin yang dapat melakukan broadcast." }, 403);
 
     const body: NewPayload = await req.json();
-    const fonnteToken = Deno.env.get("FONNTE_TOKEN");
+    const fonnteToken = Deno.env.get("FONNTE_TOKEN") || "";
     const dryRun = !fonnteToken;
 
     // -------------------- RETRY branch --------------------

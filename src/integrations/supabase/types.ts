@@ -14,6 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
+      ref_jenis_wisata: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      layanan_statistik: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      ref_kategori_aduan: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      ref_topik_langganan: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      ref_kategori_usulan: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      site_settings: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      profil_desa: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      ref_tipe_umkm: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      surat_template: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      hero_slider: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      identitas_desa: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      dokumen_upload: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+      ref_sumber_dana: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+
+      surat_jenis_dna: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+
+      surat_ajuan: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+
+      page_hero_config: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+
+      balita: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: []
+      }
+
       admin_profiles: {
         Row: {
           created_at: string
@@ -3225,6 +3332,7 @@ export type Database = {
           kabupaten: string | null
           created_at: string
           favicon_url: string | null
+          fonnte_token: string | null
           id: string
           kode_desa: string | null
           kecamatan: string | null
@@ -4352,24 +4460,36 @@ export type Database = {
       penduduk_per_dusun: {
         Row: {
           dusun: string | null
-          jumlah: number | null
-          laki: number | null
+          jumlah_penduduk: number | null
+          laki_laki: number | null
           perempuan: number | null
+          jumlah_kk: number | null
+          tenant_id: string | null
         }
         Relationships: []
       }
       penduduk_statistik: {
         Row: {
-          dusun: number | null
-          kk: number | null
-          laki: number | null
+          jumlah_penduduk: number | null
+          jumlah_kk: number | null
+          laki_laki: number | null
           perempuan: number | null
-          total: number | null
+          tenant_id: string | null
         }
         Relationships: []
       }
     }
     Functions: {
+      lacak_surat: {
+        Args: { p_kode: string }
+        Returns: any
+      }
+
+      find_penduduk_by_nik: {
+        Args: { p_nik: string }
+        Returns: any
+      }
+
       auto_close_expired_voting: { Args: never; Returns: undefined }
       cek_pbb: {
         Args: { _nik: string; _nop: string; _tahun: number }

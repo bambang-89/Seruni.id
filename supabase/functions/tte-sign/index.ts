@@ -7,6 +7,9 @@
  * - BSRE eSign integration (production mode)
  */
 
+declare const Deno: any;
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { corsHeaders, json } from "../_shared/cors.ts";
 
@@ -37,12 +40,9 @@ const BSRE_API_URL = "https://api-esign.bsre.id";
 const BSRE_API_KEY = Deno.env.get("BSRE_API_KEY") || "";
 const TTE_MODE = Deno.env.get("TTE_MODE") || "sederhana"; // 'sederhana' | 'bsre'
 
-/**
- * Generate verification QR code URL
- */
-function generateVerificationQRUrl(signatureId: string): string {
+function generateVerificationQRUrl(suratId: string): string {
   const baseUrl = Deno.env.get("PUBLIC_URL") || Deno.env.get("PUBLIC_DOMAIN") ? `https://${Deno.env.get("PUBLIC_DOMAIN") || "serunimumbul.id"}` : "https://serunimumbul.id";
-  const qrData = `${baseUrl}/verify/${signatureId}`;
+  const qrData = `${baseUrl}/layanan/verify/${suratId}`;
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
 }
 
@@ -166,7 +166,7 @@ async function createSimpleSignature(
 ): Promise<TTESignature> {
   const signatureId = crypto.randomUUID();
   const now = new Date().toISOString();
-  const qrUrl = generateVerificationQRUrl(signatureId);
+  const qrUrl = generateVerificationQRUrl(request.surat_id);
 
   // Create TTE signature record
   const { data, error } = await supabase
@@ -261,7 +261,7 @@ Deno.serve(async (req: Request) => {
 
       // Create signature record
       const signatureId = crypto.randomUUID();
-      const qrUrl = generateVerificationQRUrl(signatureId);
+      const qrUrl = generateVerificationQRUrl(surat_id);
 
       const { data: sigData, error: sigError } = await supabase
         .from("tte_signatures")
@@ -308,7 +308,7 @@ Deno.serve(async (req: Request) => {
         .update({
           tte_signature_id: signature.id,
           signed_pdf_url: bsreResult.signedDocumentUrl,
-          status_preview: "signed",
+          status_preview: "approved",
           signed_at: new Date().toISOString(),
         })
         .eq("id", surat_id);
@@ -322,7 +322,7 @@ Deno.serve(async (req: Request) => {
         .update({
           tte_signature_id: signature.id,
           qr_code_url: signature.qr_code_url,
-          status_preview: "signed",
+          status_preview: "approved",
           signed_at: signature.signed_at,
         })
         .eq("id", surat_id);
@@ -342,7 +342,7 @@ Deno.serve(async (req: Request) => {
     });
 
     // Send WA notification to pemohon
-    const fonnteToken = Deno.env.get("FONNTE_TOKEN");
+    const fonnteToken = Deno.env.get("FONNTE_TOKEN") || "";
     if (fonnteToken) {
       const { data: terbit } = await supabase
         .from("surat_terbit")

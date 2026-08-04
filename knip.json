@@ -1,0 +1,6 @@
+{
+  "ignore": [
+    "src/integrations/supabase/types.ts"
+  ],
+  "ignoreExportsUsedInFile": true
+}

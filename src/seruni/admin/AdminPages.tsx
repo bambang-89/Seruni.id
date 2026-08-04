@@ -20,6 +20,19 @@ import {
   Legend,
 } from "recharts";
 import { StandaloneFormOverlay } from "../ui";
+import { TableCrud, ImageField, VideoField, type Column } from "../components/TableCrud";
+
+export function useSelectOptions(table: string, labelKey: string, valueKey = "id", filter?: (r: Record<string, unknown>) => boolean) {
+  const [opts, setOpts] = useState<{ value: string; label: string }[]>([]);
+  useEffect(() => {
+    supabase.from(table as any).select("*").then(({ data }) => {
+      const rows = (data || []) as unknown as Record<string, unknown>[];
+      const filtered = filter ? rows.filter(filter) : rows;
+      setOpts(filtered.map(r => ({ value: String(r[valueKey]), label: String(r[labelKey]) })));
+    });
+  }, [table, labelKey, valueKey, filter]);
+  return opts;
+}
 
 export function PageTitle({ title, desc }: { title: string; desc?: string }) {
   return (
@@ -147,6 +160,29 @@ function FTextarea({
 }
 const inpAuto = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary autocomplete-[off]";
 
+const PIE_COLORS = ["#015967", "#FF9E20", "#0d7a8a", "#c97a12", "#33a3b3", "#a1560b"];
+
+const rupiahShort = (n: number) => {
+  if (n >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toFixed(2)} M`;
+  if (n >= 1_000_000) return `Rp ${(n / 1_000_000).toFixed(1)} Jt`;
+  return `Rp ${n.toLocaleString("id-ID")}`;
+};
+
+function KPI({ label, val, hint, to }: { label: string; val: string | number; hint?: string; to?: string }) {
+  const body = (
+    <>
+      <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{label}</div>
+      <div className="mt-2 font-display text-3xl font-bold text-primary tabular-nums leading-none">{val}</div>
+      {hint && <div className="mt-2 text-xs text-muted-foreground">{hint}</div>}
+    </>
+  );
+  return to ? (
+    <Link to={to} className="block bg-card border border-border p-5 hover:border-primary transition-colors">{body}</Link>
+  ) : (
+    <div className="bg-card border border-border p-5">{body}</div>
+  );
+}
+
 // ============ Dashboard ============
 export function AdminDashboard() {
   const { user } = useAuth();
@@ -167,11 +203,11 @@ export function AdminDashboard() {
   useEffect(() => {
     if (!user) return;
     supabase.from("admin_profiles").select("nama,nik").eq("id", user.id).maybeSingle()
-      .then(({ data }) => data && setProfile(data as any));
+      .then(({ data }) => data && setProfile(data));
 
     (async () => {
       const head = (t: string, filters?: (q: any) => any) => {
-        let q: any = (supabase.from(t as any) as any).select("*", { count: "exact", head: true });
+        let q: any = (supabase.from(t) as any).select("*", { count: "exact", head: true });
         if (filters) q = filters(q);
         return q;
       };
@@ -197,13 +233,13 @@ export function AdminDashboard() {
         head("potensi_wisata"),
         head("pbb_tagihan", (q) => q.eq("tahun", currentYear)),
         head("pbb_tagihan", (q) => q.eq("tahun", currentYear).eq("status_bayar", "lunas")),
-        (supabase.from("pbb_tagihan" as any) as any).select("pbb_terutang").eq("tahun", currentYear).eq("status_bayar", "lunas"),
-        (supabase.from("aduan_warga" as any) as any).select("kategori"),
-        (supabase.from("apbdes" as any) as any).select("kategori,anggaran,realisasi,jenis").eq("tahun", currentYear).eq("jenis", "belanja"),
-        (supabase.from("event_log" as any) as any).select("event_name,entitas,created_at").order("created_at", { ascending: false }).limit(8),
+        supabase.from("pbb_tagihan").select("pbb_terutang").eq("tahun", currentYear).eq("status_bayar", "lunas"),
+        supabase.from("aduan_warga").select("kategori"),
+        supabase.from("apbdes").select("kategori,anggaran,realisasi,jenis").eq("tahun", currentYear).eq("jenis", "belanja"),
+        supabase.from("event_log").select("event_name,entitas,created_at").order("created_at", { ascending: false }).limit(8),
       ]);
 
-      const pbbNominal = ((pbbSumRes.data as any[]) || []).reduce((a, r) => a + Number(r.pbb_terutang || 0), 0);
+      const pbbNominal = ((pbbSumRes.data) || []).reduce((a, r) => a + Number(r.pbb_terutang || 0), 0);
 
       setKpi({
         pamong: pamong.count ?? 0,
@@ -224,11 +260,11 @@ export function AdminDashboard() {
       });
 
       const kMap = new Map<string, number>();
-      ((aduanRows.data as any[]) || []).forEach((r) => kMap.set(r.kategori, (kMap.get(r.kategori) || 0) + 1));
+      ((aduanRows.data) || []).forEach((r) => kMap.set(r.kategori, (kMap.get(r.kategori) || 0) + 1));
       setAduanByKategori(Array.from(kMap.entries()).map(([name, value]) => ({ name, value })));
 
       const bMap = new Map<string, { anggaran: number; realisasi: number }>();
-      ((apbdesRows.data as any[]) || []).forEach((r) => {
+      ((apbdesRows.data) || []).forEach((r) => {
         const cur = bMap.get(r.kategori) || { anggaran: 0, realisasi: 0 };
         cur.anggaran += Number(r.anggaran || 0);
         cur.realisasi += Number(r.realisasi || 0);
@@ -241,33 +277,10 @@ export function AdminDashboard() {
         })),
       );
 
-      setRecentEvents((events.data as any[]) || []);
+      setRecentEvents(events.data || []);
       setLoading(false);
     })();
   }, [user, currentYear]);
-
-  const KPI = ({ label, val, hint, to }: { label: string; val: string | number; hint?: string; to?: string }) => {
-    const body = (
-      <>
-        <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{label}</div>
-        <div className="mt-2 font-display text-3xl font-bold text-primary tabular-nums leading-none">{val}</div>
-        {hint && <div className="mt-2 text-xs text-muted-foreground">{hint}</div>}
-      </>
-    );
-    return to ? (
-      <Link to={to} className="block bg-card border border-border p-5 hover:border-primary transition-colors">{body}</Link>
-    ) : (
-      <div className="bg-card border border-border p-5">{body}</div>
-    );
-  };
-
-  const rupiahShort = (n: number) => {
-    if (n >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toFixed(2)} M`;
-    if (n >= 1_000_000) return `Rp ${(n / 1_000_000).toFixed(1)} Jt`;
-    return `Rp ${n.toLocaleString("id-ID")}`;
-  };
-
-  const PIE_COLORS = ["#015967", "#FF9E20", "#0d7a8a", "#c97a12", "#33a3b3", "#a1560b"];
 
   return (
     <>
@@ -371,74 +384,7 @@ export function AdminDashboard() {
 }
 
 // ============ Profil Desa ============
-export function ProfilDesaAdmin() {
-  const [visi, setVisi] = useState("");
-  const [misi, setMisi] = useState<string[]>([""]);
-  const [sejarah, setSejarah] = useState<string[]>([""]);
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const tenantId = useTenantId();
 
-  useEffect(() => {
-    supabase.from("profil_desa").select("*").eq("singleton", true).maybeSingle().then(({ data }) => {
-      if (data) {
-        setVisi(data.visi);
-        setMisi((data.misi as string[]) || [""]);
-        setSejarah((data.sejarah as string[]) || [""]);
-      }
-      setLoading(false);
-    });
-  }, []);
-
-  const save = async () => {
-    setBusy(true);
-    const payload: Record<string, any> = {
-      singleton: true,
-      visi: visi.trim(),
-      misi: misi.map((s) => s.trim()).filter(Boolean),
-      sejarah: sejarah.map((s) => s.trim()).filter(Boolean),
-    };
-    // Auto-inject tenant_id for INSERT (upsert path: only inject if no existing row for this tenant)
-    if (tenantId && !payload.tenant_id) {
-      payload.tenant_id = tenantId;
-    }
-    const { error } = await supabase.from("profil_desa").upsert(payload, { onConflict: "singleton" });
-    setBusy(false);
-    if (error) toast.error(error.message);
-    else toast.success("Profil desa tersimpan.");
-  };
-
-  if (loading) return <div className="text-muted-foreground">Memuat…</div>;
-
-  return (
-    <>
-      <PageTitle title="Profil Desa" desc="Kelola sejarah, visi, dan misi desa." />
-      <div className="space-y-6">
-        <section className="rounded-xl bg-card border border-border p-5">
-          <h2 className="font-display font-semibold mb-3">Visi</h2>
-          <textarea value={visi} onChange={(e) => setVisi(e.target.value)} rows={3} maxLength={500} className={inp} autoComplete="off" />
-        </section>
-
-        <ListEditor
-          title="Misi"
-          items={misi}
-          setItems={setMisi}
-          placeholder="Kalimat misi…"
-          multiline
-        />
-        <ListEditor
-          title="Sejarah (per paragraf)"
-          items={sejarah}
-          setItems={setSejarah}
-          placeholder="Paragraf sejarah…"
-          multiline
-        />
-
-        <button onClick={save} disabled={busy} className={btnPri}>{busy ? "Menyimpan…" : "Simpan Perubahan"}</button>
-      </div>
-    </>
-  );
-}
 
 function ListEditor({ title, items, setItems, placeholder, multiline }: { title: string; items: string[]; setItems: (v: string[]) => void; placeholder: string; multiline?: boolean }) {
   return (
@@ -463,17 +409,7 @@ function ListEditor({ title, items, setItems, placeholder, multiline }: { title:
 }
 
 // ============ Generic Table CRUD ============
-export type Column = {
-  key: string;
-  label: string;
-  type?: "text" | "number" | "date" | "textarea" | "checkbox" | "select" | "image" | "video" | "relation";
-  step?: string;
-  hideInTable?: boolean;
-  options?: { value: string; label: string }[];
-  relation?: { table: string; labelCol: string; valueCol: string; filterBy?: string; filterField?: string };
-  imageFolder?: string;
-  render?: (row: any) => ReactNode;
-};
+
 
 export function RelationSelect({
   relation,
@@ -563,681 +499,97 @@ function ConfirmDialog({
   );
 }
 
-export function TableCrud({
-  table, columns, blank, title, desc,
-  orderBy = "urutan", orderAsc = true,
-  pageSize = 50,
-}: {
-  table: string;
-  columns: Column[];
-  blank: Record<string, any>;
-  title: string;
-  desc: string;
-  orderBy?: string;
-  orderAsc?: boolean;
-  pageSize?: number;
-}) {
-  const [rows, setRows] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [draft, setDraft] = useState<any | null>(null);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [nikError, setNikError] = useState<string | null>(null);
-  const [nikLoading, setNikLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const tenantId = useTenantId();
-  const confirm = useConfirm();
-  const nikDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = () => {
-    setLoading(true);
-    let q = (supabase.from(table as any) as any).select("*", { count: "exact" }).order(orderBy, { ascending: orderAsc });
-    if (search) {
-      // Basic search on first text column
-      const searchCol = columns.find(c => c.type !== "number" && c.type !== "checkbox" && c.type !== "date" && c.type !== "select" && c.type !== "image");
-      if (searchCol) q = q.ilike(searchCol.key, `%${search}%`);
-    }
-    q = q.range((page - 1) * pageSize, page * pageSize - 1);
-    q.then(({ data, count }: any) => {
-      setRows(data || []);
-      setTotalCount(count || 0);
-      setLoading(false);
-    });
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [table, orderBy, orderAsc, search, page]);
-
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  const filteredRows = search ? rows : rows; // Already filtered by Supabase
-
-  const save = async (row: any) => {
-    setSaving(true);
-    try {
-      const { id, ...payload } = row;
-      // NIK validation: must be exactly 16 digits
-      const nikCol = columns.find(c => c.key === "nik" || c.label.toLowerCase().includes("nik"));
-      if (nikCol && payload.nik && !/^\d{16}$/.test(String(payload.nik))) {
-        setNikError("NIK harus 16 digit angka");
-        return;
-      }
-      // Auto-inject tenant_id for tables that need it
-      const tenantTables = ["penduduk","keluarga","surat_ajuan","berita","aduan_warga","usulan_warga","apbdes","kegiatan_pembangunan","agenda","pengumuman","galeri","page_hero_config","desa_pamong","wilayah_dusun","lembaga_desa","hero_slider","nav_items","footer_columns","rpjmdes_periode","rpjmdes_bidang","rpjmdes_program","rkpdes_tahun","rkpdes_kegiatan","bidang_tanah","infrastruktur","posyandu_agregat","stunting_agregat","bantuan_sosial","penerima_bansos","bencana_kejadian","dpt_pemilih","surat_jenis","langganan_wa","pbb_tagihan","balita","potensi_umkm","potensi_produk","potensi_wisata","voting_topik","voting_opsi"];
-      if (tenantTables.includes(table) && !payload.tenant_id && tenantId) {
-        payload.tenant_id = tenantId;
-      }
-      const q = id
-        ? (supabase.from(table as any) as any).update(payload).eq("id", id)
-        : (supabase.from(table as any) as any).insert(payload);
-      const { error } = await q;
-      if (error) { toast.error(error.message); return; }
-      toast.success("Tersimpan.");
-      setDraft(null);
-      setNikError(null);
-      setPage(1);
-      load();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const del = async (id: string) => {
-    if (!(await confirm({ title: "Hapus baris ini?" }))) return;
-    const { error } = await (supabase.from(table as any) as any).delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Terhapus.");
-    load();
-  };
-
-  // CSV Export
-  const exportCsv = () => {
-    const header = columns.filter(c => !c.hideInTable).map(c => c.label).join(",");
-    const csvRows = filteredRows.map(r =>
-      columns.filter(c => !c.hideInTable).map(c => {
-        const val = r[c.key];
-        if (val === null || val === undefined) return "";
-        const str = String(val);
-        return str.includes(",") || str.includes('"') || str.includes("\n")
-          ? `"${str.replace(/"/g, '""')}"`
-          : str;
-      }).join(",")
-    );
-    const csv = [header, ...csvRows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${table}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Export CSV berhasil");
-  };
-
-  // CSV Import
-  const importCsv = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const text = ev.target?.result as string;
-      const lines = text.split("\n").filter(l => l.trim());
-      if (lines.length < 2) return toast.error("Format CSV tidak valid");
-      const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-      const dataRows = lines.slice(1);
-      let imported = 0, failed = 0;
-      for (const line of dataRows) {
-        const values = line.split(",").map(v => v.trim().replace(/^"|"$/g, "").replace(/""/g, '"'));
-        const row: any = {};
-        headers.forEach((h, i) => {
-          const col = columns.find(c => c.label === h);
-          if (col) row[col.key] = values[i] || null;
-        });
-        if (Object.keys(row).length > 0) {
-          // Auto-inject tenant_id for known multi-tenant tables during CSV import
-          const tenantTables = ["penduduk","keluarga","surat_ajuan","berita","aduan_warga","usulan_warga","apbdes","kegiatan_pembangunan","agenda","pengumuman","galeri","rpjmdes_periode","rpjmdes_bidang","rpjmdes_program","rkpdes_tahun","rkpdes_kegiatan","bidang_tanah","infrastruktur","posyandu_agregat","stunting_agregat","bantuan_sosial","penerima_bansos","bencana_kejadian","dpt_pemilih","surat_jenis","langganan_wa","pbb_tagihan","balita","potensi_umkm","potensi_produk","potensi_wisata","voting_topik","voting_opsi"];
-          if (tenantTables.includes(table) && tenantId && !row.tenant_id) {
-            row.tenant_id = tenantId;
-          }
-          const { error } = await (supabase.from(table as any) as any).insert(row);
-          if (error) failed++; else imported++;
-        }
-      }
-      toast.success(`Impor selesai: ${imported} berhasil, ${failed} gagal`);
-      setPage(1);
-      load();
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
-
-  return (
-    <>
-      <PageTitle title={title} desc={desc} />
-      <div className="flex flex-wrap gap-2 justify-between items-center mb-4">
-        <div className="flex gap-2 items-center">
-          <input
-            type="search"
-            placeholder="Cari..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm w-48"
-            autoComplete="off"
-          />
-          <span className="text-xs text-muted-foreground">{totalCount} data</span>
-        </div>
-        <div className="flex gap-2">
-          <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-2 text-sm hover:bg-muted">
-            <span>Import CSV</span>
-            <input type="file" accept=".csv" className="hidden" onChange={importCsv} />
-          </label>
-          <button onClick={exportCsv} className="rounded-md border border-border bg-background px-3 py-2 text-sm hover:bg-muted">Export CSV</button>
-          <button onClick={() => setDraft({ ...blank })} className={btnPri}>+ Tambah</button>
-        </div>
-      </div>
-
-      {draft && (
-        <StandaloneFormOverlay title={`${draft.id ? "Edit" : "Tambah"} Baris`} onClose={() => { setDraft(null); setNikError(null); }}>
-          <div className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
-              {columns.map((c) => (
-                <div key={String(c.key)} className={c.type === "textarea" ? "sm:col-span-2" : ""}>
-                  {c.type === "textarea" ? (
-                    <label className="block text-xs font-medium mb-1">
-                      <span className="block mb-1 font-medium">{c.label}</span>
-                      <textarea
-                        rows={4}
-                        value={(draft[c.key] ?? "") as string}
-                        onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
-                        className={inp}
-                        autoComplete="off"
-                      />
-                    </label>
-                  ) : c.type === "checkbox" ? (
-                    <label className="inline-flex items-center gap-2 text-sm mt-6">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(draft[c.key])}
-                        onChange={(e) => setDraft({ ...draft, [c.key]: e.target.checked })}
-                      />
-                      Aktif
-                    </label>
-                  ) : c.type === "select" ? (
-                    <label className="block text-xs font-medium mb-1">
-                      <span className="block mb-1 font-medium">{c.label}</span>
-                      <select
-                        value={(draft[c.key] ?? "") as string}
-                        onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
-                        className={inp}
-                        autoComplete="off"
-                      >
-                        <option value="" disabled>— pilih —</option>
-                        {(c.options ?? []).map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : c.type === "relation" && c.relation ? (
-                    <label className="block text-xs font-medium mb-1">
-                      <span className="block mb-1 font-medium">{c.label}</span>
-                      <RelationSelect
-                        relation={c.relation}
-                        value={(draft[c.key] ?? "") as string}
-                        onChange={(val) => setDraft({ ...draft, [c.key]: val })}
-                        className={inp}
-                        filterValue={c.relation?.filterField ? (draft[c.relation.filterField] as string) : undefined}
-                      />
-                    </label>
-                  ) : c.type === "image" ? (
-                    <label className="block text-xs font-medium mb-1">
-                      <span className="block mb-1 font-medium">{c.label}</span>
-                      <ImageField
-                        value={(draft[c.key] as string) || ""}
-                        folder={c.imageFolder || table}
-                        onChange={(url) => setDraft({ ...draft, [c.key]: url })}
-                      />
-                    </label>
-                  ) : c.type === "video" ? (
-                    <label className="block text-xs font-medium mb-1">
-                      <span className="block mb-1 font-medium">{c.label}</span>
-                      <VideoField
-                        value={(draft[c.key] as string) || ""}
-                        folder={c.imageFolder || table}
-                        onChange={(url) => setDraft({ ...draft, [c.key]: url })}
-                      />
-                    </label>
-                  ) : (
-                    <div>
-                      {(() => {
-                        const isNikField = c.key === "nik" || c.label.toLowerCase().includes("nik");
-                        const isEmailField = /email/i.test(c.label);
-                        const isTeleponField = /telepon|telp|kontak|nomor.?wa|hp/i.test(c.label);
-                        return (
-                          <label className="block text-xs font-medium mb-1">
-                            <span className="block mb-1 font-medium">{c.label}</span>
-                            <input
-                              type={c.type === "number" ? "number" : isTeleponField ? "tel" : isEmailField ? "email" : "text"}
-                              step={c.step}
-                              value={(draft[c.key] ?? "") as string | number}
-                              onChange={(e) => {
-                                const raw = e.target.value;
-                                const val = c.type === "number" ? (raw === "" ? 0 : Number(raw)) : raw;
-                                setDraft({ ...draft, [c.key]: val });
-                                if (isNikField) {
-                                  setNikError(null);
-                                  setNikLoading(false);
-                                  if (nikDebounceRef.current) clearTimeout(nikDebounceRef.current);
-                                  if (/^\d{16}$/.test(raw)) {
-                                    nikDebounceRef.current = setTimeout(async () => {
-                                      setNikLoading(true);
-                                      const { data: p } = await (supabase.from("penduduk") as any)
-                                        .select("*").eq("nik", raw).maybeSingle();
-                                      if (!p) { setNikLoading(false); return; }
-                                      const genderMap: Record<string, string> = { L: "L", P: "P" };
-                                      const next: Record<string, unknown> = { ...draft };
-                                      for (const k of ["nama", "tempat_lahir", "tanggal_lahir", "alamat"]) {
-                                        if (p[k] !== undefined && p[k] !== null) next[k] = p[k];
-                                      }
-                                      next.jenis_kelamin = genderMap[p.jenis_kelamin] ?? p.jenis_kelamin ?? "L";
-                                      next.keluarga_id = p.keluarga_id ?? null;
-                                      setNikLoading(false);
-                                      setDraft(next);
-                                    }, 500);
-                                  }
-                                }
-                              }}
-                              className={inp}
-                            />
-                            {isNikField && (nikError || nikLoading) && (
-                              <p className="text-xs mt-1">{nikLoading ? <span className="text-blue-500">Mencari data...</span> : <span className="text-red-500">{nikError}</span>}</p>
-                            )}
-                          </label>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-current/10 mt-6">
-              <button onClick={() => { setDraft(null); setNikError(null); }} className={btnSec}>Batal</button>
-              <button onClick={() => save(draft)} disabled={saving} className={btnPri}>{saving ? "Menyimpan..." : "Simpan"}</button>
-            </div>
-          </div>
-        </StandaloneFormOverlay>
-      )}
-
-      <div className="overflow-x-auto rounded-xl bg-card border border-border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted">
-            <tr>
-              {columns.filter((c) => !c.hideInTable).map((c) => (
-                <th key={String(c.key)} className="text-left px-4 py-3 font-display font-semibold">{c.label}</th>
-              ))}
-              <th className="px-4 py-3 w-40"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              <tr><td colSpan={columns.length + 1} className="px-4 py-6 text-center text-muted-foreground">Memuat…</td></tr>
-            )}
-            {!loading && rows.length === 0 && (
-              <tr><td colSpan={columns.length + 1} className="px-4 py-6 text-center text-muted-foreground">Belum ada data.</td></tr>
-            )}
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-border">
-                {columns.filter((c) => !c.hideInTable).map((c) => (
-                  <td key={String(c.key)} className="px-4 py-3">
-                    {c.render ? c.render(r) : c.type === "checkbox" ? (r[c.key] ? "✓" : "—") : String(r[c.key] ?? "")}
-                  </td>
-                ))}
-                <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
-                  <button onClick={() => setDraft(r)} className={btnSec}>Edit</button>
-                  <button onClick={() => r.id && del(r.id)} className={btnDanger}>Hapus</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-1 mt-4">
-          <button onClick={() => setPage(1)} disabled={page === 1} className="px-3 py-1 rounded border text-sm disabled:opacity-50">«</button>
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 rounded border text-sm disabled:opacity-50">‹</button>
-          <span className="px-3 py-1 text-sm">Halaman {page} dari {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1 rounded border text-sm disabled:opacity-50">›</button>
-          <button onClick={() => setPage(totalPages)} disabled={page === totalPages} className="px-3 py-1 rounded border text-sm disabled:opacity-50">»</button>
-        </div>
-      )}
-    </>
-  );
-}
-
-export function ImageField({ value, folder, onChange }: { value: string; folder: string; onChange: (url: string) => void }) {
-  const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<string>(value || "");
-
-  const onFile = async (f: File | null) => {
-    if (!f) return;
-    setBusy(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = (e) => setPreview(e.target?.result as string || "");
-      reader.readAsDataURL(f);
-      const result = await uploadFile(f, { entityType: 'lainnya', kategori: 'foto_galeri' } as any);
-      if (result.success && result.url) {
-        onChange(result.url);
-        toast.success("Foto berhasil diunggah.");
-      } else {
-        toast.error(result.error || "Gagal upload.");
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Gagal upload.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleRemove = () => {
-    setPreview("");
-    onChange("");
-  };
-
-  return (
-    <div className="space-y-2">
-      {(preview || value) && (
-        <div className="relative">
-          <img src={preview || value} alt="preview" className="h-32 w-full object-cover border border-border rounded-md" />
-        </div>
-      )}
-      <div className="flex items-center gap-3">
-        <label className="cursor-pointer inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm hover:bg-primary/90 disabled:opacity-50">
-          {busy ? "Mengunggah..." : "📁 Pilih File"}
-          <input type="file" accept="image/*" disabled={busy} onChange={(e) => onFile(e.target.files?.[0] || null)} className="hidden" />
-        </label>
-        {(value || preview) && (
-          <button type="button" onClick={handleRemove} className={btnDanger}>Hapus</button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export function PamongAdmin() {
-  return (
-    <TableCrud
-      table="desa_pamong"
-      title="Struktur Pamong Desa"
-      desc="Perangkat pemerintahan desa yang tampil di halaman Struktur."
-      blank={{ nama: "", jabatan: "", periode: "", urutan: 0, foto_url: "", nip: "", aktif: true, qr_code_url: "", ttd_image_url: "" } as any}
-      columns={[
-        { key: "nama", label: "Nama" },
-        { key: "jabatan", label: "Jabatan" },
-        { key: "nip", label: "NIP" },
-        { key: "periode", label: "Periode" },
-        { key: "urutan", label: "Urutan", type: "number" },
-        { key: "aktif", label: "Aktif", type: "checkbox" },
-        { key: "foto_url", label: "Foto Pamong", type: "image", imageFolder: "pamong", hideInTable: true },
-        { key: "ttd_image_url", label: "Tanda Tangan", type: "image", imageFolder: "pamong/ttd", hideInTable: true },
-        { key: "qr_code_url", label: "QR Code Verifikasi", type: "image", imageFolder: "pamong/qr", hideInTable: true },
-      ]}
-    />
-  );
-}
-
-export function DusunAdmin() {
-  return (
-    <TableCrud
-      table="wilayah_dusun"
-      title="Wilayah Dusun"
-      desc="Daftar dusun yang tampil di halaman Wilayah."
-      blank={{ nama: "", kk: 0, jiwa: 0, luas_ha: 0, urutan: 0 } as any}
-      columns={[
-        { key: "nama", label: "Nama Dusun" },
-        { key: "kk", label: "KK", type: "number" },
-        { key: "jiwa", label: "Jiwa", type: "number" },
-        { key: "luas_ha", label: "Luas (ha)", type: "number", step: "0.01" },
-        { key: "urutan", label: "Urutan", type: "number" },
-      ]}
-    />
-  );
-}
-
-export function LembagaAdmin() {
-  return (
-    <TableCrud
-      table="lembaga_desa"
-      title="Lembaga Desa"
-      desc="Lembaga kemasyarakatan yang tampil di halaman Lembaga."
-      blank={{ nama: "", ketua: "", jumlah_anggota: 0, urutan: 0 } as any}
-      columns={[
-        { key: "nama", label: "Nama Lembaga" },
-        { key: "ketua", label: "Ketua" },
-        { key: "jumlah_anggota", label: "Jumlah Anggota", type: "number" },
-        { key: "urutan", label: "Urutan", type: "number" },
-      ]}
-    />
-  );
-}
-
-export function BeritaAdmin() {
-  return (
-    <BeritaCrud />
-  );
-}
-
-function BeritaCrud() {
-  const [rows, setRows] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [draft, setDraft] = useState<any | null>(null);
-  const [isiText, setIsiText] = useState("");
-  const tenantId = useTenantId();
-  const confirm = useConfirm();
-
-  const load = () => {
-    setLoading(true);
-    supabase.from("berita").select("*").order("tanggal", { ascending: false }).then(({ data }) => {
-      setRows(data || []);
-      setLoading(false);
-    });
-  };
-  useEffect(load, []);
-
-  const openNew = () => {
-    setDraft({ slug: "", kategori: "Umum", judul: "", ringkasan: "", isi: [], penulis: "", tanggal: new Date().toISOString().slice(0, 10), published: true, cover_url: "" });
-    setIsiText("");
-  };
-  const openEdit = (r: any) => {
-    setDraft(r);
-    setIsiText(((r.isi as string[]) || []).join("\n\n"));
-  };
-
-  const save = async () => {
-    setSaving(true);
-    const payload: Record<string, any> = { ...draft, isi: isiText.split(/\n\n+/).map((s) => s.trim()).filter(Boolean) };
-    if (!payload.id && tenantId && !payload.tenant_id) {
-      payload.tenant_id = tenantId;
-    }
-    const { id, ...rest } = payload;
-    const q = id ? (supabase.from("berita") as any).update(rest as any).eq("id", id) : (supabase.from("berita") as any).insert(rest as any);
-    const { error } = await q;
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Tersimpan.");
-    setDraft(null);
-    load();
-  };
-
-  const del = async (id: string) => {
-    if (!(await confirm({ title: "Hapus berita ini?" }))) return;
-    const { error } = await supabase.from("berita").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Terhapus.");
-    load();
-  };
-
-  return (
-    <>
-      <PageTitle title="Berita Desa" desc="Artikel yang tampil di halaman Berita publik." />
-      <div className="flex justify-end mb-4">
-        <button onClick={openNew} className={btnPri}>+ Tambah Berita</button>
-      </div>
-      {draft && (
-        <StandaloneFormOverlay title={`${draft.id ? "Edit" : "Tambah"} Berita`} onClose={() => setDraft(null)}>
-          <div className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div><label className="block text-xs mb-1">Judul</label><input className={inp} value={draft.judul} onChange={(e) => setDraft({ ...draft, judul: e.target.value })} /></div>
-              <div><label className="block text-xs mb-1">Slug (URL)</label><input className={inp} value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} /></div>
-              <div><label className="block text-xs mb-1">Kategori</label><input className={inp} value={draft.kategori} onChange={(e) => setDraft({ ...draft, kategori: e.target.value })} /></div>
-              <div><label className="block text-xs mb-1">Tanggal</label><input type="date" className={inp} value={draft.tanggal} onChange={(e) => setDraft({ ...draft, tanggal: e.target.value })} /></div>
-              <div><label className="block text-xs mb-1">Penulis</label><input className={inp} value={draft.penulis} onChange={(e) => setDraft({ ...draft, penulis: e.target.value })} /></div>
-              <div className="flex items-end"><label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.published} onChange={(e) => setDraft({ ...draft, published: e.target.checked })} /> Publikasikan</label></div>
-            </div>
-            <div><label className="block text-xs mb-1">Ringkasan</label><textarea rows={2} className={inp} value={draft.ringkasan} onChange={(e) => setDraft({ ...draft, ringkasan: e.target.value })} /></div>
-            <div>
-              <label className="block text-xs mb-1">Foto Sampul</label>
-              <ImageField value={draft.cover_url || ""} folder="berita" onChange={(url) => setDraft({ ...draft, cover_url: url })} />
-            </div>
-            <div><label className="block text-xs mb-1">Isi (pisahkan paragraf dengan baris kosong)</label><textarea rows={10} className={inp} value={isiText} onChange={(e) => setIsiText(e.target.value)} /></div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-current/10 mt-6">
-              <button onClick={() => setDraft(null)} className={btnSec}>Batal</button>
-              <button onClick={save} disabled={saving} className={btnPri}>{saving ? "Menyimpan..." : "Simpan"}</button>
-            </div>
-          </div>
-        </StandaloneFormOverlay>
-      )}
-      <div className="overflow-x-auto rounded-xl bg-card border border-border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted"><tr><th className="text-left px-4 py-3">Tanggal</th><th className="text-left px-4 py-3">Judul</th><th className="text-left px-4 py-3">Kategori</th><th className="text-left px-4 py-3">Status</th><th className="w-40"></th></tr></thead>
-          <tbody>
-            {loading && <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Memuat…</td></tr>}
-            {!loading && rows.length === 0 && <tr><td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">Belum ada data.</td></tr>}
-            {rows.map((r) => (
-              <tr key={r.id} className="border-t border-border">
-                <td className="px-4 py-3 tabular-nums">{r.tanggal}</td>
-                <td className="px-4 py-3 font-medium">{r.judul}</td>
-                <td className="px-4 py-3">{r.kategori}</td>
-                <td className="px-4 py-3">{r.published ? <span className="text-primary">Terbit</span> : <span className="text-muted-foreground">Draf</span>}</td>
-                <td className="px-4 py-3 text-right space-x-2"><button onClick={() => openEdit(r)} className={btnSec}>Edit</button><button onClick={() => del(r.id)} className={btnDanger}>Hapus</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
-}
 
 // ============ Agenda / Pengumuman / Galeri (via TableCrud) ============
-export function AgendaAdmin() {
-  return (
-    <TableCrud
-      table="agenda"
-      title="Agenda & Kalender"
-      desc="Jadwal kegiatan desa yang tampil di halaman Kalender."
-      orderBy="tanggal"
-      orderAsc
-      blank={{ slug: "", jenis: "Kegiatan", judul: "", tanggal: new Date().toISOString().slice(0, 10), waktu: "", lokasi: "", penyelenggara: "", deskripsi: "" } as any}
-      columns={[
-        { key: "judul" as any, label: "Judul" },
-        { key: "slug" as any, label: "Slug" },
-        { key: "jenis" as any, label: "Jenis" },
-        { key: "tanggal" as any, label: "Tanggal", type: "date" },
-        { key: "waktu" as any, label: "Waktu" },
-        { key: "lokasi" as any, label: "Lokasi" },
-        { key: "penyelenggara" as any, label: "Penyelenggara" },
-        { key: "deskripsi" as any, label: "Deskripsi", type: "textarea", hideInTable: true },
-      ]}
-    />
-  );
-}
 
-export function PengumumanAdmin() {
+export function SuratAjuanAdmin() {
+  const jenisSuratOpts = useSelectOptions("surat_jenis", "nama");
+
   return (
     <TableCrud
-      table="pengumuman"
-      title="Pengumuman Resmi"
-      desc="Pengumuman bernomor register yang tampil di halaman Pengumuman."
-      orderBy="tanggal"
+      table="surat_ajuan"
+      title="Pengajuan Surat"
+      desc="Modul pengelolaan pengajuan surat dari warga."
+      orderBy="created_at"
       orderAsc={false}
-      blank={{ nomor: "", tanggal: new Date().toISOString().slice(0, 10), judul: "", ringkasan: "" } as any}
+      blank={{ 
+        nomor_tiket: "", 
+        nik: "", 
+        nama: "", 
+        kontak: "", 
+        jenis_surat_id: "", 
+        keperluan: "", 
+        status: "menunggu" 
+      } as any}
       columns={[
-        { key: "nomor" as any, label: "Nomor Register" },
-        { key: "tanggal" as any, label: "Tanggal", type: "date" },
-        { key: "judul" as any, label: "Judul" },
-        { key: "ringkasan" as any, label: "Ringkasan", type: "textarea", hideInTable: true },
+        { key: "nomor_tiket", label: "Nomor Tiket", readOnly: true },
+        { key: "nik", label: "NIK Pemohon" },
+        { key: "nama", label: "Nama Pemohon" },
+        { key: "kontak", label: "Kontak" },
+        { 
+          key: "jenis_surat_id", 
+          label: "Jenis Surat", 
+          type: "select", 
+          options: jenisSuratOpts 
+        },
+        { key: "keperluan", label: "Keperluan", type: "textarea" },
+        { 
+          key: "status", 
+          label: "Status", 
+          type: "select", 
+          options: [
+            { value: "menunggu", label: "Menunggu" },
+            { value: "diproses", label: "Diproses" },
+            { value: "disetujui", label: "Disetujui" },
+            { value: "ditolak", label: "Ditolak" },
+            { value: "selesai", label: "Selesai" },
+            { value: "dibatalkan", label: "Dibatalkan" },
+          ]
+        },
+        { key: "created_at", label: "Tgl Pengajuan", readOnly: true },
       ]}
     />
   );
 }
 
-export function GaleriAdmin() {
-  return (
-    <TableCrud
-      table="galeri"
-      title="Galeri"
-      desc="Foto kegiatan desa yang tampil di halaman Galeri."
-      orderBy="urutan"
-      orderAsc
-      blank={{ judul: "", emoji: "📷", album: "Umum", tanggal: new Date().toISOString().slice(0, 10), urutan: 0, foto_url: "" } as any}
-      columns={[
-        { key: "judul" as any, label: "Judul" },
-        { key: "album" as any, label: "Album" },
-        { key: "tanggal" as any, label: "Tanggal", type: "date" },
-        { key: "urutan" as any, label: "Urutan", type: "number" },
-        { key: "foto_url" as any, label: "Foto", type: "image", imageFolder: "galeri", hideInTable: true },
-        { key: "emoji" as any, label: "Emoji (fallback)", hideInTable: true },
-      ]}
-    />
-  );
-}
-export function VideoField({ value, folder, onChange }: { value: string; folder: string; onChange: (url: string) => void }) {
-  const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<string>(value || "");
-
-  const onFile = async (f: File | null) => {
-    if (!f) return;
-    setBusy(true);
-    try {
-      const result = await uploadFile(f, {
-        entityType: 'lainnya',
-        kategori: 'foto_galeri',
-      } as any);
-      if (result.success && result.url) {
-        setPreview(result.url);
-        onChange(result.url);
-        toast.success("Video berhasil diunggah ke penyimpanan internal.");
-      } else {
-        toast.error("Gagal unggah video.");
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Gagal unggah video.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="space-y-3">
-      {preview ? (
-        <video src={preview} controls className="w-full h-auto max-h-48 object-cover rounded shadow" />
-      ) : (
-        <div className="w-full h-32 bg-secondary flex items-center justify-center rounded text-sm text-muted-foreground border border-dashed">
-          Tidak ada video
-        </div>
-      )}
-      <div className="flex items-center gap-3">
-        <input
-          type="file"
-          accept="video/mp4,video/webm"
-          className="text-xs"
-          onChange={(e) => onFile(e.target.files?.[0] || null)}
-          disabled={busy}
-        />
-        {busy && <span className="text-xs text-muted-foreground">Mengunggah...</span>}
-      </div>
+// Dummy components for other missing routes
+const ComingSoon = ({ title }: { title: string }) => (
+  <div className="p-8">
+    <PageTitle title={title} desc="Modul ini sedang dalam pengembangan." />
+    <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-6 text-center">
+      <h3 className="font-semibold text-lg mb-2">Segera Hadir</h3>
+      <p>Fitur ini masih dalam tahap pengerjaan dan akan tersedia pada update berikutnya.</p>
     </div>
-  );
-}
+  </div>
+);
+
+export const PamongAdmin = () => <ComingSoon title="Struktur Pamong" />;
+export const LembagaAdmin = () => <ComingSoon title="Lembaga Desa" />;
+export const BeritaAdmin = () => <ComingSoon title="Berita" />;
+export const AgendaAdmin = () => <ComingSoon title="Agenda" />;
+export const PengumumanAdmin = () => <ComingSoon title="Pengumuman" />;
+export const GaleriAdmin = () => <ComingSoon title="Galeri" />;
+export const BidangTanahAdmin = () => <ComingSoon title="Pertanahan" />;
+export const InfrastrukturAdmin = () => <ComingSoon title="Infrastruktur" />;
+export const KegiatanPembangunanAdmin = () => <ComingSoon title="Kegiatan Pembangunan" />;
+export const PosyanduAdmin = () => <ComingSoon title="Posyandu" />;
+export const StuntingAdmin = () => <ComingSoon title="Stunting" />;
+export const BansosAdmin = () => <ComingSoon title="Bantuan Sosial" />;
+export const PenerimaBansosAdmin = () => <ComingSoon title="Penerima Bansos" />;
+export const BencanaAdmin = () => <ComingSoon title="Bencana" />;
+export const AduanAdmin = () => <ComingSoon title="Aduan Warga" />;
+export const DptAdmin = () => <ComingSoon title="DPT" />;
+export const JenisSuratAdmin = () => <ComingSoon title="Jenis Surat" />;
+export const SuratTerbitAdmin = () => <ComingSoon title="Surat Terbit" />;
+export const CetakSuratTerbitAdmin = () => <ComingSoon title="Cetak Surat" />;
+export const LanggananWaAdmin = () => <ComingSoon title="Langganan WA" />;
+export const BroadcastAdmin = () => <ComingSoon title="Broadcast" />;
+export const UmkmAdmin = () => <ComingSoon title="UMKM" />;
+export const ProdukMarketplaceAdmin = () => <ComingSoon title="Produk" />;
+export const WisataAdmin = () => <ComingSoon title="Wisata" />;
+export const PbbAdmin = () => <ComingSoon title="PBB" />;
+export const ApbdesAdmin = () => <ComingSoon title="APBDes" />;
+export const BalitaAdmin = () => <ComingSoon title="Balita" />;
+export const WaChatbotAdmin = () => <ComingSoon title="WA Chatbot" />;
+export const EventLogAdmin = () => <ComingSoon title="Event Log" />;

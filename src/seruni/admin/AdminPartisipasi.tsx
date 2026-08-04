@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { TableCrud } from "./AdminPages";
+import { TableCrud, type Column } from "../components/TableCrud";
 import { useConfirm } from "../ui/ConfirmDialog";
 
 const inp = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary";
@@ -160,7 +160,7 @@ export function UsulanAdmin() {
 
   const load = () => {
     setLoading(true);
-    let q = (supabase.from("usulan_warga" as any) as any).select("*").order("created_at", { ascending: false });
+    let q = supabase.from("usulan_warga").select("*").order("created_at", { ascending: false });
     if (statusF) q = q.eq("status", statusF);
     q.then(({ data }: any) => { setRows(data || []); setLoading(false); });
   };
@@ -169,7 +169,7 @@ export function UsulanAdmin() {
   const save = async () => {
     if (!editing) return;
     const { id, status, tanggapan } = editing;
-    const { error } = await (supabase.from("usulan_warga" as any) as any)
+    const { error } = await supabase.from("usulan_warga")
       .update({ status, tanggapan }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Tersimpan.");
@@ -178,7 +178,7 @@ export function UsulanAdmin() {
 
   const hapus = async (id: string) => {
     if (!(await confirm({ title: "Hapus usulan ini?" }))) return;
-    const { error } = await (supabase.from("usulan_warga" as any) as any).delete().eq("id", id);
+    const { error } = await supabase.from("usulan_warga").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Terhapus."); load();
   };
