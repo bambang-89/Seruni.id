@@ -23,6 +23,7 @@ function validateDataIdentitas(idi: unknown): Record<string, string> | null {
 }
 
 function validatePhone(phone: string): boolean {
+  if (!phone || phone === "-") return true;
   const cleaned = phone.replace(/[\s\-()]/g, "");
   return /^(\+?62|0)[8][0-9]{8,11}$/.test(cleaned);
 }
@@ -80,7 +81,7 @@ Deno.serve(async (req: Request) => {
   const tenant_id = clean(body.tenant_id, 36);
   const nik = clean(body.nik, 16);
   const nama = clean(body.nama, 120);
-  const kontak = clean(body.kontak, 20);
+  const kontak = clean(body.kontak, 20) || "-";
   const jenis_surat_id = clean(body.jenis_surat_id, 36);
   const keperluan = clean(body.keperluan, 2000);
   const lampiran = body.lampiran || [];

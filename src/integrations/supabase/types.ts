@@ -2448,6 +2448,41 @@ export type Database = {
           },
         ]
       }
+      surat_persyaratan: {
+        Row: {
+          id: string
+          tenant_id: string
+          surat_jenis_id: string
+          nama_persyaratan: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          surat_jenis_id: string
+          nama_persyaratan: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          surat_jenis_id?: string
+          nama_persyaratan?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surat_persyaratan_surat_jenis_id_fkey"
+            columns: ["surat_jenis_id"]
+            isOneToOne: false
+            referencedRelation: "surat_jenis"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       surat_jenis: {
         Row: {
           aktif: boolean

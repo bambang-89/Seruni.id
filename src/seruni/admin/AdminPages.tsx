@@ -209,7 +209,7 @@ export function AdminDashboard() {
 
     (async () => {
       const head = (t: string, filters?: (q: any) => any) => {
-        let q: any = (supabase.from(t) as any).select("*", { count: "exact", head: true });
+        let q: any = (supabase.from(t as any) as any).select("*", { count: "exact", head: true });
         if (filters) q = filters(q);
         return q;
       };
@@ -237,7 +237,7 @@ export function AdminDashboard() {
         head("pbb_tagihan", (q) => q.eq("tahun", currentYear).eq("status_bayar", "lunas")),
         supabase.from("pbb_tagihan").select("pbb_terutang").eq("tahun", currentYear).eq("status_bayar", "lunas"),
         supabase.from("aduan_warga").select("kategori"),
-        supabase.from("apbdes").select("kategori,anggaran,realisasi,jenis").eq("tahun", currentYear).eq("jenis", "belanja"),
+        supabase.from("apbdes").select("kategori,anggaran,realista,jenis").eq("tahun", currentYear).eq("jenis", "belanja"),
         supabase.from("event_log").select("event_name,entitas,created_at").order("created_at", { ascending: false }).limit(8),
       ]);
 
@@ -269,7 +269,7 @@ export function AdminDashboard() {
       ((apbdesRows.data) || []).forEach((r) => {
         const cur = bMap.get(r.kategori) || { anggaran: 0, realisasi: 0 };
         cur.anggaran += Number(r.anggaran || 0);
-        cur.realisasi += Number(r.realisasi || 0);
+        cur.realisasi += Number(r.realista || 0);
         bMap.set(r.kategori, cur);
       });
       setApbdesBidang(
@@ -507,18 +507,6 @@ function ConfirmDialog({
 
 export function SuratAjuanAdmin() {
   const jenisSuratOpts = useSelectOptions("surat_jenis", "nama");
-  const queryClient = useQueryClient();
-
-  const handleUpdateStatus = async (id: string, status: string) => {
-    try {
-      const { error } = await supabase.from("surat_ajuan").update({ status }).eq("id", id);
-      if (error) throw error;
-      toast.success(`Status berhasil diubah menjadi ${status}`);
-      queryClient.invalidateQueries({ queryKey: ["surat_ajuan"] });
-    } catch (err: any) {
-      toast.error(err.message || "Gagal mengubah status");
-    }
-  };
 
   const handlePreview = (id: string) => {
     window.open(`/admin/surat-ajuan/preview/${id}`, "_blank");
@@ -561,12 +549,11 @@ export function SuratAjuanAdmin() {
           label: "Status", 
           type: "select", 
           options: [
-            { value: "menunggu", label: "Menunggu" },
-            { value: "diproses", label: "Diproses" },
-            { value: "disetujui", label: "Disetujui" },
-            { value: "ditolak", label: "Ditolak" },
-            { value: "selesai", label: "Selesai" },
-            { value: "dibatalkan", label: "Dibatalkan" },
+            { value: "Menunggu", label: "Menunggu" },
+            { value: "Tandatangani", label: "Tandatangani" },
+            { value: "Selesai", label: "Selesai" },
+            { value: "Ditolak", label: "Ditolak" },
+            { value: "Dibatalkan", label: "Dibatalkan" },
           ]
         },
         { key: "created_at", label: "Tgl Pengajuan", readOnly: true },
@@ -575,19 +562,37 @@ export function SuratAjuanAdmin() {
         <>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => handlePreview(r.id)}>
-            Preview Dokumen
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleUpdateStatus(r.id, "diproses")}>
-            Terima & Proses
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleUpdateStatus(r.id, "disetujui")}>
-            Setujui (Tanda Tangan)
-          </DropdownMenuItem>
-          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleUpdateStatus(r.id, "ditolak")}>
-            Tolak
+            Verifikasi / Preview Surat
           </DropdownMenuItem>
         </>
       )}
+    />
+  );
+}
+
+export function SuratPersyaratanAdmin() {
+  const jenisSuratOpts = useSelectOptions("surat_jenis", "nama");
+
+  return (
+    <TableCrud
+      table="surat_persyaratan"
+      title="Master Persyaratan Surat"
+      desc="Kelola daftar persyaratan untuk masing-masing jenis surat."
+      orderBy="created_at"
+      blank={{ surat_jenis_id: "", nama_persyaratan: "" } as any}
+      columns={[
+        { 
+          key: "surat_jenis_id", 
+          label: "Jenis Surat", 
+          type: "select", 
+          options: jenisSuratOpts,
+          render: (r: any) => {
+            const opt = jenisSuratOpts.find(o => o.value === r.surat_jenis_id);
+            return opt ? opt.label : r.surat_jenis_id;
+          }
+        },
+        { key: "nama_persyaratan", label: "Nama Persyaratan" }
+      ]}
     />
   );
 }

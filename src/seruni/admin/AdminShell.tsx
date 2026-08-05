@@ -33,6 +33,7 @@ const navGroups = [
     icon: FileText,
     items: [
       { to: "/admin/jenis-surat", label: "Daftar Jenis Surat" },
+      { to: "/admin/persyaratan-surat", label: "Persyaratan Surat" },
       { to: "/admin/surat-ajuan", label: "Pengajuan Surat" },
       { to: "/admin/surat-terbit", label: "Surat Terbit" },
       { to: "/admin/buku-register", label: "Buku Register Surat" },

@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = req.body || {};
   const nik = clean(body.nik, 16);
   const nama = clean(body.nama, 120);
-  const kontak = clean(body.kontak, 20);
+  const kontak = clean(body.kontak, 20) || "-";
   const tenant_id = clean(body.tenant_id, 36);
   const jenis_surat_id = body.jenis_surat_id || null;
   const keperluan = clean(body.keperluan, 500);

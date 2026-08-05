@@ -86,6 +86,7 @@ const BalitaAdmin = lazy(() => AP().then((m) => ({ default: m.BalitaAdmin })));
 const WaChatbotAdmin = lazy(() => AP().then((m) => ({ default: m.WaChatbotAdmin })));
 const EventLogAdmin = lazy(() => AP().then((m) => ({ default: m.EventLogAdmin })));
 const AdminUmum = lazy(() => import("./seruni/admin/AdminUmum"));
+const SuratPersyaratanAdmin = lazy(() => AP().then((m) => ({ default: m.SuratPersyaratanAdmin })));
 const AdminTemplateSurat = lazy(() => import("./seruni/admin/AdminTemplateSurat"));
 const WA = () => import("./seruni/admin/WilayahAdmin");
 const RefDusunAdmin = lazy(() => WA().then((m) => ({ default: m.DusunAdmin })));
@@ -254,6 +255,7 @@ export default function App() {
             <Route path="apbdes" element={<ApbdesAdmin />} />
             <Route path="surat-ajuan" element={<SuratAjuanAdmin />} />
             <Route path="surat-ajuan/preview/:id" element={<SuratAjuanPreviewPage />} />
+            <Route path="persyaratan-surat" element={<SuratPersyaratanAdmin />} />
             <Route path="balita" element={<BalitaAdmin />} />
             <Route path="wa-chatbot" element={<WaChatbotAdmin />} />
             <Route path="event-log" element={<EventLogAdmin />} />

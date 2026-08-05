@@ -135,6 +135,7 @@ export type Column = {
   relation?: { table: string; labelCol: string; valueCol: string; filterBy?: string; filterField?: string };
   imageFolder?: string;
   render?: (row: any) => ReactNode;
+  readOnly?: boolean;
 };
 
 export function TableCrud({
