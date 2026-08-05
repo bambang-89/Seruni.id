@@ -23,6 +23,7 @@ import { StandaloneFormOverlay } from "../ui";
 import { TableCrud, ImageField, VideoField, type Column } from "../components/TableCrud";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useQueryClient } from "@tanstack/react-query";
+import { AdminPamong } from "./AdminPamong";
 
 export function useSelectOptions(table: string, labelKey: string, valueKey = "id", filter?: (r: Record<string, unknown>) => boolean) {
   const [opts, setOpts] = useState<{ value: string; label: string }[]>([]);
@@ -608,7 +609,7 @@ const ComingSoon = ({ title }: { title: string }) => (
   </div>
 );
 
-export const PamongAdmin = () => <ComingSoon title="Struktur Pamong" />;
+export const PamongAdmin = AdminPamong;
 export const LembagaAdmin = () => <ComingSoon title="Lembaga Desa" />;
 export const BeritaAdmin = () => <ComingSoon title="Berita" />;
 export const AgendaAdmin = () => <ComingSoon title="Agenda" />;
@@ -624,7 +625,23 @@ export const PenerimaBansosAdmin = () => <ComingSoon title="Penerima Bansos" />;
 export const BencanaAdmin = () => <ComingSoon title="Bencana" />;
 export const AduanAdmin = () => <ComingSoon title="Aduan Warga" />;
 export const DptAdmin = () => <ComingSoon title="DPT" />;
-export const JenisSuratAdmin = () => <ComingSoon title="Jenis Surat" />;
+export function JenisSuratAdmin() {
+  return (
+    <TableCrud
+      table="surat_jenis"
+      title="Master Jenis Surat"
+      desc="Kelola daftar jenis surat beserta format cetak HTML dinamisnya."
+      orderBy="kode_surat"
+      blank={{ kode_surat: "", kode_klasifikasi: "", nama: "", dna_field: "" } as any}
+      columns={[
+        { key: "kode_surat", label: "Kode Surat (Misal: 470)" },
+        { key: "kode_klasifikasi", label: "Kode Klasifikasi" },
+        { key: "nama", label: "Nama Surat" },
+        { key: "dna_field", label: "Template HTML Dinamis", type: "richtext", hideInTable: true }
+      ]}
+    />
+  );
+}
 export const SuratTerbitAdmin = () => <ComingSoon title="Surat Terbit" />;
 export const CetakSuratTerbitAdmin = () => <ComingSoon title="Cetak Surat" />;
 export const LanggananWaAdmin = () => <ComingSoon title="Langganan WA" />;
