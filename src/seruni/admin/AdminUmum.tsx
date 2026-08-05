@@ -228,9 +228,9 @@ export default function AdminUmum() {
       const sm = (typeof smRaw === "string" ? JSON.parse(smRaw || "{}") : smRaw) as Record<string, string> || {};
       let tSettings: any = {};
       if (typeof t?.settings === 'string') {
-        try { tSettings = JSON.parse(t.settings); } catch(e) {}
+        try { tSettings = JSON.parse(t.settings); } catch(e) { console.warn('Failed to parse settings', e); }
       } else if (t?.settings) {
-        tSettings = { ...t.settings };
+        tSettings = { ...(t.settings as Record<string, unknown>) };
       }
 
       form.reset({
@@ -311,9 +311,9 @@ export default function AdminUmum() {
     const { data: currentTenant } = await supabase.from("tenants").select("settings").eq("id", tenantId as string).single();
     let settings: any = {};
     if (typeof currentTenant?.settings === 'string') {
-      try { settings = JSON.parse(currentTenant.settings); } catch(e) {}
+      try { settings = JSON.parse(currentTenant.settings); } catch(e) { console.warn('Failed to parse tenant settings', e); }
     } else if (currentTenant?.settings) {
-      settings = { ...currentTenant.settings };
+      settings = { ...(currentTenant.settings as Record<string, unknown>) };
     }
     settings.logo_kabupaten_url = data.logo_kabupaten;
     settings.logo_provinsi_url = data.logo_provinsi;
