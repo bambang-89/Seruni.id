@@ -291,12 +291,11 @@ export function composeAlamat(
     finalAlamat = rtrw;
   }
 
-  const parts = [
-    finalAlamat,
-    kec ? `Kec. ${kec}` : null,
-    kab ? `Kab. ${kab}` : null,
-    prov ? `Prov. ${prov}` : null,
-  ];
+  const finalLower = (finalAlamat || "").toLowerCase();
+  const parts = [finalAlamat];
+  if (kec && !finalLower.includes(kec.toLowerCase()) && !finalLower.includes("kec")) parts.push(`Kec. ${kec}`);
+  if (kab && !finalLower.includes(kab.toLowerCase()) && !finalLower.includes("kab")) parts.push(`Kab. ${kab}`);
+  if (prov && !finalLower.includes(prov.toLowerCase()) && !finalLower.includes("prov")) parts.push(`Prov. ${prov}`);
 
   return parts.filter(Boolean).join(", ") || "-";
 }

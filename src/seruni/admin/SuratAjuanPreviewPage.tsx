@@ -41,7 +41,8 @@ export function SuratAjuanPreviewPage() {
       ]);
 
       setData(ajuan);
-      setUmum({ ...resT.data, ...resS.data });
+      const tSettings = typeof resT.data?.settings === 'string' ? JSON.parse(resT.data.settings) : (resT.data?.settings || {});
+      setUmum({ ...resT.data, ...resS.data, ...tSettings });
       const tpl = resTemplate.data || {};
       setTemplate({
         format_nomor: tpl.format_nomor || "[KODE]/[NOMOR_URUT]/2026",
@@ -166,6 +167,16 @@ export function SuratAjuanPreviewPage() {
   const dna = ajuanData?.data_dna || {};
   const namaSurat = data.surat_jenis?.nama || "SURAT KETERANGAN";
 
+  const previewFormatNomor = template?.format_nomor
+    ? template.format_nomor
+        .replace("[KODE]", data?.surat_jenis?.kode_surat || "___")
+        .replace("[kode_surat]", data?.surat_jenis?.kode_surat || "___")
+        .replace("[NOMOR_URUT]", "___")
+        .replace("[nomor]", "___")
+        .replace("[singkatan_kades]", umum?.singkatan_kades || "KADES")
+        .replace("[singkatan_desa]", umum?.singkatan_desa || "DESA")
+    : "___/___/2026";
+
   return (
     <div className="min-h-screen bg-gray-200 py-8 text-black" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
       
@@ -234,9 +245,9 @@ export function SuratAjuanPreviewPage() {
         <div className="flex items-center justify-between mb-4 pb-4 relative" style={{ borderBottom: "3px double black" }}>
           <div className="w-20 text-left">
             {umum?.logo_kabupaten_url ? (
-              <img src={umum.logo_kabupaten_url} alt="Logo Kabupaten" className="w-20 h-24 object-contain" />
+              <img src={umum.logo_kabupaten_url.startsWith('http') ? umum.logo_kabupaten_url : supabase.storage.from("seruni-media").getPublicUrl(umum.logo_kabupaten_url).data.publicUrl} alt="Logo Kabupaten" className="w-20 h-24 object-contain" />
             ) : umum?.logo_url ? (
-              <img src={umum.logo_url} alt="Logo Desa" className="w-20 h-24 object-contain" />
+              <img src={umum.logo_url.startsWith('http') ? umum.logo_url : supabase.storage.from("seruni-media").getPublicUrl(umum.logo_url).data.publicUrl} alt="Logo Desa" className="w-20 h-24 object-contain" />
             ) : (
               <div className="w-20 h-24 bg-gray-200 flex items-center justify-center text-xs text-center border">Logo<br/>Kabupaten</div>
             )}
@@ -256,7 +267,7 @@ export function SuratAjuanPreviewPage() {
           </div>
           <div className="w-20 text-right">
             {umum?.logo_provinsi_url ? (
-              <img src={umum.logo_provinsi_url} alt="Logo Provinsi" className="w-20 h-24 object-contain" />
+              <img src={umum.logo_provinsi_url.startsWith('http') ? umum.logo_provinsi_url : supabase.storage.from("seruni-media").getPublicUrl(umum.logo_provinsi_url).data.publicUrl} alt="Logo Provinsi" className="w-20 h-24 object-contain" />
             ) : (
               <div className="w-20 h-24" />
             )}
@@ -266,7 +277,7 @@ export function SuratAjuanPreviewPage() {
         {/* Nomor Surat */}
         <div className="text-center mb-8">
           <h4 className="text-lg font-bold underline underline-offset-4 uppercase">{namaSurat}</h4>
-          <p className="text-sm">Nomor : {template?.format_nomor}</p>
+          <p className="text-sm">Nomor : {previewFormatNomor}</p>
         </div>
 
         {/* Identitas Penduduk */}

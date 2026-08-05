@@ -226,6 +226,12 @@ export default function AdminUmum() {
 
       const smRaw = s?.social_media;
       const sm = (typeof smRaw === "string" ? JSON.parse(smRaw || "{}") : smRaw) as Record<string, string> || {};
+      let tSettings: any = {};
+      if (typeof t?.settings === 'string') {
+        try { tSettings = JSON.parse(t.settings); } catch(e) {}
+      } else if (t?.settings) {
+        tSettings = { ...t.settings };
+      }
 
       form.reset({
         nama_desa: t?.nama_desa || "",
@@ -233,8 +239,8 @@ export default function AdminUmum() {
         kabupaten: t?.kabupaten || "",
         provinsi: t?.provinsi || "",
         logo_desa: t?.logo_url || "",
-        logo_kabupaten: t?.logo_kabupaten_url || "",
-        logo_provinsi: t?.logo_provinsi_url || "",
+        logo_kabupaten: tSettings.logo_kabupaten_url || "",
+        logo_provinsi: tSettings.logo_provinsi_url || "",
         favicon: t?.favicon_url || "",
 
         tagline: s?.tagline || "",
@@ -247,10 +253,10 @@ export default function AdminUmum() {
         nomor_wa: s?.nomor_wa_resmi || "",
         fonnte_token: (s as any)?.fonnte_token || t?.fonnte_token || "",
         maps_embed_url: s?.maps_embed_url || "",
-        dusun: s?.dusun || "",
-        rt: s?.rt || "",
-        singkatan_desa: s?.singkatan_desa || "",
-        singkatan_kades: s?.singkatan_kades || "",
+        dusun: (tSettings as any)?.dusun || "",
+        rt: (tSettings as any)?.rt || "",
+        singkatan_desa: (tSettings as any)?.singkatan_desa || "",
+        singkatan_kades: (tSettings as any)?.singkatan_kades || "",
 
         sosmed_facebook: sm.facebook || "",
         sosmed_instagram: sm.instagram || "",
@@ -301,6 +307,22 @@ export default function AdminUmum() {
     form.setValue("sosmed_twitter", sosmed.twitter || "");
     form.setValue("website", formatUrl(data.website || ""));
 
+    // Fetch existing settings first
+    const { data: currentTenant } = await supabase.from("tenants").select("settings").eq("id", tenantId as string).single();
+    let settings: any = {};
+    if (typeof currentTenant?.settings === 'string') {
+      try { settings = JSON.parse(currentTenant.settings); } catch(e) {}
+    } else if (currentTenant?.settings) {
+      settings = { ...currentTenant.settings };
+    }
+    settings.logo_kabupaten_url = data.logo_kabupaten;
+    settings.logo_provinsi_url = data.logo_provinsi;
+    settings.dusun = data.dusun;
+    settings.rt = data.rt;
+    settings.singkatan_desa = data.singkatan_desa;
+    settings.singkatan_kades = data.singkatan_kades;
+    settings.kodepos = data.kodepos;
+
     // Cast payload ke Record agar kolom baru (belum di types.ts) bisa di-update
     const tenantPayload: Record<string, unknown> = {
       nama_desa: data.nama_desa,
@@ -308,10 +330,8 @@ export default function AdminUmum() {
       kabupaten: data.kabupaten,
       provinsi: data.provinsi,
       logo_url: data.logo_desa,
-      logo_kabupaten_url: data.logo_kabupaten,
-      logo_provinsi_url: data.logo_provinsi,
       favicon_url: data.favicon,
-      // fonnte_token disimpan di site_settings
+      settings: settings
     };
 
     const sitePayload: Record<string, unknown> = {
@@ -320,15 +340,9 @@ export default function AdminUmum() {
       telepon: data.kontak,
       email: data.email,
       website: formatUrl(data.website || ""),
-      kodepos: data.kodepos,
       jam_layanan: data.jam_layanan,
       nomor_wa_resmi: data.nomor_wa,
-      fonnte_token: data.fonnte_token || null,
       maps_embed_url: parseIframeToUrl(data.maps_embed_url || "") || null,
-      dusun: data.dusun,
-      rt: data.rt,
-      singkatan_desa: data.singkatan_desa,
-      singkatan_kades: data.singkatan_kades,
       social_media: sosmed,
     };
 
@@ -337,10 +351,15 @@ export default function AdminUmum() {
       .update(tenantPayload as any)
       .eq("id", tenantId as string);
 
-    const { error: e2 } = await supabase
-      .from("site_settings")
-      .update(sitePayload as any)
-      .eq("tenant_id", tenantId as string);
+    const { data: existSite } = await supabase.from("site_settings").select("id").eq("tenant_id", tenantId as string).maybeSingle();
+    let e2;
+    if (existSite) {
+      const { error } = await supabase.from("site_settings").update(sitePayload as any).eq("tenant_id", tenantId as string);
+      e2 = { message: error?.message };
+    } else {
+      const { error } = await supabase.from("site_settings").insert({ ...sitePayload, tenant_id: tenantId as string } as any);
+      e2 = { message: error?.message };
+    }
 
     setBusy(false);
 

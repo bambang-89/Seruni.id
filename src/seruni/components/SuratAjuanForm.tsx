@@ -844,10 +844,10 @@ export function SuratAjuanForm() {
               <input
                 type="text"
                 value={identitas?.agama || ""}
-                readOnly
+                onChange={(e) => setIdentitas((prev) => prev ? { ...prev, agama: e.target.value } : prev)}
                 data-testid="field-agama"
-                className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
-                placeholder="Otomatis terisi dari NIK"
+                className={cn(inputCls, "text-sm")}
+                placeholder="Agama"
               />
             </label>
           </div>
@@ -860,10 +860,10 @@ export function SuratAjuanForm() {
               <input
                 type="text"
                 value={identitas?.status_kawin || ""}
-                readOnly
+                onChange={(e) => setIdentitas((prev) => prev ? { ...prev, status_kawin: e.target.value } : prev)}
                 data-testid="field-status-kawin"
-                className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
-                placeholder="Otomatis terisi dari NIK"
+                className={cn(inputCls, "text-sm")}
+                placeholder="Status Kawin"
               />
             </label>
           </div>
@@ -892,10 +892,10 @@ export function SuratAjuanForm() {
               <input
                 type="text"
                 value={identitas?.pekerjaan || ""}
-                readOnly
+                onChange={(e) => setIdentitas((prev) => prev ? { ...prev, pekerjaan: e.target.value } : prev)}
                 data-testid="field-pekerjaan"
-                className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
-                placeholder="Otomatis terisi dari NIK"
+                className={cn(inputCls, "text-sm")}
+                placeholder="Pekerjaan"
               />
             </label>
           </div>
@@ -908,10 +908,10 @@ export function SuratAjuanForm() {
               <input
                 type="text"
                 value={identitas?.kewarganegaraan || ""}
-                readOnly
+                onChange={(e) => setIdentitas((prev) => prev ? { ...prev, kewarganegaraan: e.target.value } : prev)}
                 data-testid="field-kewarganegaraan"
-                className={cn(inputCls, "bg-accent/5 cursor-not-allowed text-sm")}
-                placeholder="Otomatis terisi dari NIK"
+                className={cn(inputCls, "text-sm")}
+                placeholder="Kewarganegaraan"
               />
             </label>
           </div>
