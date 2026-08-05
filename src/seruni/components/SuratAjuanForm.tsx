@@ -13,6 +13,7 @@ import {
   type SuratDNAField,
   fetchPendudukByNik,
   fetchKewarganegaraan,
+  fetchAgama,
   composeAlamat,
   formatTanggalLahir,
   type IdentitasData,
@@ -465,6 +466,7 @@ export function SuratAjuanForm() {
 
         if (p) {
           const kewarganegaraan = await fetchKewarganegaraan(p.warga_negara_id);
+          const agamaStr = await fetchAgama(p.agama);
           const alamat_lengkap = composeAlamat(
             p.alamat,
             p.dusun,
@@ -482,7 +484,7 @@ export function SuratAjuanForm() {
             tempat_lahir: p.tempat_lahir || "",
             tanggal_lahir: p.tanggal_lahir || "",
             jenis_kelamin: genderMap[p.jenis_kelamin] || p.jenis_kelamin || "-",
-            agama: p.agama || "-",
+            agama: agamaStr || "-",
             pendidikan: p.pendidikan || "-",
             pekerjaan: p.pekerjaan || "-",
             status_kawin: p.status_kawin || "-",

@@ -20,6 +20,12 @@ export function SuratAjuanPreviewPage() {
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const toPublicUrl = (path: string | null | undefined): string => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    return supabase.storage.from("seruni-media").getPublicUrl(path).data.publicUrl;
+  };
+
   const fetchData = async () => {
     if (!id || !tenantId) return;
     setLoading(true);
@@ -36,13 +42,30 @@ export function SuratAjuanPreviewPage() {
       // Fetch tenant settings for headers
       const [resT, resS, resTemplate] = await Promise.all([
         supabase.from("tenants").select("*").eq("id", tenantId).single(),
-        supabase.from("site_settings").select("*").eq("tenant_id", tenantId).single(),
+        supabase.from("site_settings").select("*").eq("tenant_id", tenantId).maybeSingle(),
         supabase.from("surat_template").select("*").eq("tenant_id", tenantId).maybeSingle()
       ]);
 
+      if (resS.error) console.warn("site_settings error:", resS.error.message);
+
       setData(ajuan);
-      const tSettings = typeof resT.data?.settings === 'string' ? JSON.parse(resT.data.settings) : (resT.data?.settings || {});
-      setUmum({ ...resT.data, ...resS.data, ...tSettings });
+      // Parse settings JSON from tenant
+      const tSettings = typeof resT.data?.settings === 'string'
+        ? JSON.parse(resT.data.settings)
+        : (resT.data?.settings || {});
+
+      // IMPORTANT: order = tenant base < tenant settings JSON < site_settings
+      // site_settings (alamat_kantor, email, dll) harus menang atas tSettings
+      const umumMerged = { ...resT.data, ...tSettings, ...resS.data };
+
+      // Normalise logo URLs — bisa jadi path storage atau full URL
+      umumMerged.logo_kabupaten_url = toPublicUrl(tSettings.logo_kabupaten_url || resT.data?.logo_kabupaten_url);
+      umumMerged.logo_provinsi_url  = toPublicUrl(tSettings.logo_provinsi_url  || resT.data?.logo_provinsi_url);
+      umumMerged.logo_url           = toPublicUrl(resT.data?.logo_url);
+      // kodepos: prefer settings JSON, fallback ke site_settings
+      umumMerged.kodepos = tSettings.kodepos || resS.data?.kodepos || "";
+
+      setUmum(umumMerged);
       const tpl = resTemplate.data || {};
       setTemplate({
         format_nomor: tpl.format_nomor || "[KODE]/[NOMOR_URUT]/2026",
@@ -245,9 +268,9 @@ export function SuratAjuanPreviewPage() {
         <div className="flex items-center justify-between mb-4 pb-4 relative" style={{ borderBottom: "3px double black" }}>
           <div className="w-20 text-left">
             {umum?.logo_kabupaten_url ? (
-              <img src={umum.logo_kabupaten_url.startsWith('http') ? umum.logo_kabupaten_url : supabase.storage.from("seruni-media").getPublicUrl(umum.logo_kabupaten_url).data.publicUrl} alt="Logo Kabupaten" className="w-20 h-24 object-contain" />
+              <img src={umum.logo_kabupaten_url} alt="Logo Kabupaten" className="w-20 h-24 object-contain" />
             ) : umum?.logo_url ? (
-              <img src={umum.logo_url.startsWith('http') ? umum.logo_url : supabase.storage.from("seruni-media").getPublicUrl(umum.logo_url).data.publicUrl} alt="Logo Desa" className="w-20 h-24 object-contain" />
+              <img src={umum.logo_url} alt="Logo Desa" className="w-20 h-24 object-contain" />
             ) : (
               <div className="w-20 h-24 bg-gray-200 flex items-center justify-center text-xs text-center border">Logo<br/>Kabupaten</div>
             )}
@@ -267,7 +290,7 @@ export function SuratAjuanPreviewPage() {
           </div>
           <div className="w-20 text-right">
             {umum?.logo_provinsi_url ? (
-              <img src={umum.logo_provinsi_url.startsWith('http') ? umum.logo_provinsi_url : supabase.storage.from("seruni-media").getPublicUrl(umum.logo_provinsi_url).data.publicUrl} alt="Logo Provinsi" className="w-20 h-24 object-contain" />
+              <img src={umum.logo_provinsi_url} alt="Logo Provinsi" className="w-20 h-24 object-contain" />
             ) : (
               <div className="w-20 h-24" />
             )}

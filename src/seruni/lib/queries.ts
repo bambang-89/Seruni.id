@@ -314,6 +314,23 @@ export async function fetchKewarganegaraan(warga_negara_id: unknown): Promise<st
   }
 }
 
+export async function fetchAgama(agama_val: unknown): Promise<string> {
+  if (!agama_val) return "-";
+  // Jika sudah berupa string non-numerik, langsung kembalikan
+  if (typeof agama_val === "string" && isNaN(Number(agama_val))) return agama_val;
+  // Jika ID (angka atau string angka), fetch dari ref_agama
+  try {
+    const { data } = await raw
+      .from("ref_agama")
+      .select("nama")
+      .eq("id", agama_val as string)
+      .maybeSingle();
+    return (data as { nama: string } | null)?.nama ?? String(agama_val);
+  } catch {
+    return String(agama_val);
+  }
+}
+
 export function useBerita(opts: { publishedOnly?: boolean } = { publishedOnly: true }) {
   const [data, setData] = useState<Berita[]>([]);
   const [loading, setLoading] = useState(true);
