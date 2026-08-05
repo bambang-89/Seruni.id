@@ -210,6 +210,8 @@ export type IdentitasData = {
   rw?: string;
   kabupaten?: string;
   provinsi?: string;
+  desa?: string;
+  kecamatan?: string;
   no_kk: string;
   nomor_hp?: string;
 };
@@ -260,19 +262,42 @@ export function composeAlamat(
   kabupaten: unknown,
   provinsi: unknown,
 ): string {
-  const v = (val: unknown) => (val == null ? "" : String(val).trim());
-  const rt_str = v(rt) ? `RT ${v(rt)}` : null;
-  const rw_str = v(rw) ? `RW ${v(rw)}` : null;
-  const rt_rw = rt_str && rw_str ? `${rt_str}/${rw_str}` : (rt_str || rw_str);
-  
+  const v = (val: unknown) => (val == null || val === "" || val === "-" ? "" : String(val).trim());
+  const al = v(alamat);
+  const ds = v(dusun);
+  const rt_val = v(rt);
+  const rw_val = v(rw);
+  const kec = v(kecamatan);
+  const kab = v(kabupaten);
+  const prov = v(provinsi);
+
+  let finalAlamat = al;
+
+  // Add dusun if not already in alamat
+  if (ds && finalAlamat && !finalAlamat.toLowerCase().includes(ds.toLowerCase())) {
+    finalAlamat += `, Dusun ${ds}`;
+  } else if (ds && !finalAlamat) {
+    finalAlamat = `Dusun ${ds}`;
+  }
+
+  // Add RT/RW if not already in alamat
+  const rt_str = rt_val ? `RT ${rt_val}` : "";
+  const rw_str = rw_val ? `RW ${rw_val}` : "";
+  const rtrw = [rt_str, rw_str].filter(Boolean).join("/");
+
+  if (rtrw && finalAlamat && !finalAlamat.toLowerCase().includes(`rt ${rt_val?.toLowerCase()}`)) {
+    finalAlamat += `, ${rtrw}`;
+  } else if (rtrw && !finalAlamat) {
+    finalAlamat = rtrw;
+  }
+
   const parts = [
-    v(alamat) || null,
-    v(dusun) ? `Dusun ${v(dusun)}` : null,
-    rt_rw,
-    v(kecamatan) ? `Kec. ${v(kecamatan)}` : null,
-    v(kabupaten) ? `Kab. ${v(kabupaten)}` : null,
-    v(provinsi) ? `Prov. ${v(provinsi)}` : null,
+    finalAlamat,
+    kec ? `Kec. ${kec}` : null,
+    kab ? `Kab. ${kab}` : null,
+    prov ? `Prov. ${prov}` : null,
   ];
+
   return parts.filter(Boolean).join(", ") || "-";
 }
 
