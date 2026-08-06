@@ -258,6 +258,7 @@ export function composeAlamat(
   dusun: unknown,
   rt: unknown,
   rw: unknown,
+  desa: unknown,
   kecamatan: unknown,
   kabupaten: unknown,
   provinsi: unknown,
@@ -267,17 +268,18 @@ export function composeAlamat(
   const ds = v(dusun);
   const rt_val = v(rt);
   const rw_val = v(rw);
+  const dsa = v(desa);
   const kec = v(kecamatan);
   const kab = v(kabupaten);
   const prov = v(provinsi);
 
   let finalAlamat = al;
+  const finalLower = (finalAlamat || "").toLowerCase();
 
   // Add dusun if not already in alamat
-  if (ds && finalAlamat && !finalAlamat.toLowerCase().includes(ds.toLowerCase())) {
-    finalAlamat += `, Dusun ${ds}`;
-  } else if (ds && !finalAlamat) {
-    finalAlamat = `Dusun ${ds}`;
+  if (ds && !finalLower.includes(`dusun ${ds.toLowerCase()}`) && !finalLower.includes(ds.toLowerCase())) {
+    if (finalAlamat) finalAlamat += `, Dusun ${ds}`;
+    else finalAlamat = `Dusun ${ds}`;
   }
 
   // Add RT/RW if not already in alamat
@@ -285,14 +287,13 @@ export function composeAlamat(
   const rw_str = rw_val ? `RW ${rw_val}` : "";
   const rtrw = [rt_str, rw_str].filter(Boolean).join("/");
 
-  if (rtrw && finalAlamat && !finalAlamat.toLowerCase().includes(`rt ${rt_val?.toLowerCase()}`)) {
-    finalAlamat += `, ${rtrw}`;
-  } else if (rtrw && !finalAlamat) {
-    finalAlamat = rtrw;
+  if (rtrw && !finalLower.includes(`rt ${rt_val?.toLowerCase()}`)) {
+    if (finalAlamat) finalAlamat += `, ${rtrw}`;
+    else finalAlamat = rtrw;
   }
 
-  const finalLower = (finalAlamat || "").toLowerCase();
   const parts = [finalAlamat];
+  if (dsa && !finalLower.includes(dsa.toLowerCase()) && !finalLower.includes("desa")) parts.push(`Desa ${dsa}`);
   if (kec && !finalLower.includes(kec.toLowerCase()) && !finalLower.includes("kec")) parts.push(`Kec. ${kec}`);
   if (kab && !finalLower.includes(kab.toLowerCase()) && !finalLower.includes("kab")) parts.push(`Kab. ${kab}`);
   if (prov && !finalLower.includes(prov.toLowerCase()) && !finalLower.includes("prov")) parts.push(`Prov. ${prov}`);

@@ -18,7 +18,7 @@ import {
   formatTanggalLahir,
   type IdentitasData,
 } from "@/seruni/lib/queries";
-import { useTenantId } from "@/seruni/lib/tenant";
+import { useTenantId, useTenant } from "@/seruni/lib/tenant";
 import { SuratDokumenUpload, UploadField, type DokumenSurat } from "@/seruni/components/SuratDokumenUpload";
 
 const inputCls =
@@ -379,6 +379,7 @@ function groupFields(fields: SuratDNAField[]): GroupedFields {
 export function SuratAjuanForm() {
   const { id: jenisSuratId } = useParams<{ id: string }>();
   const tenantId = useTenantId();
+  const { tenant } = useTenant();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [jenisSurat, setJenisSurat] = useState<{ nama: string; kode_surat: string } | null>(null);
@@ -472,9 +473,10 @@ export function SuratAjuanForm() {
             p.dusun,
             p.rt,
             p.rw,
-            p.kecamatan,
-            p.kabupaten,
-            p.provinsi,
+            tenant?.nama_desa,
+            tenant?.kecamatan,
+            tenant?.kabupaten,
+            tenant?.provinsi,
           );
           const genderMap: Record<string, string> = { L: "Laki-laki", P: "Perempuan" };
           const id: any = {
@@ -544,7 +546,7 @@ export function SuratAjuanForm() {
       active = false;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [nik, dnaFields]);
+  }, [nik, dnaFields, tenant?.kabupaten, tenant?.kecamatan, tenant?.nama_desa, tenant?.provinsi]);
 
   function validateAll(): boolean {
     const errors: Record<string, string> = {};

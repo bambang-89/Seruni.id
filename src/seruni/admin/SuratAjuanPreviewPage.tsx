@@ -83,6 +83,7 @@ export function SuratAjuanPreviewPage() {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, tenantId]);
 
   const updateStatus = async (status: string, keterangan: string | null = null) => {

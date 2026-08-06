@@ -189,7 +189,8 @@ export function SuratPreview({
             supabase.from("tenants").select("*").eq("id", surat.tenant_id).maybeSingle(),
             supabase.from("site_settings").select("*").eq("tenant_id", surat.tenant_id).maybeSingle(),
           ]);
-          identitasUmum = { ...resT, ...resS };
+          const tSettings = typeof resT?.settings === 'string' ? JSON.parse(resT.settings) : (resT?.settings || {});
+          identitasUmum = { ...resT, ...resS, ...tSettings };
         }
 
         setPreviewData({
@@ -198,19 +199,49 @@ export function SuratPreview({
           jenis_surat: String(surat.jenis || surat.jenis_nama || ''),
           tanggal_surat: String(surat.tanggal_terbit || new Date().toISOString()),
           tanggal_cetak: String(new Date().toISOString()),
-          penduduk: surat.penduduk ? {
-            nama: String(surat.penduduk.nama || ''),
-            nik: String(surat.penduduk.nik || ''),
-            tempat_lahir: String(surat.penduduk.tempat_lahir || ''),
-            tanggal_lahir: String(surat.penduduk.tanggal_lahir || ''),
-            jenis_kelamin: String(surat.penduduk.jenis_kelamin || ''),
-            alamat: String(surat.penduduk.alamat || surat.penduduk.keluarga?.alamat || ''),
-            pekerjaan: String(surat.penduduk.pekerjaan || ''),
-            agama: String(surat.penduduk.agama || ''),
-            status_kawin: String(surat.penduduk.status_kawin || ''),
-            no_kk: String(surat.penduduk.keluarga?.no_kk || ''),
-            foto_url: surat.penduduk.foto_url ? String(surat.penduduk.foto_url) : undefined,
-          } : undefined,
+          penduduk: surat.penduduk ? (() => {
+            const p = surat.penduduk;
+            let tgl = String(p.tanggal_lahir || '');
+            if (tgl) {
+              try {
+                const parts = tgl.split('T')[0].split('-');
+                if (parts.length === 3 && parts[0].length === 4) tgl = `${parts[2]}/${parts[1]}/${parts[0]}`;
+              } catch(e) { /* ignore */ }
+            }
+            
+            let baseAlamat = String(p.alamat || p.keluarga?.alamat || '');
+            const alamatLower = baseAlamat.toLowerCase();
+            const dusun = p.dusun || p.keluarga?.dusun;
+            const rt = p.rt || p.keluarga?.rt;
+            const rw = p.rw || p.keluarga?.rw;
+            if (dusun && !alamatLower.includes(dusun.toLowerCase())) baseAlamat += `, Dusun ${dusun}`;
+            if ((rt || rw) && !alamatLower.includes("rt")) baseAlamat += `, RT ${rt || "-"}/RW ${rw || "-"}`;
+            
+            let alamatFull = baseAlamat;
+            if (baseAlamat) {
+              const parts = [baseAlamat];
+              const baseLower = baseAlamat.toLowerCase();
+              if (identitasUmum.nama_desa && !baseLower.includes(identitasUmum.nama_desa.toLowerCase())) parts.push(`Desa ${identitasUmum.nama_desa}`);
+              if (identitasUmum.kecamatan && !baseLower.includes(identitasUmum.kecamatan.toLowerCase()) && !baseLower.includes("kec")) parts.push(`Kec. ${identitasUmum.kecamatan}`);
+              if (identitasUmum.kabupaten && !baseLower.includes(identitasUmum.kabupaten.toLowerCase()) && !baseLower.includes("kab")) parts.push(`Kab. ${identitasUmum.kabupaten}`);
+              alamatFull = parts.join(", ");
+            }
+
+
+            return {
+              nama: String(p.nama || ''),
+              nik: String(p.nik || ''),
+              tempat_lahir: String(p.tempat_lahir || ''),
+              tanggal_lahir: tgl,
+              jenis_kelamin: String(p.jenis_kelamin || ''),
+              alamat: alamatFull,
+              pekerjaan: String(p.pekerjaan || ''),
+              agama: String(p.agama || ''),
+              status_kawin: String(p.status_kawin || ''),
+              no_kk: String(p.keluarga?.no_kk || ''),
+              foto_url: p.foto_url ? String(p.foto_url) : undefined,
+            };
+          })() : undefined,
           dnaFields,
           dnaValues,
           lampiran: Array.isArray(surat.lampiran) ? surat.lampiran : [],
@@ -463,13 +494,13 @@ export function SuratPreview({
     if (!dateStr) return "";
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       const parts = dateStr.split("-");
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
     const d = new Date(dateStr);
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
-    return `${day}-${month}-${year}`;
+    return `${day}/${month}/${year}`;
   };
 
   const { template: tmpl, penduduk } = previewData;

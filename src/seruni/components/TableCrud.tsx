@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "../lib/tenant";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { RelationSelect } from "../admin/AdminPages"; 
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 import { uploadFile } from "../lib/upload";
 export function RelationLabel({ relation, value }: { relation: any, value: string }) {
@@ -128,7 +130,7 @@ export const VideoField = ({ value, folder, onChange }: any) => {
 export type Column = {
   key: string;
   label: string;
-  type?: "text" | "number" | "date" | "textarea" | "checkbox" | "select" | "image" | "video" | "relation";
+  type?: "text" | "number" | "date" | "textarea" | "richtext" | "checkbox" | "select" | "image" | "video" | "relation";
   step?: string;
   hideInTable?: boolean;
   options?: { value: string; label: string }[];
@@ -433,7 +435,7 @@ export function TableCrud({
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
             <div className="grid sm:grid-cols-2 gap-x-6 gap-y-5">
               {draft && columns.map((c) => (
-                  <div key={String(c.key)} className={c.type === "textarea" ? "sm:col-span-2" : ""}>
+                  <div key={String(c.key)} className={c.type === "textarea" || c.type === "richtext" ? "sm:col-span-2" : ""}>
                     {c.type === "textarea" ? (
                       <div className="space-y-2">
                         <label className="text-sm font-semibold tracking-tight">{c.label}</label>
@@ -443,6 +445,16 @@ export function TableCrud({
                           onChange={(e) => setDraft({ ...draft, [c.key]: e.target.value })}
                           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-shadow"
                           autoComplete="off"
+                        />
+                      </div>
+                    ) : c.type === "richtext" ? (
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold tracking-tight">{c.label}</label>
+                        <ReactQuill 
+                          theme="snow"
+                          value={(draft[c.key] ?? "") as string} 
+                          onChange={(content) => setDraft({ ...draft, [c.key]: content })}
+                          className="bg-white rounded-md"
                         />
                       </div>
                     ) : c.type === "checkbox" ? (

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenantId } from "../lib/tenant";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { RegionSelector } from "../components/RegionSelector";
-import { TagsInput } from "../components/TagsInput";
+
 
 import {
   Form,
@@ -335,6 +335,7 @@ export default function AdminUmum() {
     };
 
     const sitePayload: Record<string, unknown> = {
+      nama_resmi: `Pemerintah Desa ${data.nama_desa}`,
       tagline: data.tagline,
       alamat_kantor: data.alamat,
       telepon: data.kontak,

@@ -1,10 +1,11 @@
-﻿/**
+/**
  * AdminPamong.tsx
  * Sistem Manajemen Data Pamong / Perangkat Desa
  */
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { raw } from "@/seruni/lib/queries";
 import { useTenantId } from "../lib/tenant";
 import { uploadFile } from "../lib/upload";
 import { toast } from "sonner";
@@ -234,7 +235,7 @@ export function AdminPamong() {
     if (!tenantId) return;
     setLoading(true);
     try {
-      const { data, error } = await (supabase as any).from("desa_pamong").select("*").eq("tenant_id", tenantId).order("urutan", { ascending: true });
+      const { data, error } = await raw.from("desa_pamong").select("*").eq("tenant_id", tenantId).order("urutan", { ascending: true });
       if (error) throw error;
       setList((data as Pamong[]) ?? []);
     } catch (e: any) { toast.error("Gagal memuat: " + e.message); }
@@ -255,12 +256,12 @@ export function AdminPamong() {
     if (!tenantId) return;
     const payload = { ...form, tenant_id: tenantId, nip: form.nip || null, periode: form.periode || null, foto_url: form.foto_url || null, ttd_image_url: form.ttd_image_url || null, qr_code_url: form.qr_code_url || null, updated_at: new Date().toISOString() };
     if (form.id) {
-      const { error } = await (supabase as any).from("desa_pamong").update(payload).eq("id", form.id);
+      const { error } = await raw.from("desa_pamong").update(payload).eq("id", form.id);
       if (error) throw error;
       toast.success("Berhasil diperbarui");
     } else {
       const maxUrutan = list.length > 0 ? Math.max(...list.map(p => p.urutan)) + 1 : 1;
-      const { error } = await (supabase as any).from("desa_pamong").insert({ ...payload, urutan: form.urutan || maxUrutan });
+      const { error } = await raw.from("desa_pamong").insert({ ...payload, urutan: form.urutan || maxUrutan });
       if (error) throw error;
       toast.success("Pamong ditambahkan");
     }
@@ -269,14 +270,14 @@ export function AdminPamong() {
   };
 
   const handleToggle = async (item: Pamong) => {
-    const { error } = await (supabase as any).from("desa_pamong").update({ aktif: !item.aktif, updated_at: new Date().toISOString() }).eq("id", item.id);
+    const { error } = await raw.from("desa_pamong").update({ aktif: !item.aktif, updated_at: new Date().toISOString() }).eq("id", item.id);
     if (error) { toast.error("Gagal: " + error.message); return; }
     setList(prev => prev.map(p => p.id === item.id ? { ...p, aktif: !p.aktif } : p));
     toast.success(`${item.nama} ${!item.aktif ? "diaktifkan" : "dinonaktifkan"}`);
   };
 
   const handleDelete = async (item: Pamong) => {
-    const { error } = await (supabase as any).from("desa_pamong").delete().eq("id", item.id);
+    const { error } = await raw.from("desa_pamong").delete().eq("id", item.id);
     if (error) { toast.error("Gagal: " + error.message); return; }
     setList(prev => prev.filter(p => p.id !== item.id));
     toast.success("Berhasil dihapus");
@@ -293,7 +294,7 @@ export function AdminPamong() {
     const tmp = a.urutan; a.urutan = b.urutan; b.urutan = tmp;
     newList[idx] = b; newList[swapIdx] = a;
     setList(newList);
-    await Promise.all([(supabase as any).from("desa_pamong").update({ urutan: a.urutan }).eq("id", a.id), (supabase as any).from("desa_pamong").update({ urutan: b.urutan }).eq("id", b.id)]);
+    await Promise.all([raw.from("desa_pamong").update({ urutan: a.urutan }).eq("id", a.id), raw.from("desa_pamong").update({ urutan: b.urutan }).eq("id", b.id)]);
   };
 
   const exportCsv = () => {

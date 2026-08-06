@@ -37,7 +37,6 @@ const navGroups = [
       { to: "/admin/surat-ajuan", label: "Pengajuan Surat" },
       { to: "/admin/surat-terbit", label: "Surat Terbit" },
       { to: "/admin/buku-register", label: "Buku Register Surat" },
-      { to: "/admin/template-surat", label: "Pengaturan Template Surat" },
       { to: "/admin/aduan", label: "Aduan Warga" },
     ],
   },

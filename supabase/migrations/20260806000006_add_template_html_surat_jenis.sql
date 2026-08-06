@@ -1,0 +1,1 @@
+ALTER TABLE public.surat_jenis ADD COLUMN IF NOT EXISTS template_html TEXT;
